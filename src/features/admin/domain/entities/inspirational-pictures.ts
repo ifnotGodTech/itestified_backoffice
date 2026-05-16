@@ -7,11 +7,13 @@ export type InspirationalPictureScreen = "list" | "upload";
 export type InspirationalPictureRow = {
   id: number;
   title: string;
+  caption?: string;
   status: Exclude<InspirationalPictureStatus, "All">;
   category: string;
   uploadedBy: string;
   dateLabel: string;
   source: string;
+  imageUrl?: string;
   scheduledTime?: string;
   downloadCount: number;
   shareCount: number;

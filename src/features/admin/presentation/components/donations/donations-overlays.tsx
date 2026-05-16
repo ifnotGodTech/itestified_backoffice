@@ -38,6 +38,35 @@ function CloseX() {
 export function DonationsOverlays({ viewModel }: { viewModel: DonationsViewModel }) {
   return (
     <>
+      {viewModel.showDetails && viewModel.selectedRow ? (
+        <OverlayShell closeLabel="Close donation detail modal">
+          <div className="relative z-10 w-full max-w-[620px] rounded-[20px] bg-[#1f1f1f] px-6 pb-6 pt-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+            <Link href={closeHref(viewModel)} className="absolute right-8 top-5" aria-label="Close donation detail modal">
+              <CloseX />
+            </Link>
+            <h2 className="text-[20px] font-semibold text-white">Donation Detail</h2>
+            <div className="mt-5 rounded-[10px] border border-white/15 px-4 py-4">
+              <dl className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-4 text-[14px]">
+                <dt className="text-white/45">Donor name</dt>
+                <dd className="text-white">{viewModel.selectedRow.donor}</dd>
+                <dt className="text-white/45">Email</dt>
+                <dd className="text-white">{viewModel.selectedRow.email}</dd>
+                <dt className="text-white/45">Payment reference</dt>
+                <dd className="text-white">{viewModel.selectedRow.reference}</dd>
+                <dt className="text-white/45">Amount</dt>
+                <dd className="text-white">{viewModel.selectedRow.amount}</dd>
+                <dt className="text-white/45">Currency</dt>
+                <dd className="text-white">{viewModel.selectedRow.currency}</dd>
+                <dt className="text-white/45">Status</dt>
+                <dd className="text-white">{viewModel.selectedRow.status}</dd>
+                <dt className="text-white/45">Date</dt>
+                <dd className="text-white">{viewModel.selectedRow.date}</dd>
+              </dl>
+            </div>
+          </div>
+        </OverlayShell>
+      ) : null}
+
       {viewModel.showFilterModal ? (
         <OverlayShell closeLabel="Close donations filter modal">
           <form action="/donations" className="relative z-10 w-full max-w-[380px] overflow-hidden rounded-[20px] border border-white/15 bg-[#1d1d1d] shadow-[0_14px_40px_rgba(0,0,0,0.45)]">
@@ -166,23 +195,28 @@ export function DonationsOverlays({ viewModel }: { viewModel: DonationsViewModel
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div>
-                <p className="mb-2 text-[14px] text-white">Refund amount<span className="text-[#b27bff]">*</span></p>
+                <p className="mb-2 text-[14px] text-white">Donation amount</p>
                 <div className="flex h-[44px] items-center justify-between rounded-[8px] bg-[#2a2a2a] px-4 text-[14px] text-white/85">
-                  <span>₦ 00.00</span>
-                  <span className="border-l border-white/10 pl-4">NGN ⌄</span>
+                  <span>{viewModel.selectedRow.amount}</span>
+                  <span className="border-l border-white/10 pl-4">{viewModel.selectedRow.currency}</span>
                 </div>
               </div>
               <div>
                 <p className="mb-2 text-[14px] text-white">Reason for Reversal<span className="text-[#b27bff]">*</span></p>
                 <div className="flex h-[44px] items-center justify-between rounded-[8px] bg-[#2a2a2a] px-4 text-[14px] text-white/75">
-                  <span>Select reason for reversal</span>
+                  <span>Admin verification request</span>
                   <span>⌄</span>
                 </div>
               </div>
             </div>
             <div className="mt-8 flex justify-end gap-3">
               <Link href={closeHref(viewModel)} className="inline-flex h-[42px] min-w-[170px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 text-[14px] text-[#9B68D5]">Cancel</Link>
-              <Link href={buildDonationsHref({ tab: viewModel.activeTab, success: "refund" })} className="inline-flex h-[42px] min-w-[170px] items-center justify-center rounded-[10px] bg-white/55 px-6 text-[14px] text-white/70">Confirm Refund</Link>
+              <Link
+                href={`/api/admin/donations/${viewModel.selectedRow.id}/reverse/?reason=${encodeURIComponent("Admin verification request")}&next=${encodeURIComponent(buildDonationsHref({ tab: viewModel.activeTab, success: "reverse" }))}`}
+                className="inline-flex h-[42px] min-w-[170px] items-center justify-center rounded-[10px] bg-white/55 px-6 text-[14px] text-white/70"
+              >
+                Confirm Reversal
+              </Link>
             </div>
           </div>
         </OverlayShell>

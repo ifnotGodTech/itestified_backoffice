@@ -1,4 +1,5 @@
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
+import { backendBaseUrl } from "@/core/auth/backend";
 import type {
   HomeManagementDisplayRule,
   HomeManagementPhaseState,
@@ -257,4 +258,116 @@ export function getHomeManagementViewModel(input: {
     showRemoveConfirm: Boolean(input.removeId),
     showSuccess: input.success === "remove",
   };
+}
+
+function formatIsoDate(input: string | null | undefined): string {
+  if (!input) return "";
+  const parsed = new Date(input);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toLocaleDateString("en-GB");
+}
+
+export async function getHomeManagementViewModelFromApi(
+  input: {
+    tab?: string;
+    rule?: string;
+    count?: string;
+    state?: string;
+    fullName?: string;
+    menuId?: string;
+    viewId?: string;
+    removeId?: string;
+    success?: string;
+  },
+  cookieHeader: string,
+): Promise<HomeManagementViewModel> {
+  try {
+    const [curationResponse, picturesResponse] = await Promise.all([
+      fetch(`${backendBaseUrl}/content/admin/home-curation/`, {
+        headers: { cookie: cookieHeader },
+        cache: "no-store",
+      }),
+      fetch(`${backendBaseUrl}/content/admin/inspirational-pictures/?status=published&page_size=50`, {
+        headers: { cookie: cookieHeader },
+        cache: "no-store",
+      }),
+    ]);
+    if (!curationResponse.ok || !picturesResponse.ok) {
+      return getHomeManagementViewModel({ ...input, state: "error" });
+    }
+
+    const curationPayload = (await curationResponse.json()) as Record<string, unknown>;
+    const picturesPayload = (await picturesResponse.json()) as Record<string, unknown>;
+    const vm = getHomeManagementViewModel(input);
+    const featured = (curationPayload.featured_testimonies as Array<Record<string, unknown>> | undefined) ?? [];
+    const pictures = (picturesPayload.results as Array<Record<string, unknown>> | undefined) ?? [];
+
+    const videoRows: HomeManagementRow[] = featured
+      .filter((item) => String(item.testimony_type ?? "") === "video")
+      .map((item, index) => ({
+        id: Number(item.testimony_id ?? index + 1),
+        kind: "video",
+        title: String(item.title ?? ""),
+        category: String(item.category ?? ""),
+        source: "App submission",
+        dateUploaded: formatIsoDate(String(item.created_at ?? "")),
+        uploadedBy: "Content Admin",
+        views: 0,
+        likes: 0,
+        comments: 0,
+        shares: 0,
+        thumbnailLabel: String(item.title ?? ""),
+        thumbnailSrc: String(item.thumbnail_url ?? "") || undefined,
+        status: "Uploaded",
+      }));
+    const textRows: HomeManagementRow[] = featured
+      .filter((item) => String(item.testimony_type ?? "") !== "video")
+      .map((item, index) => ({
+        id: Number(item.testimony_id ?? index + 1),
+        kind: "text",
+        title: String(item.title ?? ""),
+        category: String(item.category ?? ""),
+        source: "App submission",
+        dateUploaded: formatIsoDate(String(item.created_at ?? "")),
+        uploadedBy: "Content Admin",
+        body: String(item.body ?? ""),
+        views: 0,
+        likes: 0,
+        comments: 0,
+        shares: 0,
+        thumbnailLabel: "Written Testimony",
+        status: "Uploaded",
+      }));
+    const pictureRowsMapped: HomeManagementRow[] = pictures.map((item, index) => ({
+      id: Number(item.id ?? index + 1),
+      kind: "picture",
+      title: String(item.title ?? ""),
+      category: String(item.category ?? ""),
+      source: String(item.source ?? ""),
+      dateUploaded: formatIsoDate(String(item.created_at ?? "")),
+      uploadedBy: "Content Admin",
+      views: 0,
+      likes: 0,
+      comments: 0,
+      shares: 0,
+      downloads: 0,
+      thumbnailLabel: String(item.title ?? ""),
+      thumbnailSrc: String(item.image_url ?? "") || undefined,
+      status: "Uploaded",
+    }));
+
+    const activeRows = vm.activeTab === "video" ? videoRows : vm.activeTab === "text" ? textRows : pictureRowsMapped;
+    const selectedId = Number(input.menuId ?? input.viewId ?? input.removeId ?? "");
+    const selectedRow = Number.isFinite(selectedId) ? activeRows.find((row) => row.id === selectedId) ?? null : null;
+    return {
+      ...vm,
+      phaseState: activeRows.length ? "populated" : "empty",
+      availableCount: activeRows.length,
+      testimonyCount: Math.min(vm.testimonyCount, Math.max(activeRows.length, 1)),
+      rows: activeRows,
+      selectedRow,
+    };
+  } catch {
+    return getHomeManagementViewModel({ ...input, state: "error" });
+  }
 }

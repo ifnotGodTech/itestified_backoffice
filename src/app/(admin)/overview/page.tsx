@@ -1,6 +1,7 @@
-import { findUserByEmail } from "@/core/auth/mock-users";
+import { cookies } from "next/headers";
 import { getServerSession } from "@/core/auth/session";
-import { getAdminOverviewViewModel, AdminOverview } from "@/features/admin";
+import { AdminOverview } from "@/features/admin";
+import { getAdminOverviewViewModelFromApi } from "@/features/admin/data/services/get-admin-overview-view-model";
 
 export default async function OverviewPage({
   searchParams,
@@ -9,11 +10,15 @@ export default async function OverviewPage({
 }) {
   const params = await searchParams;
   const session = await getServerSession();
-  const user = session?.email ? findUserByEmail(session.email) : null;
-  const viewModel = getAdminOverviewViewModel({
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore
+    .getAll()
+    .map((entry) => `${entry.name}=${entry.value}`)
+    .join("; ");
+  const viewModel = await getAdminOverviewViewModelFromApi({
     empty: params.state === "empty",
-    fullName: user?.fullName,
-  });
+    fullName: session?.fullName ?? session?.email,
+  }, cookieHeader);
 
   return <AdminOverview viewModel={viewModel} />;
 }

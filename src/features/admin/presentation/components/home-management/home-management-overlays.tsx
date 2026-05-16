@@ -146,6 +146,11 @@ function HomeManagementPictureModal({ row, viewModel }: { row: HomeManagementRow
 }
 
 function HomeManagementRemoveModal({ viewModel }: { viewModel: HomeManagementViewModel }) {
+  const selected = viewModel.selectedRow;
+  const removeHref =
+    selected && selected.kind !== "picture"
+      ? `/api/admin/content/home-curation/featured-testimonies/${selected.id}/remove`
+      : buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount, success: "remove" });
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
       <div className="relative w-full max-w-[600px] rounded-[22px] bg-[#1f1f1f] px-8 pb-8 pt-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
@@ -166,7 +171,7 @@ function HomeManagementRemoveModal({ viewModel }: { viewModel: HomeManagementVie
             Cancel
           </Link>
           <Link
-            href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount, success: "remove" })}
+            href={removeHref}
             className="inline-flex min-w-[180px] items-center justify-center rounded-[10px] bg-[#ef4335] px-6 py-4 text-[18px] text-white"
           >
             Yes, remove

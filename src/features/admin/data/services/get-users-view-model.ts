@@ -1,4 +1,5 @@
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
+import { backendBaseUrl } from "@/core/auth/backend";
 import type {
   UserManagementRow,
   UserManagementState,
@@ -119,4 +120,88 @@ export function getUsersViewModel(input: {
     showSuccess: Boolean(successMessage),
     successMessage,
   };
+}
+
+type BackendUser = {
+  id: number;
+  email: string;
+  full_name: string;
+  account_status: "active" | "deactivated" | "deleted";
+  created_at: string;
+};
+
+function mapBackendStatus(status: BackendUser["account_status"]) {
+  if (status === "deactivated") return "Deactivated" as const;
+  if (status === "deleted") return "Deleted" as const;
+  return "Registered" as const;
+}
+
+function mapRow(user: BackendUser): UserManagementRow {
+  return {
+    id: user.id,
+    userId: `U${String(user.id).padStart(5, "0")}`,
+    name: user.full_name || user.email,
+    email: user.email,
+    registrationDate: new Date(user.created_at).toLocaleDateString("en-GB"),
+    status: mapBackendStatus(user.account_status),
+    avatarSrc: "/admin-logo.svg",
+  };
+}
+
+export async function getUsersViewModelFromApi(
+  input: {
+    tab?: string;
+    state?: string;
+    q?: string;
+    menu?: string;
+    view?: string;
+    deactivate?: string;
+    reactivate?: string;
+    success?: string;
+    fullName?: string;
+  },
+  cookieHeader: string,
+): Promise<UserManagementViewModel> {
+  try {
+    const statusMap: Record<UserManagementTab, string | null> = {
+      registered: "active",
+      deactivated: "deactivated",
+      deleted: "deleted",
+    };
+    const activeTab = normalizeTab(input.tab);
+    const params = new URLSearchParams();
+    const status = statusMap[activeTab];
+    if (status) params.set("status", status);
+    if (input.q?.trim()) params.set("q", input.q.trim());
+    const query = params.toString();
+    const url = `${backendBaseUrl}/users/admin/users/${query ? `?${query}` : ""}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: cookieHeader ? { cookie: cookieHeader } : {},
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return getUsersViewModel({ ...input, state: "error" });
+    }
+    const payload = (await response.json().catch(() => ({}))) as {
+      count?: number;
+      results?: BackendUser[];
+    };
+    const rows = (payload.results ?? []).map(mapRow);
+    const vm = getUsersViewModel(input);
+    const selectedId = Number(input.menu ?? input.view ?? input.deactivate ?? input.reactivate ?? "");
+    return {
+      ...vm,
+      phaseState: rows.length === 0 ? "empty" : "populated",
+      rows,
+      totalRows: payload.count ?? rows.length,
+      selectedRow: Number.isFinite(selectedId) ? rows.find((row) => row.id === selectedId) ?? null : null,
+      showingLabel:
+        rows.length === 0
+          ? "Showing 0 of 0"
+          : `Showing 1-${rows.length} of ${payload.count ?? rows.length}`,
+    };
+  } catch {
+    return getUsersViewModel({ ...input, state: "error" });
+  }
 }

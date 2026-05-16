@@ -162,7 +162,7 @@ function DeactivateAccountModal({ row, viewModel }: { row: UserManagementRow; vi
             Cancel
           </Link>
           <Link
-            href={buildUsersHref({ tab: "deactivated", success: "deactivate" })}
+            href={`/api/admin/users/${row.id}/deactivate/?next=${encodeURIComponent(buildUsersHref({ tab: "deactivated", success: "deactivate" }))}`}
             className="inline-flex min-w-[190px] items-center justify-center rounded-[10px] bg-[#ef4335] px-5 py-4 text-[16px] text-white"
           >
             Confirm Deactivation
@@ -254,7 +254,7 @@ function ReactivateAccountModal({ row, viewModel }: { row: UserManagementRow; vi
             Cancel
           </Link>
           <Link
-            href={buildUsersHref({ tab: "registered", success: "reactivate" })}
+            href={`/api/admin/users/${row.id}/reactivate/?next=${encodeURIComponent(buildUsersHref({ tab: "registered", success: "reactivate" }))}`}
             className="inline-flex min-w-[176px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 py-4 text-[16px] text-white"
           >
             Reactivate

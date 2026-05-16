@@ -1,4 +1,5 @@
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
+import { backendBaseUrl } from "@/core/auth/backend";
 import type { MyProfileScreen, MyProfileViewModel, SettingsState } from "@/features/settings/domain/entities/settings";
 
 function normalizeScreen(screen?: string): MyProfileScreen {
@@ -49,4 +50,44 @@ export function getMyProfileViewModel(input: {
           : "Please complete all required profile fields before saving."
         : undefined,
   };
+}
+
+export async function getMyProfileViewModelFromApi(
+  input: {
+    screen?: string;
+    menu?: string;
+    password?: string;
+    state?: string;
+    fullName?: string;
+    emailAddress?: string;
+  },
+  cookieHeader: string,
+): Promise<MyProfileViewModel> {
+  try {
+    const response = await fetch(`${backendBaseUrl}/profile/me/`, {
+      method: "GET",
+      headers: cookieHeader ? { cookie: cookieHeader } : {},
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return getMyProfileViewModel({ ...input, state: "error" });
+    }
+    const payload = (await response.json().catch(() => ({}))) as {
+      full_name?: string;
+      email?: string;
+      phone_number?: string;
+      avatar?: string;
+    };
+    const vm = getMyProfileViewModel(input);
+    return {
+      ...vm,
+      phaseState: input.state === "validation" || input.state === "success" ? vm.phaseState : "populated",
+      fullName: (payload.full_name ?? vm.fullName).trim() || vm.fullName,
+      emailAddress: (payload.email ?? vm.emailAddress).trim() || vm.emailAddress,
+      mobileNumber: (payload.phone_number ?? "").trim() || vm.mobileNumber,
+      hasProfileImage: Boolean((payload.avatar ?? "").trim()),
+    };
+  } catch {
+    return getMyProfileViewModel({ ...input, state: "error" });
+  }
 }

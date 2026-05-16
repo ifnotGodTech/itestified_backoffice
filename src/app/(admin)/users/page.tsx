@@ -1,6 +1,6 @@
-import { findUserByEmail } from "@/core/auth/mock-users";
 import { getServerSession } from "@/core/auth/session";
-import { getUsersViewModel } from "@/features/admin/data/services/get-users-view-model";
+import { cookies } from "next/headers";
+import { getUsersViewModelFromApi } from "@/features/admin/data/services/get-users-view-model";
 import { UsersPage } from "@/features/admin/presentation/components/users-page";
 
 export default async function UsersRoute({
@@ -19,9 +19,13 @@ export default async function UsersRoute({
 }) {
   const params = await searchParams;
   const session = await getServerSession();
-  const user = session?.email ? findUserByEmail(session.email) : null;
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore
+    .getAll()
+    .map((entry) => `${entry.name}=${entry.value}`)
+    .join("; ");
 
-  const viewModel = getUsersViewModel({
+  const viewModel = await getUsersViewModelFromApi({
     tab: params.tab,
     state: params.state,
     q: params.q,
@@ -30,8 +34,8 @@ export default async function UsersRoute({
     deactivate: params.deactivate,
     reactivate: params.reactivate,
     success: params.success,
-    fullName: user?.fullName,
-  });
+    fullName: session?.fullName ?? session?.email,
+  }, cookieHeader);
 
   return <UsersPage viewModel={viewModel} />;
 }

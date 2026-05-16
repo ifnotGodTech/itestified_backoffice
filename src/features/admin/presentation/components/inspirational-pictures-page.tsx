@@ -112,7 +112,11 @@ function EditModal({ row, viewModel }: { row: InspirationalPictureRow; viewModel
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
       <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close edit picture modal" />
-      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[561px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_2px_10px_4px_rgba(0,0,0,0.1)]">
+      <form
+        action={`/api/admin/content/inspirational-pictures/${row.id}`}
+        method="POST"
+        className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[561px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_2px_10px_4px_rgba(0,0,0,0.1)]"
+      >
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-6">
           <h2 className="text-[28px] font-semibold leading-[1.18] text-white">Edit Picture</h2>
           <Link href={closeHref(viewModel)} className="text-[34px] leading-none text-white/90">×</Link>
@@ -120,27 +124,33 @@ function EditModal({ row, viewModel }: { row: InspirationalPictureRow; viewModel
         <div className="overflow-y-auto px-6 pb-6 pt-7">
           <div>
             <p className="mb-3 text-[16px] leading-[1.5] text-white/90">Title</p>
-            <div className="rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 text-[15px] leading-[1.5] text-white">{row.title}</div>
+            <input name="title" defaultValue={row.title} className="w-full rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 text-[15px] leading-[1.5] text-white" />
           </div>
           <div className="mt-6">
             <p className="mb-3 text-[16px] leading-[1.5] text-white/90">Category</p>
-            <div className="rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 text-[15px] leading-[1.5] text-white">{row.category}</div>
+            <input name="category" defaultValue={row.category} className="w-full rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 text-[15px] leading-[1.5] text-white" />
           </div>
           <div className="mt-6">
-            <p className="mb-3 text-[16px] leading-[1.5] text-white/90">{row.status === "Scheduled" ? "Scheduled Date" : "Upload Date"}</p>
-            <div className="rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 text-[15px] leading-[1.5] text-white">{row.dateLabel}</div>
+            <p className="mb-3 text-[16px] leading-[1.5] text-white/90">Image URL</p>
+            <input name="image_url" defaultValue={row.imageUrl ?? row.imageSrc} className="w-full rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 text-[15px] leading-[1.5] text-white" />
           </div>
+          <div className="mt-6">
+            <p className="mb-3 text-[16px] leading-[1.5] text-white/90">Source</p>
+            <input name="source" defaultValue={row.source} className="w-full rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 text-[15px] leading-[1.5] text-white" />
+          </div>
+          <input type="hidden" name="status" value={row.status === "Scheduled" ? "scheduled" : row.status === "Uploaded" ? "published" : "draft"} />
         </div>
         <div className="flex justify-end gap-4 px-6 pb-6 pt-2">
           <Link href={closeHref(viewModel)} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] font-medium text-[#9B68D5]">Cancel</Link>
-          <Link href={buildInspirationalPicturesHref({ status: viewModel.activeStatus, q: viewModel.searchQuery, success: "upload" })} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 py-4 text-[16px] font-medium text-white">Save Changes</Link>
+          <button type="submit" className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 py-4 text-[16px] font-medium text-white">Save Changes</button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
 
 function DeleteModal({ viewModel }: { viewModel: InspirationalPicturesViewModel }) {
+  const selectedId = viewModel.selectedRow?.id;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
       <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close delete picture modal" />
@@ -149,7 +159,7 @@ function DeleteModal({ viewModel }: { viewModel: InspirationalPicturesViewModel 
         <p className="mt-5 text-[16px] leading-8 text-white/72">Are you sure you want to delete this picture? This action cannot be undone.</p>
         <div className="mt-8 flex justify-center gap-4">
           <Link href={closeHref(viewModel)} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] font-medium text-[#9B68D5]">Cancel</Link>
-          <Link href={buildInspirationalPicturesHref({ status: viewModel.activeStatus, q: viewModel.searchQuery, success: "upload" })} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#ef4335] px-6 py-4 text-[16px] font-medium text-white">Delete</Link>
+          <Link href={selectedId ? `/api/admin/content/inspirational-pictures/${selectedId}/unpublish/` : closeHref(viewModel)} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#ef4335] px-6 py-4 text-[16px] font-medium text-white">Unpublish</Link>
         </div>
       </div>
     </div>
@@ -179,7 +189,7 @@ function EmptyState() {
 function UploadScreen() {
   return (
     <div className="max-w-[1248px] pt-6 md:pt-8">
-      <div className="rounded-[24px] bg-[#171717] px-6 py-8 shadow-[0_20px_60px_rgba(0,0,0,0.35)] md:px-10 md:py-10">
+      <form action="/api/admin/content/inspirational-pictures" method="POST" className="rounded-[24px] bg-[#171717] px-6 py-8 shadow-[0_20px_60px_rgba(0,0,0,0.35)] md:px-10 md:py-10">
         <div className="flex items-start justify-between gap-6">
           <h2 className="text-[32px] font-semibold leading-[1.36] text-white">Upload Picture</h2>
           <Link href={buildInspirationalPicturesHref({})} aria-label="Close upload picture screen" className="inline-flex h-6 w-6 items-center justify-center text-[20px] leading-none text-white/90">
@@ -191,30 +201,40 @@ function UploadScreen() {
           <div className="space-y-6">
             <div>
               <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Picture Source</p>
-              <div className="rounded-[10px] border border-white/10 bg-[#242424] px-4 py-4 text-[14px] leading-[1.36] text-white/35">Type here...</div>
+              <input name="source" placeholder="https://..." className="w-full rounded-[10px] border border-white/10 bg-[#242424] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35" />
             </div>
             <div>
               <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Category</p>
-              <div className="rounded-[10px] border border-white/10 bg-[#242424] px-4 py-4 text-[14px] leading-[1.36] text-white/35">Select Category</div>
+              <input name="category" placeholder="Faith" className="w-full rounded-[10px] border border-white/10 bg-[#242424] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35" />
+            </div>
+            <div>
+              <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Title</p>
+              <input name="title" placeholder="Morning Mercy" className="w-full rounded-[10px] border border-white/10 bg-[#242424] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35" />
+            </div>
+            <div>
+              <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Caption</p>
+              <textarea name="caption" placeholder="Type caption..." className="w-full rounded-[10px] border border-white/10 bg-[#242424] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35" />
             </div>
             <div>
               <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Upload Status</p>
               <div className="flex flex-wrap gap-x-7 gap-y-4 text-[14px] leading-[1.36] text-white/90">
                 <label className="inline-flex items-center gap-2">
-                  <span className="flex h-[18px] w-[18px] items-center justify-center rounded-full border border-[#9966CC]">
-                    <span className="h-[8px] w-[8px] rounded-full bg-[#9966CC]" />
-                  </span>
+                  <input type="radio" name="status" value="published" defaultChecked className="h-[16px] w-[16px] accent-[#9966CC]" />
                   Upload now
                 </label>
                 <label className="inline-flex items-center gap-2">
-                  <span className="h-[18px] w-[18px] rounded-full border border-[#9966CC]" />
+                  <input type="radio" name="status" value="scheduled" className="h-[16px] w-[16px] accent-[#9966CC]" />
                   Schedule for later
                 </label>
                 <label className="inline-flex items-center gap-2">
-                  <span className="h-[18px] w-[18px] rounded-full border border-[#9966CC]" />
+                  <input type="radio" name="status" value="draft" className="h-[16px] w-[16px] accent-[#9966CC]" />
                   Drafts
                 </label>
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <input type="datetime-local" name="publish_at" className="rounded-[10px] border border-white/10 bg-[#242424] px-4 py-3 text-[14px] text-white/85" />
+              <input type="datetime-local" name="expires_at" className="rounded-[10px] border border-white/10 bg-[#242424] px-4 py-3 text-[14px] text-white/85" />
             </div>
           </div>
           <div className="rounded-[16px] border border-dashed border-white/10 bg-[#1f1f1f] p-5">
@@ -222,17 +242,18 @@ function UploadScreen() {
               <div className="max-w-[255px]">
                 <p className="text-[14px] leading-[1.5] text-white/90">Drag & drop or choose file here to upload</p>
                 <p className="mt-2 text-[12px] leading-[1.4] text-white/40">JPG, PNG, Max size (20mb)</p>
+                <input name="image_url" placeholder="https://images.example.com/pic.jpg" className="mt-3 w-full rounded-[8px] border border-white/10 bg-[#1a1a1a] px-3 py-2 text-[12px] text-white/85 placeholder:text-white/35" />
               </div>
             </div>
           </div>
         </div>
 
         <div className="mt-8 flex justify-end">
-          <Link href={buildInspirationalPicturesHref({ success: "upload" })} className="inline-flex h-[40px] min-w-[106px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 text-[14px] font-medium text-white">
+          <button type="submit" className="inline-flex h-[40px] min-w-[106px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 text-[14px] font-medium text-white">
             Upload
-          </Link>
+          </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

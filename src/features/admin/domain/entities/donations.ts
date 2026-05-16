@@ -66,6 +66,7 @@ export type DonationsViewModel = {
     }>;
   };
   showActionMenu: boolean;
+  showDetails: boolean;
   showMonthMenu: boolean;
   showFilterModal: boolean;
   showRefundConfirm: boolean;

@@ -1,6 +1,6 @@
-import { findUserByEmail } from "@/core/auth/mock-users";
+import { cookies } from "next/headers";
 import { getServerSession } from "@/core/auth/session";
-import { getNotificationsHistoryViewModel } from "@/features/admin/data/services/get-notifications-history-view-model";
+import { getNotificationsHistoryViewModelFromApi } from "@/features/admin/data/services/get-notifications-history-view-model";
 import { NotificationsHistoryPage } from "@/features/admin/presentation/components/notifications-history-page";
 
 export default async function NotificationsHistoryRoute({
@@ -23,23 +23,30 @@ export default async function NotificationsHistoryRoute({
 }) {
   const params = await searchParams;
   const session = await getServerSession();
-  const user = session?.email ? findUserByEmail(session.email) : null;
+  const store = await cookies();
+  const cookieHeader = store
+    .getAll()
+    .map((entry) => `${entry.name}=${entry.value}`)
+    .join("; ");
 
-  const viewModel = getNotificationsHistoryViewModel({
-    state: params.state,
-    q: params.q,
-    panel: params.panel,
-    filter: params.filter,
-    statusFilter: params.statusFilter,
-    from: params.from,
-    to: params.to,
-    selected: params.selected,
-    read: params.read,
-    delete: params.delete,
-    deleteAll: params.deleteAll,
-    success: params.success,
-    fullName: user?.fullName,
-  });
+  const viewModel = await getNotificationsHistoryViewModelFromApi(
+    {
+      state: params.state,
+      q: params.q,
+      panel: params.panel,
+      filter: params.filter,
+      statusFilter: params.statusFilter,
+      from: params.from,
+      to: params.to,
+      selected: params.selected,
+      read: params.read,
+      delete: params.delete,
+      deleteAll: params.deleteAll,
+      success: params.success,
+      fullName: session?.email ?? undefined,
+    },
+    cookieHeader,
+  );
 
   return <NotificationsHistoryPage viewModel={viewModel} />;
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { backendBaseUrl, extractSetCookieHeaders } from "@/core/auth/backend";
+import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
 function extractErrorMessage(data: Record<string, unknown>): string {
   const topLevel = typeof data.message === "string" ? data.message : null;
@@ -28,10 +28,7 @@ export async function POST(req: Request) {
 
   const backendResponse = await fetch(`${backendBaseUrl}/auth/admin/change-temporary-password/`, {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      ...(req.headers.get("cookie") ? { cookie: req.headers.get("cookie") ?? "" } : {}),
-    },
+    headers: buildBackendSessionHeaders(req, true),
     body: JSON.stringify({
       current_password: body.currentPassword,
       new_password: body.newPassword,

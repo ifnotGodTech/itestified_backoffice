@@ -1,4 +1,5 @@
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
+import { backendBaseUrl } from "@/core/auth/backend";
 import type {
   ScriptureDraft,
   ScriptureFilterDraft,
@@ -208,4 +209,83 @@ export function getScriptureOfTheDayViewModel(input: {
       },
     ],
   };
+}
+
+function mapScriptureRows(results: Array<Record<string, unknown>>): ScriptureRow[] {
+  return results.map((item) => {
+    const date = String(item.date ?? "");
+    const status = String(item.status ?? "") === "published" ? "Uploaded" : "Scheduled";
+    return {
+      id: Number(item.id ?? 0),
+      date,
+      bibleText: String(item.bible_text ?? ""),
+      scripture: String(item.scripture ?? ""),
+      prayer: String(item.prayer ?? ""),
+      bibleVersion: String(item.bible_version ?? ""),
+      status,
+      scheduledDate: status === "Scheduled" ? date : undefined,
+      scheduledTime: status === "Scheduled" ? "00:00" : undefined,
+    };
+  });
+}
+
+export async function getScriptureOfTheDayViewModelFromApi(
+  input: {
+    fullName?: string;
+    tab?: string;
+    q?: string;
+    filter?: string;
+    count?: string;
+    from?: string;
+    to?: string;
+    status?: string;
+    menu?: string;
+    view?: string;
+    edit?: string;
+    remove?: string;
+    saved?: string;
+    deleted?: string;
+    scripture?: string;
+    prayer?: string;
+    bibleText?: string;
+    bibleVersion?: string;
+  },
+  cookieHeader: string,
+): Promise<ScriptureOfTheDayViewModel> {
+  try {
+    const tab = input.tab;
+    const params = new URLSearchParams();
+    if (tab === "uploaded") params.set("status", "published");
+    if (tab === "scheduled") params.set("status", "scheduled");
+    if (input.q?.trim()) params.set("q", input.q.trim());
+    const query = params.toString();
+    const url = `${backendBaseUrl}/content/admin/scriptures/${query ? `?${query}` : ""}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: cookieHeader ? { cookie: cookieHeader } : {},
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return getScriptureOfTheDayViewModel({ ...input, tab, q: input.q });
+    }
+    const payload = (await response.json().catch(() => ({}))) as {
+      count?: number;
+      results?: Array<Record<string, unknown>>;
+    };
+    const rows = mapScriptureRows(payload.results ?? []);
+    const vm = getScriptureOfTheDayViewModel(input);
+    const selectedId = Number(input.menu ?? input.view ?? input.edit ?? input.remove ?? "");
+    return {
+      ...vm,
+      rows,
+      totalRows: payload.count ?? rows.length,
+      showingLabel:
+        rows.length === 0
+          ? "Showing 0 of 0"
+          : `Showing 1-${rows.length} of ${payload.count ?? rows.length}`,
+      selectedRow: Number.isFinite(selectedId) ? rows.find((row) => row.id === selectedId) ?? null : null,
+    };
+  } catch {
+    return getScriptureOfTheDayViewModel(input);
+  }
 }

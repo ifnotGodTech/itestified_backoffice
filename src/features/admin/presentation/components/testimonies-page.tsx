@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { TestimoniesViewModel } from "@/features/admin/domain/entities/testimonies";
 import { AdminDashboardShell } from "@/features/admin/presentation/components/admin-dashboard-shell";
+import { NewTestimonyToast } from "@/features/admin/presentation/components/testimonies/new-testimony-toast";
 import { TestimoniesOverlays } from "@/features/admin/presentation/components/testimonies/testimonies-overlays";
 import { TestimoniesTable } from "@/features/admin/presentation/components/testimonies/testimonies-table";
 import { buildTestimoniesHref } from "@/features/admin/presentation/state/testimonies-route-state";
@@ -173,6 +174,7 @@ export function TestimoniesPage({ viewModel }: { viewModel: TestimoniesViewModel
 
   return (
     <AdminDashboardShell viewModel={viewModel.shell} pageTitle={showsDedicatedVideoHeading ? undefined : "Testimonies"}>
+      <NewTestimonyToast />
       {viewModel.activeTab === "video" && viewModel.activeVideoScreen === "upload" ? <UploadVideoScreen /> : null}
       {viewModel.activeTab === "video" && viewModel.activeVideoScreen === "activity" ? <ActivityLogScreen /> : null}
       {!(viewModel.activeTab === "video" && viewModel.activeVideoScreen !== "list") ? <TestimoniesTable viewModel={viewModel} /> : null}

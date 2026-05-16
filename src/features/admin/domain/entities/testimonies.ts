@@ -3,14 +3,28 @@ import type { AdminShellViewModel } from "@/features/admin/domain/entities/shell
 export type TestimonyTab = "text" | "video";
 export type TestimonyState = "populated" | "empty" | "loading" | "error";
 export type VideoTestimonyScreen = "list" | "upload" | "activity";
-export type WrittenTestimonyStatus = "Pending" | "Approved" | "Rejected";
-export type VideoTestimonyStatus = "All" | "Uploaded" | "Scheduled" | "Drafts";
+export type WrittenTestimonyStatus = "Pending" | "Approved" | "Rejected" | "Scheduled" | "Archived";
+export type VideoTestimonyStatus = "All" | "Uploaded" | "Scheduled" | "Drafts" | "Archived";
 export type TestimonyStatus = WrittenTestimonyStatus | VideoTestimonyStatus;
 export type TestimonyOrigin = "list" | "notification";
+export type ModerationAction = "approved" | "rejected" | "scheduled" | "archived" | "auto_published";
+
+export type ModerationHistoryItem = {
+  id: number;
+  action: ModerationAction;
+  from_status: string;
+  to_status: string;
+  reason: string;
+  publish_at?: string | null;
+  created_at: string;
+  actor_email?: string | null;
+  actor_name?: string | null;
+};
 
 export type TextTestimonyRow = {
   kind: "text";
   id: number;
+  title: string;
   testimonyId: string;
   name: string;
   email: string;
@@ -23,6 +37,7 @@ export type TextTestimonyRow = {
   avatarSrc?: string;
   body: string;
   approvedBy?: string;
+  moderationHistory?: ModerationHistoryItem[];
 };
 
 export type VideoTestimonyRow = {
@@ -39,6 +54,7 @@ export type VideoTestimonyRow = {
   shares: number | null;
   status: Exclude<VideoTestimonyStatus, "All">;
   thumbnailSrc: string;
+  moderationHistory?: ModerationHistoryItem[];
 };
 
 export type TestimonyRow = TextTestimonyRow | VideoTestimonyRow;
@@ -53,6 +69,14 @@ export type TestimonyFilterDraft = {
   sourceMenuOpen?: boolean;
 };
 
+export type TestimonyCategoryOption = {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  isActive: boolean;
+};
+
 export type TestimoniesViewModel = {
   shell: AdminShellViewModel;
   activeTab: TestimonyTab;
@@ -62,6 +86,7 @@ export type TestimoniesViewModel = {
   searchQuery: string;
   tabs: Array<{ key: TestimonyTab; label: string }>;
   videoStatusTabs: Array<{ key: VideoTestimonyStatus; label: string }>;
+  categories: TestimonyCategoryOption[];
   rows: TestimonyRow[];
   selectedRow: TestimonyRow | null;
   totalRows: number;
@@ -70,6 +95,8 @@ export type TestimoniesViewModel = {
   showActionMenu: boolean;
   showDetails: boolean;
   showRejectModal: boolean;
+  showScheduleModal: boolean;
+  showArchiveModal: boolean;
   showEditModal: boolean;
   showDeleteModal: boolean;
   showFilterModal: boolean;

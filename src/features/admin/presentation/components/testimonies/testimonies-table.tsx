@@ -94,12 +94,18 @@ function TestimoniesError({ message }: { message?: string }) {
 
 function TextActionMenu({ row, viewModel }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel }) {
   const openUp = viewModel.rows.length - viewModel.rows.indexOf(row) <= 2;
+  const canArchive = row.status === "Approved" || row.status === "Scheduled";
 
   return (
     <div className={`absolute right-0 z-50 min-w-[118px] overflow-hidden rounded-[12px] border border-[#5b5b5b] bg-[#242424] text-left shadow-[0_14px_24px_rgba(0,0,0,0.35)] ${openUp ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"}`}>
       <Link href={buildTestimoniesHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status, view: row.id })} className="block border-b border-white/10 px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]">
         View
       </Link>
+      {canArchive ? (
+        <Link href={buildTestimoniesHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status, archive: row.id })} className="block border-b border-white/10 px-4 py-2 text-[14px] text-[#f0c400] hover:bg-white/[0.04]">
+          Archive
+        </Link>
+      ) : null}
       <Link href={buildTestimoniesHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status, remove: row.id })} className="block px-4 py-2 text-[14px] text-[#ef4335] hover:bg-white/[0.04]">
         Delete
       </Link>

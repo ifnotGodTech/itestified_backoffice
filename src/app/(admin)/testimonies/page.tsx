@@ -1,6 +1,6 @@
-import { findUserByEmail } from "@/core/auth/mock-users";
 import { getServerSession } from "@/core/auth/session";
-import { getTestimoniesViewModel } from "@/features/admin/data/services/get-testimonies-view-model";
+import { cookies } from "next/headers";
+import { getTestimoniesViewModelFromBackend } from "@/features/admin/data/services/get-testimonies-view-model";
 import { TestimoniesPage } from "@/features/admin/presentation/components/testimonies-page";
 
 export default async function TestimoniesRoute({
@@ -21,7 +21,9 @@ export default async function TestimoniesRoute({
     menu?: string;
     view?: string;
     reject?: string;
+    schedule?: string;
     edit?: string;
+    archive?: string;
     remove?: string;
     filter?: string;
     settings?: string;
@@ -32,9 +34,14 @@ export default async function TestimoniesRoute({
 }) {
   const params = await searchParams;
   const session = await getServerSession();
-  const user = session?.email ? findUserByEmail(session.email) : null;
 
-  const viewModel = getTestimoniesViewModel({
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore
+    .getAll()
+    .map((entry) => `${entry.name}=${entry.value}`)
+    .join("; ");
+
+  const viewModel = await getTestimoniesViewModelFromBackend({
     tab: params.tab,
     videoStatus: params.videoStatus,
     screen: params.screen,
@@ -49,14 +56,17 @@ export default async function TestimoniesRoute({
     menu: params.menu,
     view: params.view,
     reject: params.reject,
+    schedule: params.schedule,
     edit: params.edit,
+    archive: params.archive,
     remove: params.remove,
     filter: params.filter,
     settings: params.settings,
     statusFilter: params.statusFilter,
     success: params.success,
     origin: params.origin,
-    fullName: user?.fullName,
+    fullName: session?.fullName ?? session?.email,
+    cookieHeader,
   });
 
   return <TestimoniesPage viewModel={viewModel} />;

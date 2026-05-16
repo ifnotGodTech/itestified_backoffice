@@ -1,4 +1,3 @@
-import { findUserByEmail } from "@/core/auth/mock-users";
 import { getServerSession } from "@/core/auth/session";
 import { getAdminManagementViewModel } from "@/features/admin/data/services/get-admin-management-view-model";
 import { AdminManagementPage } from "@/features/admin/presentation/components/admin-management-page";
@@ -25,7 +24,6 @@ export default async function AdminRoutePage({
 }) {
   const params = await searchParams;
   const session = await getServerSession();
-  const user = session?.email ? findUserByEmail(session.email) : null;
 
   const viewModel = getAdminManagementViewModel({
     state: params.state,
@@ -42,7 +40,7 @@ export default async function AdminRoutePage({
     remove: params.remove,
     success: params.success,
     successType: params.successType,
-    fullName: user?.fullName,
+    fullName: session?.fullName ?? session?.email,
   });
 
   return <AdminManagementPage viewModel={viewModel} />;

@@ -60,13 +60,12 @@ function EditModal({ viewModel }: { viewModel: ScriptureOfTheDayViewModel }) {
   const title = viewModel.isCreatingNew ? "Upload New Scripture" : "Edit Scripture";
   const ctaLabel = viewModel.isCreatingNew ? "Upload Scripture" : "Save Changes";
 
+  const selectedId = viewModel.selectedRow?.id;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
       <Link href={closeHref} className="absolute inset-0" aria-label="Close scripture edit modal" />
-      <form action="/scripture-of-the-day" className="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[760px] flex-col overflow-hidden rounded-[22px] bg-[#171717] shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:max-h-[calc(100vh-4rem)]">
-        <input type="hidden" name="tab" value={viewModel.activeTab} />
-        <input type="hidden" name="q" value={viewModel.searchQuery} />
-        <input type="hidden" name="saved" value="1" />
+      <form action={selectedId ? `/api/admin/content/scriptures/${selectedId}` : "/api/admin/content/scriptures"} method="POST" className="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[760px] flex-col overflow-hidden rounded-[22px] bg-[#171717] shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:max-h-[calc(100vh-4rem)]">
+        <input type="hidden" name="date" value={viewModel.selectedRow?.date ?? ""} />
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#171717] px-6 py-5">
           <h2 className="text-[26px] font-semibold text-white">{title}</h2>
           <Link href={closeHref} className="text-[34px] leading-none text-white/90">
@@ -84,12 +83,12 @@ function EditModal({ viewModel }: { viewModel: ScriptureOfTheDayViewModel }) {
           </label>
           <label className="block space-y-2">
             <span className="text-[15px] font-semibold text-white">Bible Text</span>
-            <input name="bibleText" defaultValue={draft.bibleText} className="h-[40px] w-full rounded-[10px] bg-[#242424] px-4 text-[15px] text-white outline-none" />
+            <input name="bible_text" defaultValue={draft.bibleText} className="h-[40px] w-full rounded-[10px] bg-[#242424] px-4 text-[15px] text-white outline-none" />
           </label>
           <label className="block space-y-2">
             <span className="text-[15px] font-semibold text-white">Bible Version</span>
             <div className="relative">
-              <select name="bibleVersion" defaultValue={draft.bibleVersion} className="h-[40px] w-full appearance-none rounded-[10px] bg-[#242424] px-4 pr-10 text-[15px] text-white outline-none">
+            <select name="bible_version" defaultValue={draft.bibleVersion} className="h-[40px] w-full appearance-none rounded-[10px] bg-[#242424] px-4 pr-10 text-[15px] text-white outline-none">
                 <option value="KJV">KJV</option>
                 <option value="NIV">NIV</option>
                 <option value="ESV">ESV</option>

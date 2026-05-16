@@ -1,5 +1,26 @@
 export const backendBaseUrl = process.env.BACKEND_API_BASE_URL ?? "http://127.0.0.1:8000/api/v1";
 
+function readCookieValue(cookieHeader: string | null, name: string): string | null {
+  if (!cookieHeader) return null;
+  const parts = cookieHeader.split(";").map((item) => item.trim());
+  for (const part of parts) {
+    if (part.startsWith(`${name}=`)) {
+      return decodeURIComponent(part.slice(name.length + 1));
+    }
+  }
+  return null;
+}
+
+export function buildBackendSessionHeaders(req: Request, includeJson: boolean = false): Record<string, string> {
+  const cookieHeader = req.headers.get("cookie");
+  const csrfToken = readCookieValue(cookieHeader, "csrftoken");
+  const headers: Record<string, string> = {};
+  if (includeJson) headers["content-type"] = "application/json";
+  if (cookieHeader) headers.cookie = cookieHeader;
+  if (csrfToken) headers["x-csrftoken"] = csrfToken;
+  return headers;
+}
+
 export async function postBackendAuth(path: string, body: Record<string, unknown>) {
   const response = await fetch(`${backendBaseUrl}${path}`, {
     method: "POST",

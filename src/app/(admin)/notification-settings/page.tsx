@@ -1,6 +1,6 @@
-import { findUserByEmail } from "@/core/auth/mock-users";
+import { cookies } from "next/headers";
 import { getServerSession } from "@/core/auth/session";
-import { getNotificationSettingsViewModel } from "@/features/settings/data/services/get-notification-settings-view-model";
+import { getNotificationSettingsViewModelFromApi } from "@/features/settings/data/services/get-notification-settings-view-model";
 import { NotificationSettingsPage } from "@/features/settings/presentation/components/notification-settings-page";
 
 export default async function NotificationSettingsRoute({
@@ -13,13 +13,17 @@ export default async function NotificationSettingsRoute({
 }) {
   const params = await searchParams;
   const session = await getServerSession();
-  const user = session?.email ? findUserByEmail(session.email) : null;
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore
+    .getAll()
+    .map((entry) => `${entry.name}=${entry.value}`)
+    .join("; ");
 
-  const viewModel = getNotificationSettingsViewModel({
+  const viewModel = await getNotificationSettingsViewModelFromApi({
     state: params.state,
     success: params.success,
-    fullName: user?.fullName,
-  });
+    fullName: session?.fullName ?? session?.email,
+  }, cookieHeader);
 
   return <NotificationSettingsPage viewModel={viewModel} />;
 }

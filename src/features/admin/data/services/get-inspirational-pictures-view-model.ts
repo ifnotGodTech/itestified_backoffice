@@ -1,4 +1,5 @@
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
+import { backendBaseUrl } from "@/core/auth/backend";
 import type {
   InspirationalPictureRow,
   InspirationalPictureScreen,
@@ -119,4 +120,94 @@ export function getInspirationalPicturesViewModel(input: {
     showSuccess: Boolean(successMessage),
     successMessage,
   };
+}
+
+function normalizeBackendStatus(status: string): Exclude<InspirationalPictureStatus, "All"> {
+  if (status === "published") return "Uploaded";
+  if (status === "scheduled") return "Scheduled";
+  return "Drafts";
+}
+
+function mapBackendRows(results: Array<Record<string, unknown>>): InspirationalPictureRow[] {
+  return results.map((item) => {
+    const createdAt = String(item.created_at ?? "");
+    const createdDate = createdAt ? new Date(createdAt) : null;
+    return {
+      id: Number(item.id ?? 0),
+      title: String(item.title ?? ""),
+      caption: String(item.caption ?? ""),
+      status: normalizeBackendStatus(String(item.status ?? "")),
+      category: String(item.category ?? ""),
+      uploadedBy: "Admin",
+      dateLabel:
+        createdDate && !Number.isNaN(createdDate.getTime())
+          ? createdDate.toLocaleDateString("en-GB")
+          : "-",
+      source: String(item.source ?? ""),
+      imageUrl: String(item.image_url ?? ""),
+      scheduledTime: String(item.publish_at ?? ""),
+      downloadCount: 0,
+      shareCount: 0,
+      imageSrc: String(item.image_url ?? "/admin-logo.svg"),
+    };
+  });
+}
+
+export async function getInspirationalPicturesViewModelFromApi(
+  input: {
+    status?: string;
+    screen?: string;
+    state?: string;
+    q?: string;
+    menu?: string;
+    view?: string;
+    edit?: string;
+    remove?: string;
+    success?: string;
+    fullName?: string;
+  },
+  cookieHeader: string,
+): Promise<InspirationalPicturesViewModel> {
+  try {
+    const statusMap: Record<string, string> = {
+      Uploaded: "published",
+      Scheduled: "scheduled",
+      Drafts: "draft",
+    };
+    const params = new URLSearchParams();
+    if (input.status && input.status !== "All" && statusMap[input.status]) {
+      params.set("status", statusMap[input.status]);
+    }
+    if (input.q?.trim()) params.set("q", input.q.trim());
+    const query = params.toString();
+    const url = `${backendBaseUrl}/content/admin/inspirational-pictures/${query ? `?${query}` : ""}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: cookieHeader ? { cookie: cookieHeader } : {},
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return getInspirationalPicturesViewModel({ ...input, state: "error" });
+    }
+    const payload = (await response.json().catch(() => ({}))) as {
+      count?: number;
+      results?: Array<Record<string, unknown>>;
+    };
+    const rows = mapBackendRows(payload.results ?? []);
+    const vm = getInspirationalPicturesViewModel(input);
+    const selectedId = Number(input.menu ?? input.view ?? input.edit ?? input.remove ?? "");
+    return {
+      ...vm,
+      phaseState: rows.length === 0 ? "empty" : "populated",
+      rows,
+      selectedRow: Number.isFinite(selectedId) ? rows.find((row) => row.id === selectedId) ?? null : null,
+      totalRows: payload.count ?? rows.length,
+      showingLabel:
+        rows.length === 0
+          ? "Showing 0 of 0"
+          : `Showing 1-${rows.length} of ${payload.count ?? rows.length}`,
+    };
+  } catch {
+    return getInspirationalPicturesViewModel({ ...input, state: "error" });
+  }
 }

@@ -13,4 +13,5 @@ export type SessionData = {
   email: string;
   role: UserRole;
   mustChangePassword: boolean;
+  fullName?: string;
 };

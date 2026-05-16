@@ -14,6 +14,7 @@ export type DonationsRouteParams = {
   to?: string | null;
   statusFilter?: DonationTab | null;
   menu?: number | null;
+  detail?: number | null;
   refund?: number | null;
   reverse?: number | null;
   reason?: number | null;
@@ -36,6 +37,7 @@ export function buildDonationsHref(params: DonationsRouteParams) {
   if (params.to) search.set("to", params.to);
   if (params.statusFilter) search.set("statusFilter", params.statusFilter);
   if (params.menu) search.set("menu", String(params.menu));
+  if (params.detail) search.set("detail", String(params.detail));
   if (params.refund) search.set("refund", String(params.refund));
   if (params.reverse) search.set("reverse", String(params.reverse));
   if (params.reason) search.set("reason", String(params.reason));

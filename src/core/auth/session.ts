@@ -7,9 +7,10 @@ function mapBackendSession(payload: Record<string, unknown>): SessionData | null
   const email = typeof payload.email === "string" ? payload.email : null;
   const role = payload.role === "admin" ? "admin" : null;
   const mustChangePassword = payload.must_change_password === true;
+  const fullName = typeof payload.full_name === "string" ? payload.full_name : undefined;
 
   if (!email || !role) return null;
-  return { userId: email, email, role, mustChangePassword };
+  return { userId: email, email, role, mustChangePassword, fullName };
 }
 
 async function fetchBackendSession(cookieHeader?: string | null): Promise<SessionData | null> {

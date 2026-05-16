@@ -15,7 +15,9 @@ export type TestimoniesRouteParams = {
   menu?: number | null;
   view?: number | null;
   reject?: number | null;
+  schedule?: number | null;
   edit?: number | null;
+  archive?: number | null;
   remove?: number | null;
   filter?: boolean | null;
   settings?: boolean | null;
@@ -40,7 +42,9 @@ export function buildTestimoniesHref(params: TestimoniesRouteParams) {
   if (params.menu) search.set("menu", String(params.menu));
   if (params.view) search.set("view", String(params.view));
   if (params.reject) search.set("reject", String(params.reject));
+  if (params.schedule) search.set("schedule", String(params.schedule));
   if (params.edit) search.set("edit", String(params.edit));
+  if (params.archive) search.set("archive", String(params.archive));
   if (params.remove) search.set("remove", String(params.remove));
   if (params.filter) search.set("filter", "1");
   if (params.settings) search.set("settings", "1");

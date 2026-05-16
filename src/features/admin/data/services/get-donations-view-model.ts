@@ -1,4 +1,5 @@
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
+import { backendBaseUrl } from "@/core/auth/backend";
 import type {
   DonationRow,
   DonationTab,
@@ -189,6 +190,7 @@ export function getDonationsViewModel(input: {
   to?: string;
   statusFilter?: string;
   menu?: string;
+  detail?: string;
   refund?: string;
   reverse?: string;
   reason?: string;
@@ -220,7 +222,7 @@ export function getDonationsViewModel(input: {
   const filteredRows = applyFilter(searchedRows, filterDraft);
   const rows = phaseState === "populated" ? filteredRows : [];
 
-  const selectedId = Number(input.menu ?? input.refund ?? input.reverse ?? input.reason ?? input.remove ?? "");
+  const selectedId = Number(input.menu ?? input.detail ?? input.refund ?? input.reverse ?? input.reason ?? input.remove ?? "");
   const selectedRow = Number.isFinite(selectedId) ? donationRows.find((row) => row.id === selectedId) ?? null : null;
   const successMessage = getSuccessMessage(input.success);
 
@@ -254,6 +256,7 @@ export function getDonationsViewModel(input: {
       cards: [],
     },
     showActionMenu: Boolean(input.menu),
+    showDetails: Boolean(input.detail),
     showMonthMenu: input.monthMenu === "1",
     showFilterModal: input.filter === "1",
     showRefundConfirm: Boolean(input.refund),
@@ -263,4 +266,111 @@ export function getDonationsViewModel(input: {
     showSuccess: Boolean(successMessage),
     successMessage,
   };
+}
+
+function formatAmount(amount: number, currency: string) {
+  const symbol = currency === "USD" ? "$" : "₦";
+  return `${symbol}${amount.toLocaleString()}`;
+}
+
+function toDateLabel(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function mapStatus(status: string): DonationTab {
+  if (status === "successful" || status === "pending" || status === "declined") return status;
+  return "reversal";
+}
+
+function mapCurrencyLabel(currency: string) {
+  return currency === "USD" ? "Dollar ($)" : "Naira (₦)";
+}
+
+function mapRows(results: Array<Record<string, unknown>>): DonationRow[] {
+  return results.map((item) => {
+    const amount = Number(item.amount ?? 0);
+    const currency = String(item.currency ?? "NGN");
+    const providerTransactionId = String(item.provider_transaction_id ?? "");
+    return {
+      id: Number(item.id ?? 0),
+      donor: String(item.donor_name ?? ""),
+      email: String(item.donor_email ?? ""),
+      amount: formatAmount(amount, currency),
+      currency: mapCurrencyLabel(currency),
+      date: toDateLabel(String(item.created_at ?? "")),
+      status: mapStatus(String(item.status ?? "")),
+      reference: String(item.payment_reference ?? ""),
+      paymentMethod: "Flutterwave",
+      paymentMask: providerTransactionId ? `****${providerTransactionId.slice(-4)}` : "****0000",
+    };
+  });
+}
+
+export async function getDonationsViewModelFromApi(
+  input: {
+    tab?: string;
+    state?: string;
+    month?: string;
+    monthMenu?: string;
+    q?: string;
+    filter?: string;
+    minAmount?: string;
+    maxAmount?: string;
+    currency?: string;
+    from?: string;
+    to?: string;
+    statusFilter?: string;
+    menu?: string;
+    detail?: string;
+    refund?: string;
+    reverse?: string;
+    reason?: string;
+    remove?: string;
+    success?: string;
+    fullName?: string;
+  },
+  cookieHeader: string,
+): Promise<DonationsViewModel> {
+  try {
+    const activeTab = normalizeTab(input.tab);
+    const statusFilter =
+      activeTab === "all" ? input.statusFilter : activeTab === "reversal" ? "reversed" : activeTab;
+    const searchParams = new URLSearchParams();
+    if (statusFilter) searchParams.set("status", statusFilter);
+    if (input.q?.trim()) searchParams.set("q", input.q.trim());
+    if (input.from?.trim()) searchParams.set("from", input.from.trim());
+    if (input.to?.trim()) searchParams.set("to", input.to.trim());
+    const query = searchParams.toString();
+    const url = `${backendBaseUrl}/donations/admin/donations/${query ? `?${query}` : ""}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: cookieHeader ? { cookie: cookieHeader } : {},
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return getDonationsViewModel({ ...input, state: "error" });
+    }
+    const payload = (await response.json().catch(() => ({}))) as { count?: number; results?: Array<Record<string, unknown>> };
+    const rows = mapRows(payload.results ?? []);
+    const vm = getDonationsViewModel(input);
+    return {
+      ...vm,
+      phaseState: rows.length === 0 ? "empty" : "populated",
+      rows,
+      selectedRow: (() => {
+        const selectedId = Number(input.menu ?? input.detail ?? input.refund ?? input.reverse ?? input.reason ?? input.remove ?? "");
+        return Number.isFinite(selectedId) ? rows.find((row) => row.id === selectedId) ?? null : null;
+      })(),
+      showingLabel: rows.length === 0 ? "Page 1 of 1" : `Showing 1-${rows.length} of ${payload.count ?? rows.length}`,
+      topStats: [
+        { label: `Donors (${rows.length})`, value: "", tone: "info" as const },
+        { label: `Total Donations (${rows[0]?.amount ?? "₦0"})`, value: "", tone: "accent" as const },
+      ],
+      tableBadge: getTableBadge(vm.activeTab, rows),
+    };
+  } catch {
+    return getDonationsViewModel({ ...input, state: "error" });
+  }
 }

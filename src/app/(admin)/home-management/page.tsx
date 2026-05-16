@@ -1,6 +1,6 @@
-import { findUserByEmail } from "@/core/auth/mock-users";
+import { cookies } from "next/headers";
 import { getServerSession } from "@/core/auth/session";
-import { getHomeManagementViewModel } from "@/features/admin/data/services/get-home-management-view-model";
+import { getHomeManagementViewModelFromApi } from "@/features/admin/data/services/get-home-management-view-model";
 import { HomeManagementPage } from "@/features/admin/presentation/components/home-management-page";
 
 export default async function HomeManagementRoute({
@@ -19,9 +19,14 @@ export default async function HomeManagementRoute({
 }) {
   const params = await searchParams;
   const session = await getServerSession();
-  const user = session?.email ? findUserByEmail(session.email) : null;
 
-  const viewModel = getHomeManagementViewModel({
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore
+    .getAll()
+    .map(({ name, value }) => `${name}=${value}`)
+    .join("; ");
+
+  const viewModel = await getHomeManagementViewModelFromApi({
     tab: params.tab,
     rule: params.rule,
     count: params.count,
@@ -30,8 +35,8 @@ export default async function HomeManagementRoute({
     viewId: params.view,
     removeId: params.remove,
     success: params.success,
-    fullName: user?.fullName,
-  });
+    fullName: session?.fullName ?? session?.email,
+  }, cookieHeader);
 
   return <HomeManagementPage viewModel={viewModel} />;
 }

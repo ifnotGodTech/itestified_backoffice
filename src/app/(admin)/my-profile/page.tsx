@@ -1,6 +1,6 @@
-import { findUserByEmail } from "@/core/auth/mock-users";
+import { cookies } from "next/headers";
 import { getServerSession } from "@/core/auth/session";
-import { getMyProfileViewModel } from "@/features/settings/data/services/get-my-profile-view-model";
+import { getMyProfileViewModelFromApi } from "@/features/settings/data/services/get-my-profile-view-model";
 import { MyProfilePage } from "@/features/settings/presentation/components/my-profile-page";
 
 export default async function MyProfileRoute({
@@ -15,16 +15,20 @@ export default async function MyProfileRoute({
 }) {
   const params = await searchParams;
   const session = await getServerSession();
-  const user = session?.email ? findUserByEmail(session.email) : null;
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore
+    .getAll()
+    .map((entry) => `${entry.name}=${entry.value}`)
+    .join("; ");
 
-  const viewModel = getMyProfileViewModel({
+  const viewModel = await getMyProfileViewModelFromApi({
     screen: params.screen,
     menu: params.menu,
     password: params.password,
     state: params.state,
-    fullName: user?.fullName,
-    emailAddress: user?.email,
-  });
+    fullName: session?.fullName ?? session?.email,
+    emailAddress: session?.email,
+  }, cookieHeader);
 
   return <MyProfilePage viewModel={viewModel} />;
 }

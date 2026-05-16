@@ -1,4 +1,5 @@
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
+import { backendBaseUrl } from "@/core/auth/backend";
 import type {
   NotificationHistoryRow,
   NotificationsHistoryFilterDraft,
@@ -136,4 +137,86 @@ export function getNotificationsHistoryViewModel(input: {
     showSuccess: Boolean(successMessage),
     successMessage,
   };
+}
+
+function toDateAndTime(value: string): { date: string; time: string } {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return { date: value || "-", time: "-" };
+  }
+  const date = parsed.toLocaleDateString("en-GB");
+  const time = parsed.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return { date, time };
+}
+
+function mapRows(results: Array<Record<string, unknown>>): NotificationHistoryRow[] {
+  return results.map((item) => {
+    const dateTime = toDateAndTime(String(item.created_at ?? ""));
+    return {
+      id: Number(item.id ?? 0),
+      title: String(item.title ?? "Notification"),
+      message: String(item.message ?? ""),
+      date: dateTime.date,
+      time: dateTime.time,
+      status: (item.is_read as boolean | undefined) === true ? "read" : "unread",
+    };
+  });
+}
+
+export async function getNotificationsHistoryViewModelFromApi(
+  input: {
+    state?: string;
+    q?: string;
+    panel?: string;
+    filter?: string;
+    statusFilter?: string;
+    from?: string;
+    to?: string;
+    selected?: string;
+    read?: string;
+    delete?: string;
+    deleteAll?: string;
+    success?: string;
+    fullName?: string;
+  },
+  cookieHeader: string,
+): Promise<NotificationsHistoryViewModel> {
+  try {
+    const searchParams = new URLSearchParams();
+    if (input.q?.trim()) searchParams.set("q", input.q.trim());
+    if (input.statusFilter?.trim()) searchParams.set("status", input.statusFilter.trim());
+    if (input.from?.trim()) searchParams.set("from", input.from.trim());
+    if (input.to?.trim()) searchParams.set("to", input.to.trim());
+    const query = searchParams.toString();
+    const url = `${backendBaseUrl}/notifications/admin/history/${query ? `?${query}` : ""}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: cookieHeader ? { cookie: cookieHeader } : {},
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return getNotificationsHistoryViewModel({ ...input, state: "error" });
+    }
+    const payload = (await response.json().catch(() => ({}))) as {
+      count?: number;
+      results?: Array<Record<string, unknown>>;
+    };
+    const mappedRows = mapRows(payload.results ?? []);
+    const vm = getNotificationsHistoryViewModel(input);
+    return {
+      ...vm,
+      phaseState: mappedRows.length == 0 ? "empty" : "populated",
+      rows: mappedRows,
+      showingLabel:
+        mappedRows.length == 0
+          ? "Showing 0 of 0"
+          : `Showing 1-${mappedRows.length} of ${payload.count ?? mappedRows.length}`,
+      selectedRow: (() => {
+        const selectedId = Number(input.delete ?? "");
+        return Number.isFinite(selectedId) ? mappedRows.find((row) => row.id === selectedId) ?? null : null;
+      })(),
+    };
+  } catch {
+    return getNotificationsHistoryViewModel({ ...input, state: "error" });
+  }
 }

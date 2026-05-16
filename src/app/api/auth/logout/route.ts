@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { backendBaseUrl, extractSetCookieHeaders } from "@/core/auth/backend";
+import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
 export async function POST(req: Request) {
   const backendResponse = await fetch(`${backendBaseUrl}/auth/admin/logout/`, {
     method: "POST",
-    headers: req.headers.get("cookie") ? { cookie: req.headers.get("cookie") ?? "" } : {},
+    headers: buildBackendSessionHeaders(req),
     cache: "no-store",
   });
 

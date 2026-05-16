@@ -3,7 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import type { TestimoniesViewModel, TestimonyRow, TextTestimonyRow, VideoTestimonyRow } from "@/features/admin/domain/entities/testimonies";
+import { useRouter } from "next/navigation";
+import type {
+  TestimoniesViewModel,
+  TestimonyCategoryOption,
+  TestimonyRow,
+  TextTestimonyRow,
+  VideoTestimonyRow,
+} from "@/features/admin/domain/entities/testimonies";
 import { buildTestimoniesHref } from "@/features/admin/presentation/state/testimonies-route-state";
 
 function StatusPill({ status }: { status: string }) {
@@ -141,7 +148,59 @@ function TestimonyMetaCard({ row }: { row: TextTestimonyRow }) {
   );
 }
 
+function ModerationHistoryPanel({ row }: { row: TestimonyRow }) {
+  const history = row.moderationHistory ?? [];
+  if (history.length === 0) {
+    return (
+      <div className="mt-6 rounded-[20px] border border-white/10 px-4 py-4">
+        <h3 className="text-[16px] font-semibold text-white">Moderation History</h3>
+        <p className="mt-3 text-[14px] text-white/65">No moderation actions recorded yet.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-6 rounded-[20px] border border-white/10 px-4 py-4">
+      <h3 className="text-[16px] font-semibold text-white">Moderation History</h3>
+      <div className="mt-4 space-y-3 text-[13px]">
+        {history.map((item) => (
+          <div key={item.id} className="rounded-[10px] border border-white/10 bg-[#262626] px-3 py-3">
+            <p className="text-white/92">
+              <span className="capitalize">{item.action.replace("_", " ")}</span> by {item.actor_name ?? "System"}
+            </p>
+            <p className="mt-1 text-white/65">
+              {new Date(item.created_at).toLocaleString()} • {item.from_status} → {item.to_status}
+            </p>
+            {item.publish_at ? <p className="mt-1 text-white/65">Publish at: {new Date(item.publish_at).toLocaleString()}</p> : null}
+            {item.reason ? <p className="mt-1 text-white/75">Reason: {item.reason}</p> : null}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PendingDetailModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel }) {
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+
+  async function approveTestimony() {
+    setSubmitting(true);
+    const response = await fetch(`/api/admin/testimonies/${row.id}/approve`, { method: "POST" });
+    if (response.ok) {
+      router.push(
+        buildTestimoniesHref({
+          tab: viewModel.activeTab,
+          q: viewModel.searchQuery,
+          statusFilter: viewModel.filterDraft.status,
+          success: "approve",
+        }),
+      );
+      router.refresh();
+      return;
+    }
+    setSubmitting(false);
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
       <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close testimony detail modal" />
@@ -166,23 +225,32 @@ function PendingDetailModal({ row, viewModel }: { row: TextTestimonyRow; viewMod
           </div>
 
           <div className="mt-6">
-            <h3 className="text-[18px] font-semibold text-white">Miraculous Healing After Prayer</h3>
+            <h3 className="text-[18px] font-semibold text-white">{row.title}</h3>
             <p className="mt-4 text-[17px] leading-[1.55] text-white/82">{row.body}</p>
           </div>
+          <ModerationHistoryPanel row={row} />
         </div>
         <div className="flex justify-end gap-4 px-6 pb-8 pt-2">
+          <Link
+            href={buildTestimoniesHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status, schedule: row.id })}
+            className="inline-flex min-w-[178px] items-center justify-center rounded-[10px] border border-[#f0c400] px-6 py-4 text-[16px] text-[#f0c400]"
+          >
+            Schedule
+          </Link>
           <Link
             href={buildTestimoniesHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status, reject: row.id })}
             className="inline-flex min-w-[178px] items-center justify-center rounded-[10px] border border-[#ef4335] px-6 py-4 text-[16px] text-[#ef4335]"
           >
             Reject Testimony
           </Link>
-          <Link
-            href={buildTestimoniesHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status, success: "approve" })}
-            className="inline-flex min-w-[178px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 py-4 text-[16px] text-white"
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={approveTestimony}
+            className="inline-flex min-w-[178px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 py-4 text-[16px] text-white disabled:opacity-60"
           >
-            Approve Testimony
-          </Link>
+            {submitting ? "Approving..." : "Approve Testimony"}
+          </button>
         </div>
       </div>
     </div>
@@ -232,9 +300,126 @@ function ApprovedDetailModal({ row, viewModel }: { row: TextTestimonyRow; viewMo
           </div>
 
           <div className="mt-6">
-            <h3 className="text-[18px] font-semibold text-white">Miraculous Healing After Prayer</h3>
+            <h3 className="text-[18px] font-semibold text-white">{row.title}</h3>
             <p className="mt-4 text-[17px] leading-[1.55] text-white/82">{row.body}</p>
           </div>
+          <ModerationHistoryPanel row={row} />
+          {(row.status === "Approved" || row.status === "Scheduled") ? (
+            <div className="mt-6 flex justify-end">
+              <Link
+                href={buildTestimoniesHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status, archive: row.id })}
+                className="inline-flex min-w-[160px] items-center justify-center rounded-[10px] border border-[#ef4335] px-5 py-3 text-[14px] text-[#ef4335]"
+              >
+                Archive Testimony
+              </Link>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScheduleModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel }) {
+  const router = useRouter();
+  const [publishAt, setPublishAt] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submitSchedule() {
+    setSubmitting(true);
+    setError(null);
+    const response = await fetch(`/api/admin/testimonies/${row.id}/schedule`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ publish_at: publishAt ? new Date(publishAt).toISOString() : "" }),
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      setError(payload.message ?? "Unable to schedule testimony.");
+      setSubmitting(false);
+      return;
+    }
+    router.push(closeHref(viewModel));
+    router.refresh();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
+      <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close schedule testimony modal" />
+      <div className="relative z-10 w-full max-w-[520px] rounded-[24px] bg-[#1e1e1e] px-6 py-6 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+        <h2 className="text-[24px] font-semibold text-white">Schedule Testimony</h2>
+        <p className="mt-2 text-[14px] text-white/70">Set a future publish date/time for this pending testimony.</p>
+        <input
+          type="datetime-local"
+          value={publishAt}
+          onChange={(event) => setPublishAt(event.target.value)}
+          className="mt-5 h-[44px] w-full rounded-[10px] bg-[#2a2a2a] px-3 text-[14px] text-white outline-none"
+        />
+        {error ? <p className="mt-3 text-[14px] text-[#ef4335]">{error}</p> : null}
+        <div className="mt-6 flex justify-end gap-3">
+          <Link href={closeHref(viewModel)} className="inline-flex min-w-[120px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-4 py-3 text-[14px] text-[#9B68D5]">Cancel</Link>
+          <button
+            type="button"
+            disabled={submitting || !publishAt}
+            onClick={submitSchedule}
+            className="inline-flex min-w-[120px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-4 py-3 text-[14px] text-white disabled:opacity-60"
+          >
+            {submitting ? "Scheduling..." : "Schedule"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ArchiveModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel }) {
+  const router = useRouter();
+  const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submitArchive() {
+    setSubmitting(true);
+    setError(null);
+    const response = await fetch(`/api/admin/testimonies/${row.id}/archive`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reason }),
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      setError(payload.message ?? "Unable to archive testimony.");
+      setSubmitting(false);
+      return;
+    }
+    router.push(closeHref(viewModel));
+    router.refresh();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
+      <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close archive testimony modal" />
+      <div className="relative z-10 w-full max-w-[520px] rounded-[24px] bg-[#1e1e1e] px-6 py-6 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+        <h2 className="text-[24px] font-semibold text-white">Archive Testimony</h2>
+        <p className="mt-2 text-[14px] text-white/70">This removes the testimony from public browse without deleting it.</p>
+        <textarea
+          value={reason}
+          onChange={(event) => setReason(event.target.value)}
+          placeholder="Optional reason"
+          className="mt-5 min-h-[130px] w-full rounded-[10px] bg-[#2a2a2a] px-3 py-3 text-[14px] text-white outline-none"
+        />
+        {error ? <p className="mt-3 text-[14px] text-[#ef4335]">{error}</p> : null}
+        <div className="mt-6 flex justify-end gap-3">
+          <Link href={closeHref(viewModel)} className="inline-flex min-w-[120px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-4 py-3 text-[14px] text-[#9B68D5]">Cancel</Link>
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={submitArchive}
+            className="inline-flex min-w-[120px] items-center justify-center rounded-[10px] bg-[#ef4335] px-4 py-3 text-[14px] text-white disabled:opacity-60"
+          >
+            {submitting ? "Archiving..." : "Archive"}
+          </button>
         </div>
       </div>
     </div>
@@ -242,7 +427,34 @@ function ApprovedDetailModal({ row, viewModel }: { row: TextTestimonyRow; viewMo
 }
 
 function RejectModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel }) {
+  const router = useRouter();
   const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submitRejection() {
+    setSubmitting(true);
+    setError(null);
+    const response = await fetch(`/api/admin/testimonies/${row.id}/reject`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reason }),
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      setError(payload.message ?? "Unable to reject testimony.");
+      setSubmitting(false);
+      return;
+    }
+    router.push(
+      buildTestimoniesHref({
+        tab: viewModel.activeTab,
+        q: viewModel.searchQuery,
+        statusFilter: viewModel.filterDraft.status,
+      }),
+    );
+    router.refresh();
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
@@ -262,6 +474,7 @@ function RejectModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: Tes
             placeholder="Type here..."
             className="min-h-[300px] w-full resize-none rounded-[14px] border border-transparent bg-[#2b2b2b] px-5 py-4 text-[16px] leading-7 text-white outline-none placeholder:text-white/35"
           />
+          {error ? <p className="mt-3 text-[14px] text-[#ef4335]">{error}</p> : null}
         </div>
         <div className="flex justify-end gap-4 px-6 pb-6 pt-2">
           <Link
@@ -270,12 +483,14 @@ function RejectModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: Tes
           >
             Cancel
           </Link>
-          <Link
-            href={buildTestimoniesHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status })}
-            className="inline-flex min-w-[118px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-5 py-4 text-[16px] text-white"
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={submitRejection}
+            className="inline-flex min-w-[118px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-5 py-4 text-[16px] text-white disabled:opacity-60"
           >
-            Confirm
-          </Link>
+            {submitting ? "Saving..." : "Confirm"}
+          </button>
         </div>
       </div>
     </div>
@@ -308,7 +523,10 @@ function DeleteTextTestimonyModal({ viewModel }: { viewModel: TestimoniesViewMod
 }
 
 function FilterModal({ viewModel }: { viewModel: TestimoniesViewModel }) {
-  const categoryOptions = ["Healing", "Deliverance", "Faith", "Salvation"];
+  const categoryOptions = viewModel.categories.filter((category) => category.isActive);
+  const selectedCategoryLabel =
+    viewModel.categories.find((category) => category.slug === viewModel.filterDraft.category)?.name ??
+    viewModel.filterDraft.category;
   const sourceOptions = ["You-tube", "Instagram", "TikTok", "Facebook"];
   const isVideo = viewModel.activeTab === "video";
   return (
@@ -368,14 +586,14 @@ function FilterModal({ viewModel }: { viewModel: TestimoniesViewModel }) {
             })}
             className="flex h-[32px] items-center justify-between rounded-[8px] bg-[#2a2a2a] px-3 text-[14px] text-white/78"
           >
-            <span>{viewModel.filterDraft.category || "Select"}</span>
+            <span>{selectedCategoryLabel || "Select"}</span>
             <span className="text-white/82">{viewModel.filterDraft.categoryMenuOpen ? <ChevronDownIcon /> : <ChevronDownIcon />}</span>
           </Link>
           {viewModel.filterDraft.categoryMenuOpen ? (
             <div className="mt-2 overflow-hidden rounded-[8px] border border-white/15 bg-[#1f1f1f]">
               {categoryOptions.map((option) => (
                 <Link
-                  key={option}
+                  key={option.id}
                   href={buildTestimoniesHref({
                     tab: viewModel.activeTab,
                     videoStatus: isVideo ? viewModel.activeVideoStatus : null,
@@ -383,14 +601,14 @@ function FilterModal({ viewModel }: { viewModel: TestimoniesViewModel }) {
                     filter: true,
                     from: viewModel.filterDraft.from,
                     to: viewModel.filterDraft.to,
-                    category: option,
+                    category: option.slug,
                     source: viewModel.filterDraft.source,
                     statusFilter: viewModel.filterDraft.status,
                     sourceMenuOpen: viewModel.filterDraft.sourceMenuOpen,
                   })}
                   className="block border-t border-white/10 px-4 py-3 text-[14px] text-white/88 first:border-t-0 hover:bg-white/[0.03]"
                 >
-                  {option}
+                  {option.name}
                 </Link>
               ))}
             </div>
@@ -499,18 +717,141 @@ function SuccessModal({ viewModel }: { viewModel: TestimoniesViewModel }) {
   );
 }
 
+async function readApiMessage(response: Response, fallback: string): Promise<string> {
+  const payload = (await response.json().catch(() => ({}))) as { message?: string };
+  if (typeof payload.message === "string" && payload.message.trim()) return payload.message;
+  return fallback;
+}
+
 function TestimonySettingsModal({ viewModel }: { viewModel: TestimoniesViewModel }) {
+  const [categories, setCategories] = useState<TestimonyCategoryOption[]>(viewModel.categories);
+  const [newName, setNewName] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [busyId, setBusyId] = useState<number | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+
+  async function createCategory() {
+    const name = newName.trim();
+    if (!name) return;
+    setBusyId(-1);
+    setMessage(null);
+    const response = await fetch("/api/admin/testimonies/categories", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name, description: newDescription }),
+    });
+    if (!response.ok) {
+      setMessage(await readApiMessage(response, "Unable to create category."));
+      setBusyId(null);
+      return;
+    }
+    const created = (await response.json()) as {
+      id: number;
+      name: string;
+      slug: string;
+      description?: string;
+      is_active: boolean;
+    };
+    setCategories((previous) => [
+      ...previous,
+      {
+        id: created.id,
+        name: created.name,
+        slug: created.slug,
+        description: created.description ?? "",
+        isActive: created.is_active,
+      },
+    ]);
+    setNewName("");
+    setNewDescription("");
+    setBusyId(null);
+  }
+
+  async function updateCategory(category: TestimonyCategoryOption) {
+    const updatedName = window.prompt("Update category name", category.name)?.trim();
+    if (!updatedName || updatedName === category.name) return;
+    setBusyId(category.id);
+    setMessage(null);
+    const response = await fetch(`/api/admin/testimonies/categories/${category.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: updatedName }),
+    });
+    if (!response.ok) {
+      setMessage(await readApiMessage(response, "Unable to update category."));
+      setBusyId(null);
+      return;
+    }
+    const updated = (await response.json()) as {
+      id: number;
+      name: string;
+      slug: string;
+      description?: string;
+      is_active: boolean;
+    };
+    setCategories((previous) =>
+      previous.map((row) =>
+        row.id === updated.id
+          ? {
+              id: updated.id,
+              name: updated.name,
+              slug: updated.slug,
+              description: updated.description ?? "",
+              isActive: updated.is_active,
+            }
+          : row,
+      ),
+    );
+    setBusyId(null);
+  }
+
+  async function toggleCategory(category: TestimonyCategoryOption) {
+    setBusyId(category.id);
+    setMessage(null);
+    const response = await fetch(`/api/admin/testimonies/categories/${category.id}/activation`, {
+      method: category.isActive ? "DELETE" : "POST",
+    });
+    if (!response.ok) {
+      setMessage(await readApiMessage(response, "Unable to update category status."));
+      setBusyId(null);
+      return;
+    }
+    const updated = (await response.json()) as {
+      id: number;
+      name: string;
+      slug: string;
+      description?: string;
+      is_active: boolean;
+    };
+    setCategories((previous) =>
+      previous.map((row) =>
+        row.id === updated.id
+          ? {
+              id: updated.id,
+              name: updated.name,
+              slug: updated.slug,
+              description: updated.description ?? "",
+              isActive: updated.is_active,
+            }
+          : row,
+      ),
+    );
+    setBusyId(null);
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
       <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close testimony settings modal" />
-      <div className="relative z-10 w-full max-w-[560px] overflow-hidden rounded-[24px] bg-[#1f1f1f] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+      <div className="relative z-10 w-full max-w-[720px] overflow-hidden rounded-[24px] bg-[#1f1f1f] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <h2 className="text-[28px] font-semibold text-white">Testimony Settings</h2>
           <Link href={closeHref(viewModel)} className="text-white/90" aria-label="Close testimony settings">
             <CloseIcon />
           </Link>
         </div>
-        <div className="px-6 py-7">
+        <div className="max-h-[70vh] overflow-y-auto px-6 py-7">
           <div className="flex items-start justify-between gap-6">
             <div>
               <p className="text-[16px] font-medium text-white">Notify admin of new written testimonies</p>
@@ -519,6 +860,61 @@ function TestimonySettingsModal({ viewModel }: { viewModel: TestimoniesViewModel
             <span className="relative mt-1 inline-flex h-[24px] w-[48px] rounded-full bg-[#9B68D5]">
               <span className="absolute right-[2px] top-[2px] h-[20px] w-[20px] rounded-full bg-white" />
             </span>
+          </div>
+          <div className="mt-8 border-t border-white/10 pt-6">
+            <h3 className="text-[20px] font-semibold text-white">Manage Categories</h3>
+            <p className="mt-2 text-[14px] text-white/65">Create, rename, deactivate, and reactivate testimony categories.</p>
+            {message ? <p className="mt-3 text-[13px] text-[#ef4335]">{message}</p> : null}
+            <div className="mt-5 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+              <input
+                value={newName}
+                onChange={(event) => setNewName(event.target.value)}
+                placeholder="Category name"
+                className="h-[44px] rounded-[10px] bg-[#2a2a2a] px-3 text-[14px] text-white outline-none"
+              />
+              <input
+                value={newDescription}
+                onChange={(event) => setNewDescription(event.target.value)}
+                placeholder="Description (optional)"
+                className="h-[44px] rounded-[10px] bg-[#2a2a2a] px-3 text-[14px] text-white outline-none"
+              />
+              <button
+                type="button"
+                onClick={createCategory}
+                disabled={busyId === -1 || !newName.trim()}
+                className="inline-flex h-[44px] min-w-[120px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-4 text-[14px] text-white disabled:opacity-60"
+              >
+                {busyId === -1 ? "Creating..." : "Add"}
+              </button>
+            </div>
+            <div className="mt-5 space-y-2">
+              {sortedCategories.map((category) => (
+                <div key={category.id} className="flex items-center justify-between rounded-[12px] border border-white/10 bg-[#262626] px-4 py-3">
+                  <div>
+                    <p className="text-[14px] text-white">{category.name}</p>
+                    <p className="text-[12px] text-white/60">{category.isActive ? "Active" : "Inactive"}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => updateCategory(category)}
+                      disabled={busyId === category.id}
+                      className="rounded-[8px] border border-white/20 px-3 py-1 text-[12px] text-white/85 disabled:opacity-50"
+                    >
+                      Rename
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleCategory(category)}
+                      disabled={busyId === category.id}
+                      className="rounded-[8px] border border-[#9B68D5] px-3 py-1 text-[12px] text-[#cba7ff] disabled:opacity-50"
+                    >
+                      {busyId === category.id ? "Saving..." : category.isActive ? "Deactivate" : "Reactivate"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
         <div className="flex justify-end gap-4 px-6 pb-6">
@@ -610,7 +1006,7 @@ function EditVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel:
                   </span>
                 </div>
               </div>
-              <div className="mt-6 grid grid-cols-[1fr_1fr] gap-6">
+              <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
                 <div>
                   <p className="mb-3 text-[16px] text-white/90">Scheduled Time</p>
                   <div className="flex items-center justify-between rounded-[10px] bg-[#2a2a2a] px-4 py-4 text-[15px] text-white">
@@ -620,7 +1016,7 @@ function EditVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel:
                     </span>
                   </div>
                 </div>
-                <div className="pt-[31px]">
+                <div className="sm:pt-[31px]">
                   <div className="flex items-center justify-between rounded-[10px] bg-[#2a2a2a] px-4 py-4 text-[15px] text-white">
                     <span>PM</span>
                     <span className="text-white/85">
@@ -672,6 +1068,8 @@ export function TestimoniesOverlays({ viewModel }: { viewModel: TestimoniesViewM
       {viewModel.showDetails && viewModel.selectedRow?.kind === "text" && viewModel.selectedRow.status !== "Pending" ? <ApprovedDetailModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
       {viewModel.showDetails && viewModel.selectedRow?.kind === "video" ? <VideoDetailsModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
       {viewModel.showRejectModal && viewModel.selectedRow?.kind === "text" ? <RejectModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
+      {viewModel.showScheduleModal && viewModel.selectedRow?.kind === "text" ? <ScheduleModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
+      {viewModel.showArchiveModal && viewModel.selectedRow?.kind === "text" ? <ArchiveModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
       {viewModel.showEditModal && viewModel.selectedRow?.kind === "video" ? <EditVideoModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
       {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "video" ? <DeleteVideoModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
       {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "text" ? <DeleteTextTestimonyModal viewModel={viewModel} /> : null}

@@ -1,4 +1,3 @@
-import { findUserByEmail } from "@/core/auth/mock-users";
 import { getServerSession } from "@/core/auth/session";
 import { getReviewsViewModel } from "@/features/admin/data/services/get-reviews-view-model";
 import { ReviewsPage } from "@/features/admin/presentation/components/reviews-page";
@@ -22,7 +21,6 @@ export default async function ReviewsRoute({
 }) {
   const params = await searchParams;
   const session = await getServerSession();
-  const user = session?.email ? findUserByEmail(session.email) : null;
 
   const viewModel = getReviewsViewModel({
     state: params.state,
@@ -36,7 +34,7 @@ export default async function ReviewsRoute({
     view: params.view,
     remove: params.remove,
     deleteAll: params.deleteAll,
-    fullName: user?.fullName,
+    fullName: session?.fullName ?? session?.email,
   });
 
   return <ReviewsPage viewModel={viewModel} />;

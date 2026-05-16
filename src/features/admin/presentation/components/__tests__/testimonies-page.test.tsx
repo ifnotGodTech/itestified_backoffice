@@ -34,9 +34,14 @@ describe("TestimoniesPage", () => {
   });
 
   test("renders the pending testimony detail state", () => {
-    render(<TestimoniesPage viewModel={getTestimoniesViewModel({ view: "1" })} />);
+    const viewModel = getTestimoniesViewModel({ view: "1" });
+    render(<TestimoniesPage viewModel={viewModel} />);
 
-    expect(screen.getByText("Miraculous Healing After Prayer")).toBeInTheDocument();
+    const selectedRow = viewModel.selectedRow;
+    expect(selectedRow?.kind).toBe("text");
+    if (selectedRow?.kind === "text") {
+      expect(screen.getByText(selectedRow.body)).toBeInTheDocument();
+    }
     expect(screen.getByText("Approve Testimony")).toBeInTheDocument();
     expect(screen.getByText("Reject Testimony")).toBeInTheDocument();
   });

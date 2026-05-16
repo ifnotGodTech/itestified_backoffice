@@ -3,6 +3,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import type { AdminShellViewModel } from "@/features/admin/domain/entities/shell";
 import { AdminSidebarNav } from "@/features/admin/presentation/components/admin-sidebar-nav";
+import { HeaderNotificationBell } from "@/features/admin/presentation/components/header-notification-bell";
 
 function HeaderIcon({
   kind,
@@ -96,7 +97,7 @@ export function AdminDashboardShell({
               <div className="flex items-center gap-[7px]">
                 <HeaderIcon kind="theme" />
                 <HeaderIcon kind="moon" active />
-                <HeaderIcon kind="bell" badge href="/notifications-history?panel=1" label="Open notifications" />
+                <HeaderNotificationBell />
                 <HeaderIcon kind="panel" />
               </div>
               <div className="flex items-center gap-3">

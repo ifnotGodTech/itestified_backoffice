@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { backendBaseUrl, extractSetCookieHeaders } from "@/core/auth/backend";
+import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
 export async function POST(req: Request) {
   const body = (await req.json()) as { email?: string; roleCode?: string };
@@ -10,10 +10,7 @@ export async function POST(req: Request) {
 
   const backendResponse = await fetch(`${backendBaseUrl}/auth/admin/invitations/`, {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      ...(req.headers.get("cookie") ? { cookie: req.headers.get("cookie") ?? "" } : {}),
-    },
+    headers: buildBackendSessionHeaders(req, true),
     body: JSON.stringify({ email: body.email, role_code: body.roleCode }),
     cache: "no-store",
   });

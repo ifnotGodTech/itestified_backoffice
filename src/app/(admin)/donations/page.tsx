@@ -1,6 +1,6 @@
-import { findUserByEmail } from "@/core/auth/mock-users";
+import { cookies } from "next/headers";
 import { getServerSession } from "@/core/auth/session";
-import { getDonationsViewModel } from "@/features/admin/data/services/get-donations-view-model";
+import { getDonationsViewModelFromApi } from "@/features/admin/data/services/get-donations-view-model";
 import { DonationsPage } from "@/features/admin/presentation/components/donations-page";
 
 export default async function DonationsRoute({
@@ -20,6 +20,7 @@ export default async function DonationsRoute({
     to?: string;
     statusFilter?: string;
     menu?: string;
+    detail?: string;
     refund?: string;
     reverse?: string;
     reason?: string;
@@ -29,9 +30,14 @@ export default async function DonationsRoute({
 }) {
   const params = await searchParams;
   const session = await getServerSession();
-  const user = session?.email ? findUserByEmail(session.email) : null;
+  const store = await cookies();
+  const cookieHeader = store
+    .getAll()
+    .map((entry) => `${entry.name}=${entry.value}`)
+    .join("; ");
 
-  const viewModel = getDonationsViewModel({
+  const viewModel = await getDonationsViewModelFromApi(
+    {
     tab: params.tab,
     state: params.state,
     month: params.month,
@@ -45,13 +51,16 @@ export default async function DonationsRoute({
     to: params.to,
     statusFilter: params.statusFilter,
     menu: params.menu,
+    detail: params.detail,
     refund: params.refund,
     reverse: params.reverse,
     reason: params.reason,
     remove: params.remove,
     success: params.success,
-    fullName: user?.fullName,
-  });
+      fullName: session?.email ?? undefined,
+    },
+    cookieHeader,
+  );
 
   return <DonationsPage viewModel={viewModel} />;
 }

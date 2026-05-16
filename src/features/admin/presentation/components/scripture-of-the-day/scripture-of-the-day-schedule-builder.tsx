@@ -4,9 +4,7 @@ import { buildScriptureOfTheDayHref } from "@/features/admin/presentation/state/
 
 export function ScriptureScheduleBuilder({ viewModel }: { viewModel: ScriptureOfTheDayViewModel }) {
   return (
-    <form action="/scripture-of-the-day" className="max-w-[980px] space-y-4">
-      <input type="hidden" name="tab" value="scheduled" />
-      <input type="hidden" name="saved" value="1" />
+    <form action="/api/admin/content/scriptures" method="POST" className="max-w-[980px] space-y-4">
       <div className="flex items-center justify-end">
         <button type="submit" className="rounded-[8px] bg-white/40 px-6 py-2 text-[14px] text-white/80">
           Save
@@ -36,26 +34,33 @@ export function ScriptureScheduleBuilder({ viewModel }: { viewModel: ScriptureOf
             <div className="grid grid-cols-2 gap-4">
               <label className="space-y-2">
                 <span className="text-[13px] font-medium text-white/90">Bible Verse</span>
-                <div className="relative">
-                  <select className="h-[44px] w-full appearance-none rounded-[8px] bg-[#242424] px-4 pr-10 text-[13px] text-white/50 outline-none">
-                    <option>Select Bible Verse</option>
-                  </select>
-                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/55">▾</span>
-                </div>
+                <input name="bible_text" placeholder="Jeremiah 29:11" className="h-[44px] w-full rounded-[8px] bg-[#242424] px-4 text-[13px] text-white/85 outline-none placeholder:text-white/50" />
               </label>
               <label className="space-y-2">
                 <span className="text-[13px] font-medium text-white/90">Bible Version</span>
                 <div className="relative">
-                  <select className="h-[44px] w-full appearance-none rounded-[8px] bg-[#242424] px-4 pr-10 text-[13px] text-white/50 outline-none">
-                    <option>Select Version</option>
+                  <select name="bible_version" className="h-[44px] w-full appearance-none rounded-[8px] bg-[#242424] px-4 pr-10 text-[13px] text-white/85 outline-none">
+                    <option value="KJV">KJV</option>
+                    <option value="NIV">NIV</option>
+                    <option value="ESV">ESV</option>
                   </select>
                   <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/55">▾</span>
                 </div>
               </label>
             </div>
             <label className="space-y-2">
+              <span className="text-[13px] font-medium text-white/90">Scripture</span>
+              <textarea
+                name="scripture"
+                rows={2}
+                placeholder="Type scripture here..."
+                className="min-h-[86px] w-full resize-none rounded-[8px] bg-[#242424] px-4 py-3 text-[13px] text-white/75 outline-none placeholder:text-white/30"
+              />
+            </label>
+            <label className="space-y-2">
               <span className="text-[13px] font-medium text-white/90">Prayer</span>
               <textarea
+                name="prayer"
                 rows={2}
                 placeholder="Type Prayer here..."
                 className="min-h-[86px] w-full resize-none rounded-[8px] bg-[#242424] px-4 py-3 text-[13px] text-white/75 outline-none placeholder:text-white/30"
@@ -80,7 +85,7 @@ export function ScriptureScheduleBuilder({ viewModel }: { viewModel: ScriptureOf
           <label className="space-y-2">
             <span className="text-[13px] font-medium text-white/90">From</span>
             <div className="relative">
-              <input name="from" placeholder="MM/DD/YYYY" className="h-[44px] w-full rounded-[8px] bg-[#242424] px-4 pr-10 text-[13px] text-white/50 outline-none placeholder:text-white/30" />
+              <input name="date" placeholder="YYYY-MM-DD" className="h-[44px] w-full rounded-[8px] bg-[#242424] px-4 pr-10 text-[13px] text-white/50 outline-none placeholder:text-white/30" />
               <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/55">🗓</span>
             </div>
           </label>

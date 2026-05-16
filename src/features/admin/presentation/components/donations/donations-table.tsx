@@ -34,8 +34,11 @@ function DonationStatusBadge({ status }: { status: DonationRow["status"] }) {
       ? "border-[#0cbc32]/40 bg-transparent text-[#0cbc32]"
       : status === "pending"
         ? "border-[#f0c400]/45 bg-transparent text-[#f0c400]"
-        : "border-[#ef4335]/45 bg-transparent text-[#ef4335]";
-  const label = status === "successful" ? "Success" : status === "pending" ? "Pending" : "Declined";
+        : status === "reversal"
+          ? "border-[#8d9aa8]/45 bg-transparent text-[#8d9aa8]"
+          : "border-[#ef4335]/45 bg-transparent text-[#ef4335]";
+  const label =
+    status === "successful" ? "Success" : status === "pending" ? "Pending" : status === "reversal" ? "Reversed" : "Declined";
   return <AdminStatusBadge label={label} toneClassName={cls} />;
 }
 
@@ -56,6 +59,12 @@ function DonationActionMenu({ row, viewModel }: { row: DonationRow; viewModel: D
 
   return (
     <AdminActionMenuPanel className={`absolute right-0 z-50 min-w-[156px] rounded-[12px] border-[#626262] bg-[#2a2a2a] ${openUp ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"}`}>
+      <Link
+        href={buildDonationsHref({ tab: viewModel.activeTab, detail: row.id })}
+        className="block border-b border-white/10 px-4 py-3 text-[14px] text-white/80 hover:bg-white/[0.04]"
+      >
+        View details
+      </Link>
       {row.status === "successful" ? (
         <Link
           href={buildDonationsHref({ tab: viewModel.activeTab, reverse: row.id })}
