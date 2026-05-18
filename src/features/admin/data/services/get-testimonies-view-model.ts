@@ -362,6 +362,15 @@ type BackendCategory = {
   is_active: boolean;
 };
 
+function normalizeBackendCategoriesPayload(payload: unknown): BackendCategory[] {
+  if (Array.isArray(payload)) return payload as BackendCategory[];
+  if (payload && typeof payload === "object") {
+    const maybeMap = payload as { results?: unknown };
+    if (Array.isArray(maybeMap.results)) return maybeMap.results as BackendCategory[];
+  }
+  return [];
+}
+
 function mapBackendStatusToText(status: BackendTestimony["status"]): WrittenTestimonyStatus {
   if (status === "approved") return "Approved";
   if (status === "rejected") return "Rejected";
@@ -432,7 +441,8 @@ export async function getTestimoniesViewModelFromBackend(
       };
     }
     const testimoniesPayload = (await testimoniesResponse.json()) as { results?: BackendTestimony[] };
-    const categoriesPayload = (await categoriesResponse.json()) as BackendCategory[];
+    const categoriesPayloadRaw = (await categoriesResponse.json()) as unknown;
+    const categoriesPayload = normalizeBackendCategoriesPayload(categoriesPayloadRaw);
     const backendRows = testimoniesPayload.results ?? [];
     const categories: TestimonyCategoryOption[] = (categoriesPayload ?? []).map((category) => ({
       id: category.id,
@@ -502,7 +512,7 @@ export async function getTestimoniesViewModelFromBackend(
     return {
       ...base,
       phaseState: "populated",
-      categories: categories.length > 0 ? categories : fallbackCategories,
+      categories,
       rows: typedRows,
       selectedRow,
       totalRows: typedRows.length,
