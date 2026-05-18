@@ -268,9 +268,10 @@ export function getDonationsViewModel(input: {
   };
 }
 
-function formatAmount(amount: number, currency: string) {
+function formatAmount(amountMinor: number, currency: string) {
   const symbol = currency === "USD" ? "$" : "₦";
-  return `${symbol}${amount.toLocaleString()}`;
+  const amountMajor = amountMinor / 100;
+  return `${symbol}${amountMajor.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function toDateLabel(value: string) {
@@ -290,14 +291,14 @@ function mapCurrencyLabel(currency: string) {
 
 function mapRows(results: Array<Record<string, unknown>>): DonationRow[] {
   return results.map((item) => {
-    const amount = Number(item.amount ?? 0);
+    const amountMinor = Number(item.amount ?? 0);
     const currency = String(item.currency ?? "NGN");
     const providerTransactionId = String(item.provider_transaction_id ?? "");
     return {
       id: Number(item.id ?? 0),
       donor: String(item.donor_name ?? ""),
       email: String(item.donor_email ?? ""),
-      amount: formatAmount(amount, currency),
+      amount: formatAmount(amountMinor, currency),
       currency: mapCurrencyLabel(currency),
       date: toDateLabel(String(item.created_at ?? "")),
       status: mapStatus(String(item.status ?? "")),
@@ -306,6 +307,15 @@ function mapRows(results: Array<Record<string, unknown>>): DonationRow[] {
       paymentMask: providerTransactionId ? `****${providerTransactionId.slice(-4)}` : "****0000",
     };
   });
+}
+
+function getTotalDonationsLabel(results: Array<Record<string, unknown>>): string {
+  if (results.length === 0) return "Total Donations (₦0.00)";
+  const currencies = new Set(results.map((item) => String(item.currency ?? "NGN")));
+  if (currencies.size > 1) return "Total Donations (Mixed currencies)";
+  const currency = String(results[0]?.currency ?? "NGN");
+  const totalMinor = results.reduce((sum, item) => sum + Number(item.amount ?? 0), 0);
+  return `Total Donations (${formatAmount(totalMinor, currency)})`;
 }
 
 export async function getDonationsViewModelFromApi(
@@ -353,7 +363,8 @@ export async function getDonationsViewModelFromApi(
       return getDonationsViewModel({ ...input, state: "error" });
     }
     const payload = (await response.json().catch(() => ({}))) as { count?: number; results?: Array<Record<string, unknown>> };
-    const rows = mapRows(payload.results ?? []);
+    const rawResults = payload.results ?? [];
+    const rows = mapRows(rawResults);
     const vm = getDonationsViewModel(input);
     return {
       ...vm,
@@ -366,7 +377,7 @@ export async function getDonationsViewModelFromApi(
       showingLabel: rows.length === 0 ? "Page 1 of 1" : `Showing 1-${rows.length} of ${payload.count ?? rows.length}`,
       topStats: [
         { label: `Donors (${rows.length})`, value: "", tone: "info" as const },
-        { label: `Total Donations (${rows[0]?.amount ?? "₦0"})`, value: "", tone: "accent" as const },
+        { label: getTotalDonationsLabel(rawResults), value: "", tone: "accent" as const },
       ],
       tableBadge: getTableBadge(vm.activeTab, rows),
     };

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
-export async function GET(req: Request, { params }: { params: Promise<{ testimonyId: string }> }) {
+export async function POST(req: Request, { params }: { params: Promise<{ testimonyId: string }> }) {
   const { testimonyId } = await params;
   const backendResponse = await fetch(`${backendBaseUrl}/content/admin/home-curation/featured-testimonies/${testimonyId}/remove/`, {
     method: "POST",
@@ -22,4 +22,3 @@ export async function GET(req: Request, { params }: { params: Promise<{ testimon
   }
   return redirect;
 }
-

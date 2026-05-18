@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
-export async function GET(req: Request, context: { params: Promise<{ userId: string }> }) {
+export async function POST(req: Request, context: { params: Promise<{ userId: string }> }) {
   const { userId } = await context.params;
   const next = new URL(req.url).searchParams.get("next") || "/users?tab=deactivated&success=deactivate";
   const backendResponse = await fetch(`${backendBaseUrl}/users/admin/users/${userId}/deactivate/`, {

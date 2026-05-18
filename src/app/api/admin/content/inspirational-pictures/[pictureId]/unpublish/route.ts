@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
-export async function GET(req: Request, context: { params: Promise<{ pictureId: string }> }) {
+export async function POST(req: Request, context: { params: Promise<{ pictureId: string }> }) {
   const { pictureId } = await context.params;
   const backendResponse = await fetch(
     `${backendBaseUrl}/content/admin/inspirational-pictures/${pictureId}/unpublish/`,

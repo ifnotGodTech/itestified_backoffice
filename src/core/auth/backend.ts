@@ -1,4 +1,5 @@
 export const backendBaseUrl = process.env.BACKEND_API_BASE_URL ?? "http://127.0.0.1:8000/api/v1";
+const backendOrigin = new URL(backendBaseUrl).origin;
 
 function readCookieValue(cookieHeader: string | null, name: string): string | null {
   if (!cookieHeader) return null;
@@ -18,6 +19,10 @@ export function buildBackendSessionHeaders(req: Request, includeJson: boolean = 
   if (includeJson) headers["content-type"] = "application/json";
   if (cookieHeader) headers.cookie = cookieHeader;
   if (csrfToken) headers["x-csrftoken"] = csrfToken;
+  // Django CSRF checks on secure requests require a Referer/Origin match.
+  // Server-to-server proxy calls do not include browser Referer automatically.
+  headers.origin = backendOrigin;
+  headers.referer = `${backendOrigin}/`;
   return headers;
 }
 

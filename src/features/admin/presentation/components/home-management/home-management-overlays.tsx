@@ -170,12 +170,23 @@ function HomeManagementRemoveModal({ viewModel }: { viewModel: HomeManagementVie
           >
             Cancel
           </Link>
-          <Link
-            href={removeHref}
-            className="inline-flex min-w-[180px] items-center justify-center rounded-[10px] bg-[#ef4335] px-6 py-4 text-[18px] text-white"
-          >
-            Yes, remove
-          </Link>
+          {selected && selected.kind !== "picture" ? (
+            <form action={removeHref} method="POST">
+              <button
+                type="submit"
+                className="inline-flex min-w-[180px] items-center justify-center rounded-[10px] bg-[#ef4335] px-6 py-4 text-[18px] text-white"
+              >
+                Yes, remove
+              </button>
+            </form>
+          ) : (
+            <Link
+              href={removeHref}
+              className="inline-flex min-w-[180px] items-center justify-center rounded-[10px] bg-[#ef4335] px-6 py-4 text-[18px] text-white"
+            >
+              Yes, remove
+            </Link>
+          )}
         </div>
       </div>
     </div>

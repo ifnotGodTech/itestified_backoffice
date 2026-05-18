@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
-export async function GET(req: Request, context: { params: Promise<{ donationId: string }> }) {
+export async function POST(req: Request, context: { params: Promise<{ donationId: string }> }) {
   const { donationId } = await context.params;
   const url = new URL(req.url);
   const reason = url.searchParams.get("reason")?.trim() || "Reversal requested by admin review.";

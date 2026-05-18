@@ -159,7 +159,13 @@ function DeleteModal({ viewModel }: { viewModel: InspirationalPicturesViewModel 
         <p className="mt-5 text-[16px] leading-8 text-white/72">Are you sure you want to delete this picture? This action cannot be undone.</p>
         <div className="mt-8 flex justify-center gap-4">
           <Link href={closeHref(viewModel)} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] font-medium text-[#9B68D5]">Cancel</Link>
-          <Link href={selectedId ? `/api/admin/content/inspirational-pictures/${selectedId}/unpublish/` : closeHref(viewModel)} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#ef4335] px-6 py-4 text-[16px] font-medium text-white">Unpublish</Link>
+          {selectedId ? (
+            <form action={`/api/admin/content/inspirational-pictures/${selectedId}/unpublish/`} method="POST">
+              <button type="submit" className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#ef4335] px-6 py-4 text-[16px] font-medium text-white">Unpublish</button>
+            </form>
+          ) : (
+            <Link href={closeHref(viewModel)} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#ef4335] px-6 py-4 text-[16px] font-medium text-white">Unpublish</Link>
+          )}
         </div>
       </div>
     </div>

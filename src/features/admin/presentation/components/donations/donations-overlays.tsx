@@ -211,12 +211,14 @@ export function DonationsOverlays({ viewModel }: { viewModel: DonationsViewModel
             </div>
             <div className="mt-8 flex justify-end gap-3">
               <Link href={closeHref(viewModel)} className="inline-flex h-[42px] min-w-[170px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 text-[14px] text-[#9B68D5]">Cancel</Link>
-              <Link
-                href={`/api/admin/donations/${viewModel.selectedRow.id}/reverse/?reason=${encodeURIComponent("Admin verification request")}&next=${encodeURIComponent(buildDonationsHref({ tab: viewModel.activeTab, success: "reverse" }))}`}
-                className="inline-flex h-[42px] min-w-[170px] items-center justify-center rounded-[10px] bg-white/55 px-6 text-[14px] text-white/70"
-              >
-                Confirm Reversal
-              </Link>
+              <form action={`/api/admin/donations/${viewModel.selectedRow.id}/reverse/?reason=${encodeURIComponent("Admin verification request")}&next=${encodeURIComponent(buildDonationsHref({ tab: viewModel.activeTab, success: "reverse" }))}`} method="POST">
+                <button
+                  type="submit"
+                  className="inline-flex h-[42px] min-w-[170px] items-center justify-center rounded-[10px] bg-white/55 px-6 text-[14px] text-white/70"
+                >
+                  Confirm Reversal
+                </button>
+              </form>
             </div>
           </div>
         </OverlayShell>
