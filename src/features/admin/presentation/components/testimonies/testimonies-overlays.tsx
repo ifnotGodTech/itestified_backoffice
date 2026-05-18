@@ -727,22 +727,32 @@ function TestimonySettingsModal({ viewModel }: { viewModel: TestimoniesViewModel
   const [categories, setCategories] = useState<TestimonyCategoryOption[]>(viewModel.categories);
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [editingDescription, setEditingDescription] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageTone, setMessageTone] = useState<"success" | "error">("success");
 
   const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+
+  function buildDefaultDescription(categoryName: string): string {
+    return `Watch and read ${categoryName} testimonies. Be blessed, edified, and receive yours.`;
+  }
 
   async function createCategory() {
     const name = newName.trim();
     if (!name) return;
+    const description = newDescription.trim() || buildDefaultDescription(name);
     setBusyId(-1);
     setMessage(null);
     const response = await fetch("/api/admin/testimonies/categories", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name, description: newDescription }),
+      body: JSON.stringify({ name, description }),
     });
     if (!response.ok) {
+      setMessageTone("error");
       setMessage(await readApiMessage(response, "Unable to create category."));
       setBusyId(null);
       return;
@@ -767,19 +777,27 @@ function TestimonySettingsModal({ viewModel }: { viewModel: TestimoniesViewModel
     setNewName("");
     setNewDescription("");
     setBusyId(null);
+    setMessageTone("success");
+    setMessage("Category created successfully.");
   }
 
-  async function updateCategory(category: TestimonyCategoryOption) {
-    const updatedName = window.prompt("Update category name", category.name)?.trim();
-    if (!updatedName || updatedName === category.name) return;
+  async function updateCategory(category: TestimonyCategoryOption, updatedName: string, updatedDescription: string) {
+    const trimmedName = updatedName.trim();
+    const trimmedDescription = updatedDescription.trim() || buildDefaultDescription(trimmedName);
+    if (!trimmedName) return;
+    if (trimmedName === category.name && trimmedDescription === (category.description ?? "").trim()) {
+      setEditingId(null);
+      return;
+    }
     setBusyId(category.id);
     setMessage(null);
     const response = await fetch(`/api/admin/testimonies/categories/${category.id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: updatedName }),
+      body: JSON.stringify({ name: trimmedName, description: trimmedDescription }),
     });
     if (!response.ok) {
+      setMessageTone("error");
       setMessage(await readApiMessage(response, "Unable to update category."));
       setBusyId(null);
       return;
@@ -804,7 +822,10 @@ function TestimonySettingsModal({ viewModel }: { viewModel: TestimoniesViewModel
           : row,
       ),
     );
+    setEditingId(null);
     setBusyId(null);
+    setMessageTone("success");
+    setMessage("Category updated successfully.");
   }
 
   async function toggleCategory(category: TestimonyCategoryOption) {
@@ -814,6 +835,7 @@ function TestimonySettingsModal({ viewModel }: { viewModel: TestimoniesViewModel
       method: category.isActive ? "DELETE" : "POST",
     });
     if (!response.ok) {
+      setMessageTone("error");
       setMessage(await readApiMessage(response, "Unable to update category status."));
       setBusyId(null);
       return;
@@ -839,6 +861,8 @@ function TestimonySettingsModal({ viewModel }: { viewModel: TestimoniesViewModel
       ),
     );
     setBusyId(null);
+    setMessageTone("success");
+    setMessage(category.isActive ? "Category deactivated successfully." : "Category reactivated successfully.");
   }
 
   return (
@@ -864,7 +888,11 @@ function TestimonySettingsModal({ viewModel }: { viewModel: TestimoniesViewModel
           <div className="mt-8 border-t border-white/10 pt-6">
             <h3 className="text-[20px] font-semibold text-white">Manage Categories</h3>
             <p className="mt-2 text-[14px] text-white/65">Create, rename, deactivate, and reactivate testimony categories.</p>
-            {message ? <p className="mt-3 text-[13px] text-[#ef4335]">{message}</p> : null}
+            {message ? (
+              <p className={`mt-3 text-[13px] ${messageTone === "error" ? "text-[#ef4335]" : "text-[#6BFFB4]"}`}>
+                {message}
+              </p>
+            ) : null}
             <div className="mt-5 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
               <input
                 value={newName}
@@ -891,22 +919,69 @@ function TestimonySettingsModal({ viewModel }: { viewModel: TestimoniesViewModel
               {sortedCategories.map((category) => (
                 <div key={category.id} className="flex items-center justify-between rounded-[12px] border border-white/10 bg-[#262626] px-4 py-3">
                   <div>
-                    <p className="text-[14px] text-white">{category.name}</p>
-                    <p className="text-[12px] text-white/60">{category.isActive ? "Active" : "Inactive"}</p>
+                    {editingId === category.id ? (
+                      <div className="space-y-2">
+                        <input
+                          value={editingName}
+                          onChange={(event) => setEditingName(event.target.value)}
+                          className="h-[36px] w-[240px] rounded-[8px] bg-[#1f1f1f] px-3 text-[13px] text-white outline-none"
+                          placeholder="Category name"
+                        />
+                        <input
+                          value={editingDescription}
+                          onChange={(event) => setEditingDescription(event.target.value)}
+                          className="h-[36px] w-[300px] rounded-[8px] bg-[#1f1f1f] px-3 text-[13px] text-white outline-none"
+                          placeholder="Description"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-[14px] text-white">{category.name}</p>
+                        <p className="text-[12px] text-white/60">
+                          {category.isActive ? "Active" : "Inactive"}
+                          {category.description ? ` • ${category.description}` : ""}
+                        </p>
+                      </>
+                    )}
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => updateCategory(category)}
-                      disabled={busyId === category.id}
-                      className="rounded-[8px] border border-white/20 px-3 py-1 text-[12px] text-white/85 disabled:opacity-50"
-                    >
-                      Rename
-                    </button>
+                    {editingId === category.id ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => updateCategory(category, editingName, editingDescription)}
+                          disabled={busyId === category.id || !editingName.trim()}
+                          className="rounded-[8px] border border-white/20 px-3 py-1 text-[12px] text-white/85 disabled:opacity-50"
+                        >
+                          {busyId === category.id ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(null)}
+                          disabled={busyId === category.id}
+                          className="rounded-[8px] border border-white/20 px-3 py-1 text-[12px] text-white/70 disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingId(category.id);
+                          setEditingName(category.name);
+                          setEditingDescription(category.description ?? "");
+                        }}
+                        disabled={busyId === category.id}
+                        className="rounded-[8px] border border-white/20 px-3 py-1 text-[12px] text-white/85 disabled:opacity-50"
+                      >
+                        Edit
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => toggleCategory(category)}
-                      disabled={busyId === category.id}
+                      disabled={busyId === category.id || editingId === category.id}
                       className="rounded-[8px] border border-[#9B68D5] px-3 py-1 text-[12px] text-[#cba7ff] disabled:opacity-50"
                     >
                       {busyId === category.id ? "Saving..." : category.isActive ? "Deactivate" : "Reactivate"}
