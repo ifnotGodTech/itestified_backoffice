@@ -52,7 +52,7 @@ function CloseIcon() {
 
 function newDraft(seed: number): VideoDraft {
   return {
-    id: `video-${Date.now()}-${seed}`,
+    id: `video-${seed}`,
     title: "",
     source: "",
     body: "",
