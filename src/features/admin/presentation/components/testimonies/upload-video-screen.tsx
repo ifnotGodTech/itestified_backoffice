@@ -281,9 +281,17 @@ export function UploadVideoScreen({ categories }: Props) {
                     <UploadCloudIcon />
                   </div>
                   <p className="mt-5 text-[16px] leading-[1.45] text-[var(--color-text-secondary)]">
-                    Drag & drop or <span className="text-[var(--color-primary)]">choose file</span> here to upload
+                    Drag & drop or{" "}
+                    <label
+                      htmlFor={`video-file-input-${draft.id}`}
+                      className="cursor-pointer text-[var(--color-primary)] underline-offset-2 hover:underline"
+                    >
+                      choose file
+                    </label>{" "}
+                    here to upload
                   </p>
                   <input
+                    id={`video-file-input-${draft.id}`}
                     type="file"
                     accept="video/*"
                     onChange={(event) => setDraftValue(index, { videoFile: event.target.files?.[0] ?? null })}
