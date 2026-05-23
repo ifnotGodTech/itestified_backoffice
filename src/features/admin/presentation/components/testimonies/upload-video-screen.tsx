@@ -26,13 +26,26 @@ const MAX_VIDEOS_PER_BATCH = 10;
 const MAX_VIDEO_FILE_SIZE_BYTES = 200 * 1024 * 1024;
 const ALLOWED_VIDEO_CONTENT_TYPES = new Set(["video/mp4"]);
 
-function extractApiErrorMessage(data: Record<string, unknown>): string {
-  if (typeof data.message === "string" && data.message.trim()) return data.message;
-  for (const value of Object.values(data)) {
+function extractApiErrorMessage(data: unknown): string {
+  if (!data || typeof data !== "object") {
+    return "Upload failed. Please review your details and try again.";
+  }
+  const record = data as Record<string, unknown>;
+  if (typeof record.message === "string" && record.message.trim()) return record.message;
+  for (const value of Object.values(record)) {
     if (typeof value === "string" && value.trim()) return value;
     if (Array.isArray(value)) {
       const first = value.find((item) => typeof item === "string" && item.trim());
       if (typeof first === "string") return first;
+      const nested = value.find((item) => item && typeof item === "object");
+      if (nested) {
+        const nestedMessage = extractApiErrorMessage(nested);
+        if (nestedMessage !== "Upload failed. Please review your details and try again.") return nestedMessage;
+      }
+    }
+    if (value && typeof value === "object") {
+      const nestedMessage = extractApiErrorMessage(value);
+      if (nestedMessage !== "Upload failed. Please review your details and try again.") return nestedMessage;
     }
   }
   return "Upload failed. Please review your details and try again.";
@@ -187,8 +200,12 @@ export function UploadVideoScreen({ categories }: Props) {
         });
 
         if (!response.ok) {
-          const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
-          throw new Error(extractApiErrorMessage(data));
+          const data = (await response.json().catch(() => null)) as unknown;
+          const message = extractApiErrorMessage(data);
+          if (message !== "Upload failed. Please review your details and try again.") {
+            throw new Error(message);
+          }
+          throw new Error(`Upload failed (${response.status}). Please review your details and try again.`);
         }
       }
 

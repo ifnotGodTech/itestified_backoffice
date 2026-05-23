@@ -48,7 +48,19 @@ export async function POST(req: Request) {
   } else {
     const text = (await backendResponse.text().catch(() => "")).trim();
     payload = {
-      message: text || `Backend upload request failed (${backendResponse.status}).`,
+      message:
+        text ||
+        backendResponse.statusText ||
+        `Backend upload request failed (${backendResponse.status}).`,
+    };
+  }
+  if (
+    (!payload || typeof payload !== "object" || Object.keys(payload as Record<string, unknown>).length === 0) &&
+    !backendResponse.ok
+  ) {
+    payload = {
+      message:
+        backendResponse.statusText || `Backend upload request failed (${backendResponse.status}).`,
     };
   }
   const response = NextResponse.json(payload, { status: backendResponse.status });
