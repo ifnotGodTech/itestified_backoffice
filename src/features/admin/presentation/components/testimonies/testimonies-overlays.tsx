@@ -58,15 +58,6 @@ function CalendarIcon() {
   );
 }
 
-function TimeIcon() {
-  return (
-    <svg viewBox="0 0 18 18" className="h-[18px] w-[18px]" fill="none" aria-hidden="true">
-      <circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M9 5.25v4.2l2.8 1.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 function closeHref(viewModel: TestimoniesViewModel) {
   return buildTestimoniesHref({
     tab: viewModel.activeTab,
@@ -475,7 +466,38 @@ function RejectModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: Tes
   );
 }
 
-function DeleteTextTestimonyModal({ viewModel }: { viewModel: TestimoniesViewModel }) {
+function DeleteTextTestimonyModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel }) {
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function deleteTestimony() {
+    setSubmitting(true);
+    setError(null);
+    const response = await fetch(`/api/admin/testimonies/${row.id}/delete`, { method: "DELETE" });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      setError(payload.message ?? "Unable to delete testimony.");
+      setSubmitting(false);
+      return;
+    }
+    router.push(
+      buildTestimoniesHref({
+        tab: viewModel.activeTab,
+        videoStatus: viewModel.activeTab === "video" ? viewModel.activeVideoStatus : null,
+        engagement: viewModel.activeTab === "video" ? viewModel.activeVideoEngagement : null,
+        q: viewModel.searchQuery,
+        from: viewModel.filterDraft.from,
+        to: viewModel.filterDraft.to,
+        category: viewModel.filterDraft.category,
+        source: viewModel.filterDraft.source,
+        statusFilter: viewModel.filterDraft.status,
+        success: "delete",
+      }),
+    );
+    router.refresh();
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
       <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close delete testimony modal" />
@@ -487,13 +509,19 @@ function DeleteTextTestimonyModal({ viewModel }: { viewModel: TestimoniesViewMod
         <p className="mx-auto mt-8 max-w-[520px] text-[17px] leading-[1.5] text-white/78">
           Are you sure you want to delete this testimony? Once deleted, the testimony will be removed from the system. This action cannot be undone.
         </p>
+        {error ? <p className="mt-3 text-[13px] text-[#ef4335]">{error}</p> : null}
         <div className="mt-10 flex justify-center gap-6">
           <Link href={closeHref(viewModel)} className="inline-flex min-w-[176px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] text-[#9B68D5]">
             Cancel
           </Link>
-          <Link href={closeHref(viewModel)} className="inline-flex min-w-[176px] items-center justify-center rounded-[10px] bg-[#ef4335] px-6 py-4 text-[16px] text-white">
-            Yes, delete
-          </Link>
+          <button
+            type="button"
+            onClick={deleteTestimony}
+            disabled={submitting}
+            className="inline-flex min-w-[176px] items-center justify-center rounded-[10px] bg-[#ef4335] px-6 py-4 text-[16px] text-white disabled:opacity-60"
+          >
+            {submitting ? "Deleting..." : "Yes, delete"}
+          </button>
         </div>
       </div>
     </div>
@@ -1041,6 +1069,70 @@ function VideoDetailsModal({ row, viewModel }: { row: VideoTestimonyRow; viewMod
 }
 
 function EditVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel: TestimoniesViewModel }) {
+  const router = useRouter();
+  const [title, setTitle] = useState(row.title);
+  const [categoryId, setCategoryId] = useState<string>(() => {
+    const matchedCategory = viewModel.categories.find((category) => category.name === row.category);
+    return matchedCategory ? String(matchedCategory.id) : "";
+  });
+  const [scheduledPublishAt, setScheduledPublishAt] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function saveChanges() {
+    setSubmitting(true);
+    setError(null);
+    const payload: Record<string, string> = {
+      title: title.trim(),
+    };
+    if (categoryId) {
+      payload.category_id = categoryId;
+    }
+    if (row.status === "Scheduled" && scheduledPublishAt.trim()) {
+      const parsed = new Date(scheduledPublishAt);
+      if (!Number.isNaN(parsed.getTime())) {
+        payload.scheduled_publish_at = parsed.toISOString();
+      }
+    }
+    const response = await fetch(`/api/admin/testimonies/${row.id}/edit`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const responsePayload = (await response.json().catch(() => ({}))) as {
+        message?: string;
+        title?: string[];
+        category_id?: string[];
+        scheduled_publish_at?: string[];
+      };
+      setError(
+        responsePayload.message ||
+          responsePayload.title?.[0] ||
+          responsePayload.category_id?.[0] ||
+          responsePayload.scheduled_publish_at?.[0] ||
+          "Unable to update video testimony.",
+      );
+      setSubmitting(false);
+      return;
+    }
+    router.push(
+      buildTestimoniesHref({
+        tab: "video",
+        videoStatus: viewModel.activeVideoStatus,
+        engagement: viewModel.activeVideoEngagement,
+        q: viewModel.searchQuery,
+        from: viewModel.filterDraft.from,
+        to: viewModel.filterDraft.to,
+        category: viewModel.filterDraft.category,
+        source: viewModel.filterDraft.source,
+        statusFilter: viewModel.filterDraft.status,
+        success: "edit",
+      }),
+    );
+    router.refresh();
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
       <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close edit video modal" />
@@ -1054,13 +1146,30 @@ function EditVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel:
         <div className="overflow-y-auto px-6 py-6">
           <div>
             <p className="mb-3 text-[16px] text-white/90">Title</p>
-            <div className="rounded-[10px] bg-[#2a2a2a] px-4 py-4 text-[15px] text-white">{row.title}</div>
+            <input
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              className="w-full rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 text-[15px] text-white outline-none ring-[#9B68D5]/50 focus:ring-2"
+            />
           </div>
           <div className="mt-6">
             <p className="mb-3 text-[16px] text-white/90">Category</p>
-            <div className="flex items-center justify-between rounded-[10px] bg-[#2a2a2a] px-4 py-4 text-[15px] text-white">
-              <span>{row.category}</span>
-              <span className="text-white/85">
+            <div className="relative">
+              <select
+                value={categoryId}
+                onChange={(event) => setCategoryId(event.target.value)}
+                className="w-full appearance-none rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 pr-10 text-[15px] text-white outline-none ring-[#9B68D5]/50 focus:ring-2"
+              >
+                <option value="" disabled>
+                  Select a category
+                </option>
+                {viewModel.categories.map((category) => (
+                  <option key={category.id} value={String(category.id)}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/85">
                 <ChevronDownIcon />
               </span>
             </div>
@@ -1069,42 +1178,34 @@ function EditVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel:
             <>
               <div className="mt-6">
                 <p className="mb-3 text-[16px] text-white/90">Scheduled date</p>
-                <div className="flex items-center justify-between rounded-[10px] bg-[#2a2a2a] px-4 py-4 text-[15px] text-white">
-                  <span>8/08/2024</span>
-                  <span className="text-white/92">
+                <div className="relative">
+                  <input
+                    type="datetime-local"
+                    value={scheduledPublishAt}
+                    onChange={(event) => setScheduledPublishAt(event.target.value)}
+                    className="w-full rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 pr-10 text-[15px] text-white outline-none ring-[#9B68D5]/50 focus:ring-2"
+                  />
+                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/92">
                     <CalendarIcon />
                   </span>
                 </div>
               </div>
-              <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
-                <div>
-                  <p className="mb-3 text-[16px] text-white/90">Scheduled Time</p>
-                  <div className="flex items-center justify-between rounded-[10px] bg-[#2a2a2a] px-4 py-4 text-[15px] text-white">
-                    <span>08:00 PM</span>
-                    <span className="text-white/92">
-                      <TimeIcon />
-                    </span>
-                  </div>
-                </div>
-                <div className="sm:pt-[31px]">
-                  <div className="flex items-center justify-between rounded-[10px] bg-[#2a2a2a] px-4 py-4 text-[15px] text-white">
-                    <span>PM</span>
-                    <span className="text-white/85">
-                      <ChevronDownIcon />
-                    </span>
-                  </div>
-                </div>
-              </div>
             </>
           ) : null}
+          {error ? <p className="mt-4 text-[13px] text-[#ef4335]">{error}</p> : null}
         </div>
         <div className="flex justify-end gap-4 px-6 pb-6 pt-2">
           <Link href={closeHref(viewModel)} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] text-[#9B68D5]">
-            {row.status === "Uploaded" ? "Cancel" : "Upload"}
+            Cancel
           </Link>
-          <Link href={buildTestimoniesHref({ tab: "video", videoStatus: row.status, engagement: viewModel.activeVideoEngagement, success: row.status === "Uploaded" ? null : "upload" })} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 py-4 text-[16px] text-white">
-            Save Changes
-          </Link>
+          <button
+            type="button"
+            onClick={saveChanges}
+            disabled={submitting}
+            className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 py-4 text-[16px] text-white disabled:opacity-60"
+          >
+            {submitting ? "Saving..." : "Save Changes"}
+          </button>
         </div>
       </div>
     </div>
@@ -1112,15 +1213,54 @@ function EditVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel:
 }
 
 function DeleteVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel: TestimoniesViewModel }) {
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function deleteVideo() {
+    setSubmitting(true);
+    setError(null);
+    const response = await fetch(`/api/admin/testimonies/${row.id}/delete`, { method: "DELETE" });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { message?: string };
+      setError(payload.message ?? "Unable to delete video testimony.");
+      setSubmitting(false);
+      return;
+    }
+    router.push(
+      buildTestimoniesHref({
+        tab: "video",
+        videoStatus: viewModel.activeVideoStatus,
+        engagement: viewModel.activeVideoEngagement,
+        q: viewModel.searchQuery,
+        from: viewModel.filterDraft.from,
+        to: viewModel.filterDraft.to,
+        category: viewModel.filterDraft.category,
+        source: viewModel.filterDraft.source,
+        statusFilter: viewModel.filterDraft.status,
+        success: "delete",
+      }),
+    );
+    router.refresh();
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
       <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close delete video modal" />
       <div className="relative z-10 w-full max-w-[420px] rounded-[24px] bg-[#1f1f1f] px-8 py-10 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <h2 className="text-[28px] font-semibold text-white">Delete Video?</h2>
         <p className="mt-5 text-[16px] leading-8 text-white/72">This video testimony will be removed from the list.</p>
+        {error ? <p className="mt-3 text-[13px] text-[#ef4335]">{error}</p> : null}
         <div className="mt-8 flex justify-center gap-4">
           <Link href={closeHref(viewModel)} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] text-[#9B68D5]">Cancel</Link>
-          <Link href={closeHref(viewModel)} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#ef4335] px-6 py-4 text-[16px] text-white">Delete</Link>
+          <button
+            type="button"
+            onClick={deleteVideo}
+            disabled={submitting}
+            className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#ef4335] px-6 py-4 text-[16px] text-white disabled:opacity-60"
+          >
+            {submitting ? "Deleting..." : "Delete"}
+          </button>
         </div>
       </div>
     </div>
@@ -1142,7 +1282,7 @@ export function TestimoniesOverlays({ viewModel }: { viewModel: TestimoniesViewM
       {viewModel.showArchiveModal && viewModel.selectedRow?.kind === "text" ? <ArchiveModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
       {viewModel.showEditModal && viewModel.selectedRow?.kind === "video" ? <EditVideoModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
       {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "video" ? <DeleteVideoModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "text" ? <DeleteTextTestimonyModal viewModel={viewModel} /> : null}
+      {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "text" ? <DeleteTextTestimonyModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
       {viewModel.showFilterModal ? <FilterModal viewModel={viewModel} /> : null}
       {viewModel.showSettingsModal ? <TestimonySettingsModal viewModel={viewModel} /> : null}
     </>

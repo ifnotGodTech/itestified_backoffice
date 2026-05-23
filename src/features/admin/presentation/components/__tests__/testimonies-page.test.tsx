@@ -74,7 +74,7 @@ describe("TestimoniesPage", () => {
 
     expect(screen.getByRole("heading", { name: "Edit Video testimony" })).toBeInTheDocument();
     expect(screen.getByText("Scheduled date")).toBeInTheDocument();
-    expect(screen.getAllByText("Upload").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "Save Changes" })).toBeInTheDocument();
   });
 
   test("renders the reject testimony modal", () => {
@@ -102,6 +102,18 @@ describe("TestimoniesPage", () => {
     render(<TestimoniesPage viewModel={getTestimoniesViewModel({ tab: "video", success: "upload" })} />);
 
     expect(screen.getAllByText("Video Uploaded Successfully!").length).toBeGreaterThan(0);
+  });
+
+  test("renders the edit success state", () => {
+    render(<TestimoniesPage viewModel={getTestimoniesViewModel({ tab: "video", success: "edit" })} />);
+
+    expect(screen.getAllByText("Video Updated Successfully!").length).toBeGreaterThan(0);
+  });
+
+  test("renders the delete success state", () => {
+    render(<TestimoniesPage viewModel={getTestimoniesViewModel({ success: "delete" })} />);
+
+    expect(screen.getAllByText("Testimony Deleted Successfully!").length).toBeGreaterThan(0);
   });
 
   test("renders the video upload screen with single and multiple mode controls", async () => {

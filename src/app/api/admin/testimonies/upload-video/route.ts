@@ -41,8 +41,17 @@ export async function POST(req: Request) {
     cache: "no-store",
   });
 
-  const data = (await backendResponse.json().catch(() => ({}))) as unknown;
-  const response = NextResponse.json(data, { status: backendResponse.status });
+  const backendContentType = (backendResponse.headers.get("content-type") || "").toLowerCase();
+  let payload: unknown = {};
+  if (backendContentType.includes("application/json")) {
+    payload = (await backendResponse.json().catch(() => ({}))) as unknown;
+  } else {
+    const text = (await backendResponse.text().catch(() => "")).trim();
+    payload = {
+      message: text || `Backend upload request failed (${backendResponse.status}).`,
+    };
+  }
+  const response = NextResponse.json(payload, { status: backendResponse.status });
   for (const header of extractSetCookieHeaders(backendResponse)) {
     response.headers.append("set-cookie", header);
   }

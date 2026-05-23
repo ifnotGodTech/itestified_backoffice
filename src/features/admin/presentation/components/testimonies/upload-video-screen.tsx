@@ -23,6 +23,8 @@ type VideoDraft = {
 };
 
 const MAX_VIDEOS_PER_BATCH = 10;
+const MAX_VIDEO_FILE_SIZE_BYTES = 200 * 1024 * 1024;
+const ALLOWED_VIDEO_CONTENT_TYPES = new Set(["video/mp4"]);
 
 function extractApiErrorMessage(data: Record<string, unknown>): string {
   if (typeof data.message === "string" && data.message.trim()) return data.message;
@@ -34,6 +36,20 @@ function extractApiErrorMessage(data: Record<string, unknown>): string {
     }
   }
   return "Upload failed. Please review your details and try again.";
+}
+
+function validateVideoFile(file: File | null): string | null {
+  if (!file) return "Video file is required.";
+  if (!ALLOWED_VIDEO_CONTENT_TYPES.has((file.type || "").toLowerCase())) {
+    return "Only MP4 video uploads are allowed.";
+  }
+  if (file.size <= 0) {
+    return "Video file is empty.";
+  }
+  if (file.size > MAX_VIDEO_FILE_SIZE_BYTES) {
+    return "Video file exceeds the 200MB limit.";
+  }
+  return null;
 }
 
 const pageCardClass =
@@ -122,6 +138,14 @@ export function UploadVideoScreen({ categories }: Props) {
       setMessageTone("error");
       setMessage("Each video requires title, category, and video file.");
       return;
+    }
+    for (const draft of workingDrafts) {
+      const validationError = validateVideoFile(draft.videoFile);
+      if (validationError) {
+        setMessageTone("error");
+        setMessage(validationError);
+        return;
+      }
     }
     if (uploadStatus === "schedule_for_later" && (!scheduledDate || !scheduledTime)) {
       setMessageTone("error");

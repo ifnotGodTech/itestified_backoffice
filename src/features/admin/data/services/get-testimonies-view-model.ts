@@ -310,6 +310,10 @@ export function getTestimoniesViewModel(input: {
       ? "Testimony Approved Successfully!"
       : input.success === "upload"
         ? "Video Uploaded Successfully!"
+        : input.success === "edit"
+          ? "Video Updated Successfully!"
+          : input.success === "delete"
+            ? "Testimony Deleted Successfully!"
         : undefined;
   const origin = input.origin === "notification" ? "notification" : "list";
   const detailReturnHref = origin === "notification" ? "/notifications-history" : undefined;
