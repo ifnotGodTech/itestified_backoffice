@@ -77,6 +77,13 @@ describe("TestimoniesPage", () => {
     expect(screen.getByRole("button", { name: "Save Changes" })).toBeInTheDocument();
   });
 
+  test("renders the edit draft video state with upload action", () => {
+    render(<TestimoniesPage viewModel={getTestimoniesViewModel({ tab: "video", edit: "3" })} />);
+
+    expect(screen.getByRole("heading", { name: "Edit Video testimony" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Upload" })).toBeInTheDocument();
+  });
+
   test("renders the reject testimony modal", () => {
     render(<TestimoniesPage viewModel={getTestimoniesViewModel({ reject: "1" })} />);
 

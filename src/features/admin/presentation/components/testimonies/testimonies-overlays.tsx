@@ -1078,6 +1078,7 @@ function EditVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel:
   const [scheduledPublishAt, setScheduledPublishAt] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isDraft = row.status === "Drafts";
 
   async function saveChanges() {
     setSubmitting(true);
@@ -1128,6 +1129,64 @@ function EditVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel:
         source: viewModel.filterDraft.source,
         statusFilter: viewModel.filterDraft.status,
         success: "edit",
+      }),
+    );
+    router.refresh();
+  }
+
+  async function uploadNow() {
+    setSubmitting(true);
+    setError(null);
+    const savePayload: Record<string, string> = {
+      title: title.trim(),
+    };
+    if (categoryId) {
+      savePayload.category_id = categoryId;
+    }
+    const saveResponse = await fetch(`/api/admin/testimonies/${row.id}/edit`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(savePayload),
+    });
+    if (!saveResponse.ok) {
+      const responsePayload = (await saveResponse.json().catch(() => ({}))) as {
+        message?: string;
+        title?: string[];
+        category_id?: string[];
+      };
+      setError(
+        responsePayload.message ||
+          responsePayload.title?.[0] ||
+          responsePayload.category_id?.[0] ||
+          "Unable to update video testimony before upload.",
+      );
+      setSubmitting(false);
+      return;
+    }
+
+    const response = await fetch(`/api/admin/testimonies/${row.id}/upload-now`, {
+      method: "POST",
+    });
+    if (!response.ok) {
+      const responsePayload = (await response.json().catch(() => ({}))) as {
+        message?: string;
+      };
+      setError(responsePayload.message || "Unable to upload draft video now.");
+      setSubmitting(false);
+      return;
+    }
+    router.push(
+      buildTestimoniesHref({
+        tab: "video",
+        videoStatus: viewModel.activeVideoStatus,
+        engagement: viewModel.activeVideoEngagement,
+        q: viewModel.searchQuery,
+        from: viewModel.filterDraft.from,
+        to: viewModel.filterDraft.to,
+        category: viewModel.filterDraft.category,
+        source: viewModel.filterDraft.source,
+        statusFilter: viewModel.filterDraft.status,
+        success: "upload",
       }),
     );
     router.refresh();
@@ -1198,14 +1257,25 @@ function EditVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel:
           <Link href={closeHref(viewModel)} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] text-[#9B68D5]">
             Cancel
           </Link>
-          <button
-            type="button"
-            onClick={saveChanges}
-            disabled={submitting}
-            className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 py-4 text-[16px] text-white disabled:opacity-60"
-          >
-            {submitting ? "Saving..." : "Save Changes"}
-          </button>
+          {isDraft ? (
+            <button
+              type="button"
+              onClick={uploadNow}
+              disabled={submitting}
+              className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 py-4 text-[16px] text-white disabled:opacity-60"
+            >
+              {submitting ? "Uploading..." : "Upload"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={saveChanges}
+              disabled={submitting}
+              className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 py-4 text-[16px] text-white disabled:opacity-60"
+            >
+              {submitting ? "Saving..." : "Save Changes"}
+            </button>
+          )}
         </div>
       </div>
     </div>
