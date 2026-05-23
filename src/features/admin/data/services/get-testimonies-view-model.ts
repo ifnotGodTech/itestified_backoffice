@@ -7,6 +7,7 @@ import type {
   TestimonyState,
   TestimonyTab,
   TextTestimonyRow,
+  VideoEngagementMetric,
   VideoTestimonyScreen,
   VideoTestimonyRow,
   VideoTestimonyStatus,
@@ -112,6 +113,7 @@ const videoRows: VideoTestimonyRow[] = [
     title: "God Healed Me",
     category: "Healing",
     source: "You-tube",
+    videoUrl: "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4",
     dateUploaded: "08/08/2024",
     uploadedBy: "Super Admin",
     views: 20,
@@ -127,6 +129,7 @@ const videoRows: VideoTestimonyRow[] = [
     title: "God Healed Me",
     category: "Deliverance",
     source: "You-tube",
+    videoUrl: "",
     dateUploaded: "08/08/2024",
     uploadedBy: "N/A",
     views: null,
@@ -142,6 +145,7 @@ const videoRows: VideoTestimonyRow[] = [
     title: "God Healed Me",
     category: "Healing",
     source: "You-tube",
+    videoUrl: "",
     dateUploaded: "08/08/2024",
     uploadedBy: "N/A",
     views: null,
@@ -186,6 +190,33 @@ function normalizeVideoScreen(screen?: string): VideoTestimonyScreen {
   return "list";
 }
 
+function normalizeVideoEngagement(engagement?: string): VideoEngagementMetric {
+  if (engagement === "views" || engagement === "likes" || engagement === "comments" || engagement === "shares") {
+    return engagement;
+  }
+  return "total";
+}
+
+function engagementValue(row: VideoTestimonyRow, engagement: VideoEngagementMetric): number {
+  const views = row.views ?? 0;
+  const likes = row.likes ?? 0;
+  const comments = row.comments ?? 0;
+  const shares = row.shares ?? 0;
+  if (engagement === "views") return views;
+  if (engagement === "likes") return likes;
+  if (engagement === "comments") return comments;
+  if (engagement === "shares") return shares;
+  return views + likes + comments + shares;
+}
+
+function sortVideoRowsByEngagement(rows: VideoTestimonyRow[], engagement: VideoEngagementMetric): VideoTestimonyRow[] {
+  return [...rows].sort((a, b) => {
+    const delta = engagementValue(b, engagement) - engagementValue(a, engagement);
+    if (delta !== 0) return delta;
+    return b.id - a.id;
+  });
+}
+
 function rowsForTab(tab: TestimonyTab) {
   return tab === "video" ? videoRows : textRows;
 }
@@ -210,6 +241,7 @@ function categoryMatches(rowCategory: string, selectedCategory: string): boolean
 export function getTestimoniesViewModel(input: {
   tab?: string;
   videoStatus?: string;
+  engagement?: string;
   screen?: string;
   state?: string;
   q?: string;
@@ -235,6 +267,7 @@ export function getTestimoniesViewModel(input: {
 }): TestimoniesViewModel {
   const activeTab = normalizeTab(input.tab);
   const activeVideoStatus = normalizeVideoStatus(input.videoStatus);
+  const activeVideoEngagement = normalizeVideoEngagement(input.engagement);
   const activeVideoScreen = normalizeVideoScreen(input.screen);
   const phaseState = normalizeState(input.state);
   const searchQuery = input.q?.trim() ?? "";
@@ -264,7 +297,12 @@ export function getTestimoniesViewModel(input: {
           const matchesTo = dateTo ? row.dateSubmitted === dateTo : true;
           return matchesStatus && matchesCategory && matchesFrom && matchesTo;
         });
-  const rows = phaseState === "populated" ? filteredRows : [];
+  const rows =
+    phaseState === "populated"
+      ? activeTab === "video"
+        ? sortVideoRowsByEngagement(filteredRows as VideoTestimonyRow[], activeVideoEngagement)
+        : filteredRows
+      : [];
   const selectedId = Number(input.menu ?? input.view ?? input.reject ?? input.schedule ?? input.archive ?? input.edit ?? input.remove ?? "");
   const selectedRow = Number.isFinite(selectedId) ? baseRows.find((row) => row.id === selectedId) ?? null : null;
   const successMessage =
@@ -289,6 +327,7 @@ export function getTestimoniesViewModel(input: {
     }),
     activeTab,
     activeVideoStatus,
+    activeVideoEngagement,
     activeVideoScreen,
     phaseState,
     searchQuery,
@@ -329,7 +368,7 @@ type BackendTestimony = {
   id: number;
   title: string;
   testimony_type: "written" | "video";
-  status: "pending_review" | "approved" | "rejected" | "scheduled" | "archived";
+  status: "draft" | "pending_review" | "approved" | "rejected" | "scheduled" | "archived";
   author_name: string;
   author_email: string;
   category: string;
@@ -351,6 +390,7 @@ type BackendTestimony = {
     actor_name?: string | null;
   }>;
   body?: string;
+  video_url?: string;
   thumbnail_url?: string;
 };
 
@@ -381,6 +421,7 @@ function mapBackendStatusToText(status: BackendTestimony["status"]): WrittenTest
 
 function mapBackendStatusToVideo(status: BackendTestimony["status"]): Exclude<VideoTestimonyStatus, "All"> {
   if (status === "approved") return "Uploaded";
+  if (status === "draft") return "Drafts";
   if (status === "rejected") return "Drafts";
   if (status === "scheduled") return "Scheduled";
   if (status === "archived") return "Archived";
@@ -408,7 +449,7 @@ export async function getTestimoniesViewModelFromBackend(
       : input.videoStatus === "Uploaded"
         ? "approved"
       : input.videoStatus === "Drafts"
-          ? "rejected"
+          ? "draft"
         : input.videoStatus === "Scheduled"
             ? "scheduled"
           : input.videoStatus === "Archived"
@@ -461,6 +502,7 @@ export async function getTestimoniesViewModelFromBackend(
             title: item.title,
             category: item.category,
             source: "Mobile upload",
+            videoUrl: item.video_url || "",
             dateUploaded: new Date(item.created_at).toLocaleDateString("en-GB"),
             uploadedBy: item.author_name,
             views: item.view_count,
@@ -489,8 +531,17 @@ export async function getTestimoniesViewModelFromBackend(
         } satisfies TextTestimonyRow;
       });
 
+    const activeVideoEngagement = normalizeVideoEngagement(input.engagement);
+    const finalRows: TestimonyRow[] =
+      activeTab === "video"
+        ? sortVideoRowsByEngagement(
+            typedRows.filter((row): row is VideoTestimonyRow => row.kind === "video"),
+            activeVideoEngagement,
+          )
+        : typedRows;
+
     const selectedId = Number(input.menu ?? input.view ?? input.reject ?? input.schedule ?? input.archive ?? input.edit ?? input.remove ?? "");
-    let selectedRow = Number.isFinite(selectedId) ? typedRows.find((row) => row.id === selectedId) ?? null : null;
+    let selectedRow = Number.isFinite(selectedId) ? finalRows.find((row) => row.id === selectedId) ?? null : null;
     if (selectedRow && input.view) {
       const detailResponse = await fetch(`${backendBaseUrl}/testimonies/admin/testimonies/${selectedRow.id}/`, {
         headers: input.cookieHeader ? { cookie: input.cookieHeader } : {},
@@ -506,17 +557,21 @@ export async function getTestimoniesViewModelFromBackend(
                 body: detailPayload.body || selectedRow.body,
                 moderationHistory,
               }
-            : { ...selectedRow, moderationHistory };
+            : {
+                ...selectedRow,
+                videoUrl: detailPayload.video_url || selectedRow.videoUrl || "",
+                moderationHistory,
+              };
       }
     }
     return {
       ...base,
       phaseState: "populated",
       categories,
-      rows: typedRows,
+      rows: finalRows,
       selectedRow,
-      totalRows: typedRows.length,
-      showingLabel: typedRows.length === 0 ? "Showing 0 of 0" : `Showing 1-${typedRows.length} of ${typedRows.length}`,
+      totalRows: finalRows.length,
+      showingLabel: finalRows.length === 0 ? "Showing 0 of 0" : `Showing 1-${finalRows.length} of ${finalRows.length}`,
     };
   } catch {
     return {

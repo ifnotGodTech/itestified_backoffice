@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { getTestimoniesViewModel } from "@/features/admin/data/services/get-testimonies-view-model";
 import { TestimoniesPage } from "@/features/admin/presentation/components/testimonies-page";
@@ -103,12 +104,18 @@ describe("TestimoniesPage", () => {
     expect(screen.getAllByText("Video Uploaded Successfully!").length).toBeGreaterThan(0);
   });
 
-  test("renders the video upload screen", () => {
+  test("renders the video upload screen with single and multiple mode controls", async () => {
+    const user = userEvent.setup();
     render(<TestimoniesPage viewModel={getTestimoniesViewModel({ tab: "video", screen: "upload" })} />);
 
     expect(screen.getByRole("heading", { name: "Upload Video Testimonies" })).toBeInTheDocument();
     expect(screen.getByText("Single Video Upload")).toBeInTheDocument();
     expect(screen.getByText("Upload Status")).toBeInTheDocument();
+    await user.selectOptions(screen.getAllByRole("combobox")[0], "multiple");
+    expect(screen.getByText("Multiple Video Upload")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add new video" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Add new video" }));
+    expect(screen.getByRole("button", { name: "Remove video 1" })).toBeInTheDocument();
   });
 
   test("renders the testimony settings modal", () => {

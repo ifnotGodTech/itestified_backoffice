@@ -69,7 +69,7 @@ function HomeManagementTextModal({ row, viewModel }: { row: HomeManagementRow; v
         <div className="overflow-y-auto px-6 pb-8">
           <div className="relative -mt-14 flex justify-center">
             <div className="relative h-[98px] w-[98px] overflow-hidden rounded-full border-[6px] border-[#1e1e1e] bg-white p-3">
-              {row.thumbnailSrc ? <Image src={row.thumbnailSrc} alt={row.submitterName ?? row.uploadedBy} fill className="object-contain p-3" /> : null}
+              {row.thumbnailSrc ? <Image src={row.thumbnailSrc} alt={row.submitterName ?? row.uploadedBy} fill sizes="72px" className="object-contain p-3" /> : null}
             </div>
           </div>
           <div className="mx-auto mt-7 w-full max-w-[516px] rounded-[18px] border border-white/10 bg-[#1b1b1b] px-3 py-[18px] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">

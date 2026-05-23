@@ -4,113 +4,19 @@ import { AdminDashboardShell } from "@/features/admin/presentation/components/ad
 import { NewTestimonyToast } from "@/features/admin/presentation/components/testimonies/new-testimony-toast";
 import { TestimoniesOverlays } from "@/features/admin/presentation/components/testimonies/testimonies-overlays";
 import { TestimoniesTable } from "@/features/admin/presentation/components/testimonies/testimonies-table";
+import { UploadVideoScreen } from "@/features/admin/presentation/components/testimonies/upload-video-screen";
 import { buildTestimoniesHref } from "@/features/admin/presentation/state/testimonies-route-state";
 
 const pageCardClass =
   "rounded-[20px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]";
-const fieldClass =
-  "rounded-[10px] bg-[var(--color-surface-panel)] px-4 py-4 text-[15px] text-[var(--color-text-secondary)]";
 const subtleButtonClass =
   "inline-flex min-h-[52px] items-center justify-center rounded-[12px] border border-[var(--color-primary)] px-5 text-[14px] text-[var(--color-primary)]";
-const filledButtonClass =
-  "inline-flex min-h-[52px] items-center justify-center rounded-[12px] bg-[var(--color-primary)] px-5 text-[14px] font-medium text-[var(--color-text-primary)]";
-const sectionLabelClass = "mb-3 text-[16px] font-medium text-[var(--color-text-primary)]";
-const pageTitleClass = "text-[28px] font-semibold leading-[1.2] text-[var(--color-text-primary)] md:text-[32px]";
 
 function ChevronLeftIcon() {
   return (
     <svg viewBox="0 0 16 16" className="h-5 w-5" fill="none" aria-hidden="true">
       <path d="M10.5 3 5.5 8l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
-  );
-}
-
-function UploadCloudIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" aria-hidden="true">
-      <rect x="3.5" y="4.5" width="17" height="15" rx="3" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M12 15.5V8.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M8.75 11.75 12 8.5l3.25 3.25" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function UploadVideoScreen() {
-  return (
-    <div className="max-w-[1248px] pt-6 md:pt-8">
-      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h2 className={pageTitleClass}>Upload Video Testimonies</h2>
-        </div>
-        <button type="button" className="inline-flex h-[44px] w-fit min-w-[96px] items-center justify-center rounded-[10px] bg-white/55 px-6 text-[14px] text-[var(--color-text-primary)] md:self-start">
-          Upload
-        </button>
-      </div>
-
-      <div className="mt-10 md:mt-12">
-        <p className={sectionLabelClass}>Upload Mode</p>
-        <div className="inline-flex h-[40px] min-w-[170px] items-center justify-between rounded-[10px] bg-[var(--color-surface-panel)] px-4 text-[14px] text-[var(--color-text-primary)]">
-          <span>Single Video Upload</span>
-          <span className="text-[var(--color-text-secondary)]">▾</span>
-        </div>
-      </div>
-
-      <div className={`${pageCardClass} mt-8 px-6 py-7 md:mt-10 md:px-7 md:py-8`}>
-        <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_496px] xl:gap-10">
-          <div>
-            <h3 className="text-[20px] font-semibold text-[var(--color-text-primary)]">Video 1</h3>
-            <div className="mt-7 space-y-6">
-              <div>
-                <p className={sectionLabelClass}>Title</p>
-                <div className={fieldClass}>Enter Video Title</div>
-              </div>
-              <div>
-                <p className={sectionLabelClass}>Source</p>
-                <div className={fieldClass}>Enter Video Source</div>
-              </div>
-              <div>
-                <p className={sectionLabelClass}>Category</p>
-                <div className="flex items-center justify-between rounded-[10px] bg-[var(--color-surface-panel)] px-4 py-4 text-[15px] text-[var(--color-text-secondary)]">
-                  <span>Select Category</span>
-                  <span className="text-[var(--color-text-secondary)]">▾</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="flex h-[250px] items-center justify-center rounded-[18px] border border-dashed border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] text-center">
-              <div className="flex max-w-[260px] flex-col items-center">
-                <div className="flex h-[50px] w-[50px] items-center justify-center rounded-[14px] bg-[var(--color-surface-muted)] text-[var(--color-primary)]">
-                  <UploadCloudIcon />
-                </div>
-                <p className="mt-5 text-[18px] leading-[1.45] text-[var(--color-text-secondary)]">
-                  Drag & drop or <span className="text-[var(--color-primary)]">choose file</span> here to upload
-                </p>
-                <p className="mt-2 text-[15px] text-[var(--color-text-muted)]">MP4, Max size(200mb)</p>
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <p className={sectionLabelClass}>Thumbnail</p>
-              <div className="mt-3 flex flex-wrap gap-x-6 gap-y-4 text-[15px] text-[var(--color-text-secondary)]">
-                <label className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full border border-[var(--color-primary)]" />Custom Upload</label>
-                <label className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full border border-[var(--color-primary)]" />Auto Generate</label>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className={`${pageCardClass} mt-8 px-6 py-6 md:px-7 md:py-7`}>
-        <p className={sectionLabelClass}>Upload Status</p>
-        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-4 text-[15px] text-[var(--color-text-secondary)]">
-          <label className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full border border-[var(--color-primary)]" />Upload Now</label>
-          <label className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full border border-[var(--color-primary)]" />Schedule for later</label>
-          <label className="inline-flex items-center gap-2"><span className="h-4 w-4 rounded-full border border-[var(--color-primary)]" />Drafts</label>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -175,7 +81,7 @@ export function TestimoniesPage({ viewModel }: { viewModel: TestimoniesViewModel
   return (
     <AdminDashboardShell viewModel={viewModel.shell} pageTitle={showsDedicatedVideoHeading ? undefined : "Testimonies"}>
       <NewTestimonyToast />
-      {viewModel.activeTab === "video" && viewModel.activeVideoScreen === "upload" ? <UploadVideoScreen /> : null}
+      {viewModel.activeTab === "video" && viewModel.activeVideoScreen === "upload" ? <UploadVideoScreen categories={viewModel.categories} /> : null}
       {viewModel.activeTab === "video" && viewModel.activeVideoScreen === "activity" ? <ActivityLogScreen /> : null}
       {!(viewModel.activeTab === "video" && viewModel.activeVideoScreen !== "list") ? <TestimoniesTable viewModel={viewModel} /> : null}
       <TestimoniesOverlays viewModel={viewModel} />

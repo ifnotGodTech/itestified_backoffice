@@ -119,18 +119,18 @@ function VideoActionMenu({ row, viewModel }: { row: VideoTestimonyRow; viewModel
 
   return (
     <div className={`absolute right-0 z-50 min-w-[126px] overflow-hidden rounded-[12px] border border-[#5b5b5b] bg-[#242424] text-left shadow-[0_14px_24px_rgba(0,0,0,0.35)] ${openUp ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"}`}>
-      <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, q: viewModel.searchQuery, view: row.id })} className="block border-b border-white/10 px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]">
+      <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, q: viewModel.searchQuery, view: row.id })} className="block border-b border-white/10 px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]">
         View
       </Link>
-      <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, q: viewModel.searchQuery, edit: row.id })} className="block border-b border-white/10 px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]">
+      <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, q: viewModel.searchQuery, edit: row.id })} className="block border-b border-white/10 px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]">
         Edit
       </Link>
       {showUpload ? (
-        <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, q: viewModel.searchQuery, success: "upload" })} className="block border-b border-white/10 px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]">
+        <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, q: viewModel.searchQuery, success: "upload" })} className="block border-b border-white/10 px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]">
           Upload
         </Link>
       ) : null}
-      <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, q: viewModel.searchQuery, remove: row.id })} className="block px-4 py-2 text-[14px] text-[#ef4335] hover:bg-white/[0.04]">
+      <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, q: viewModel.searchQuery, remove: row.id })} className="block px-4 py-2 text-[14px] text-[#ef4335] hover:bg-white/[0.04]">
         Delete
       </Link>
     </div>
@@ -153,6 +153,7 @@ function TopTabs({ viewModel }: { viewModel: TestimoniesViewModel }) {
         const href = buildTestimoniesHref({
           tab: tab.key,
           videoStatus: tab.key === "video" ? viewModel.activeVideoStatus : null,
+          engagement: tab.key === "video" ? viewModel.activeVideoEngagement : null,
           state: viewModel.phaseState === "populated" ? null : viewModel.phaseState,
           q: viewModel.searchQuery,
           statusFilter: viewModel.filterDraft.status,
@@ -188,6 +189,7 @@ function SearchAndActions({ viewModel }: { viewModel: TestimoniesViewModel }) {
         href={buildTestimoniesHref({
           tab: viewModel.activeTab,
           videoStatus: viewModel.activeTab === "video" ? viewModel.activeVideoStatus : null,
+          engagement: viewModel.activeTab === "video" ? viewModel.activeVideoEngagement : null,
           q: viewModel.searchQuery,
           from: viewModel.filterDraft.from,
           to: viewModel.filterDraft.to,
@@ -250,7 +252,7 @@ function VideoStatusTabs({ viewModel }: { viewModel: TestimoniesViewModel }) {
       {viewModel.videoStatusTabs.map((tab) => (
         <Link
           key={tab.key}
-          href={buildTestimoniesHref({ tab: "video", videoStatus: tab.key, q: viewModel.searchQuery })}
+          href={buildTestimoniesHref({ tab: "video", videoStatus: tab.key, engagement: viewModel.activeVideoEngagement, q: viewModel.searchQuery })}
           className={`border-b pb-1 ${tab.key === viewModel.activeVideoStatus ? "border-[var(--color-primary)] text-[var(--color-text-primary)]" : "border-transparent text-[var(--color-text-muted)]"}`}
         >
           {tab.label}
@@ -260,67 +262,185 @@ function VideoStatusTabs({ viewModel }: { viewModel: TestimoniesViewModel }) {
   );
 }
 
+function EngagementSelector({ viewModel }: { viewModel: TestimoniesViewModel }) {
+  const options = [
+    { key: "total", label: "Total" },
+    { key: "views", label: "Views" },
+    { key: "likes", label: "Likes" },
+    { key: "comments", label: "Comments" },
+    { key: "shares", label: "Shares" },
+  ] as const;
+
+  const activeLabel = options.find((option) => option.key === viewModel.activeVideoEngagement)?.label ?? "Total";
+
+  return (
+    <details className="relative">
+      <summary className="inline-flex h-[36px] min-w-[158px] cursor-pointer list-none items-center justify-between rounded-[8px] border border-[var(--color-primary)] bg-[var(--color-surface-panel)] px-3 text-[12px] text-white">
+        <span>Engagement: {activeLabel}</span>
+        <span className="ml-2 text-white/70">▾</span>
+      </summary>
+      <div className="absolute right-0 z-30 mt-2 min-w-[176px] overflow-hidden rounded-[10px] border border-white/10 bg-[#232323] shadow-[0_12px_24px_rgba(0,0,0,0.35)]">
+        {options.map((option) => (
+          <Link
+            key={option.key}
+            href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: option.key, q: viewModel.searchQuery })}
+            className={`block px-3 py-2 text-[12px] hover:bg-white/[0.05] ${viewModel.activeVideoEngagement === option.key ? "text-[var(--color-primary)]" : "text-white/85"}`}
+          >
+            {option.label}
+          </Link>
+        ))}
+      </div>
+    </details>
+  );
+}
+
 function VideoTable({ viewModel }: { viewModel: TestimoniesViewModel }) {
   const isAll = viewModel.activeVideoStatus === "All";
   const isUploaded = viewModel.activeVideoStatus === "Uploaded";
   const isScheduled = viewModel.activeVideoStatus === "Scheduled";
   const isDrafts = viewModel.activeVideoStatus === "Drafts";
 
-  const gridClass = isAll
-    ? "grid min-w-[1220px] grid-cols-[76px_113px_108px_113px_88px_104px_113px_72px_72px_88px_72px_104px_60px] items-center"
-    : isUploaded
-      ? "grid min-w-[1140px] grid-cols-[76px_108px_108px_108px_88px_104px_113px_72px_72px_88px_72px_60px] items-center"
-      : isScheduled
-        ? "grid min-w-[1180px] grid-cols-[76px_152px_178px_168px_136px_168px_136px_76px] items-center"
-        : "grid min-w-[980px] grid-cols-[76px_152px_230px_176px_170px_76px] items-center";
+  const gridClass = isAll || isUploaded
+    ? "grid grid-cols-[54px_70px_minmax(140px,1.6fr)_minmax(110px,1fr)_minmax(110px,0.95fr)_minmax(110px,1fr)_minmax(110px,1fr)_108px] items-center"
+    : isScheduled
+      ? "grid grid-cols-[54px_70px_minmax(150px,1.7fr)_minmax(110px,1fr)_minmax(110px,0.95fr)_minmax(110px,1fr)_minmax(100px,0.9fr)_108px] items-center"
+      : "grid grid-cols-[54px_70px_minmax(150px,1.9fr)_minmax(110px,1fr)_minmax(110px,1fr)_108px] items-center";
+
+  function EngagementCell({ row }: { row: VideoTestimonyRow }) {
+    const views = row.views ?? 0;
+    const likes = row.likes ?? 0;
+    const comments = row.comments ?? 0;
+    const shares = row.shares ?? 0;
+    const value =
+      viewModel.activeVideoEngagement === "views"
+        ? views
+        : viewModel.activeVideoEngagement === "likes"
+          ? likes
+          : viewModel.activeVideoEngagement === "comments"
+            ? comments
+            : viewModel.activeVideoEngagement === "shares"
+              ? shares
+              : views + likes + comments + shares;
+    return <span className="whitespace-nowrap">{value}</span>;
+  }
 
   return (
-    <div className="overflow-x-auto">
-      <div className={`${gridClass} bg-[var(--color-surface-muted)] px-4 py-[11px] text-[10px] font-medium text-[var(--color-text-secondary)]`}>
-        <HeaderLabel label="S/N" />
-        <HeaderLabel label="Thumbnail" />
-        <HeaderLabel label="Title" />
-        <HeaderLabel label="Category" />
-        <HeaderLabel label="Source" />
-        {isScheduled ? <HeaderLabel label="Scheduled Date" /> : null}
-        {!isScheduled && !isDrafts ? <HeaderLabel label="Date Uploaded" /> : null}
-        {isScheduled ? <HeaderLabel label="Time" /> : null}
-        {!isScheduled && !isDrafts ? <HeaderLabel label="Uploaded By" /> : null}
-        {isAll || isUploaded ? <HeaderLabel label="Views" /> : null}
-        {isAll || isUploaded ? <HeaderLabel label="Likes" /> : null}
-        {isAll || isUploaded ? <HeaderLabel label="Comments" /> : null}
-        {isAll || isUploaded ? <HeaderLabel label="Shares" /> : null}
-        {isAll ? <HeaderLabel label="Status" /> : null}
-        <span>Action</span>
+    <div>
+      <div className="relative pr-[52px]">
+        <div className={`${gridClass} bg-[var(--color-surface-muted)] px-4 py-[11px] text-[10px] font-medium text-[var(--color-text-secondary)]`}>
+          <HeaderLabel label="S/N" />
+          <HeaderLabel label="Thumbnail" />
+          <HeaderLabel label="Title" />
+          <HeaderLabel label="Category" />
+          <HeaderLabel label="Source" />
+          {isScheduled ? <HeaderLabel label="Scheduled Date" /> : null}
+          {!isScheduled && !isDrafts ? <HeaderLabel label="Date Uploaded" /> : null}
+          {isScheduled ? <HeaderLabel label="Time" /> : null}
+          {!isScheduled && !isDrafts ? <HeaderLabel label="Uploaded By" /> : null}
+          {isAll || isUploaded ? <HeaderLabel label="Engagement" /> : null}
+          {isAll || isUploaded || isScheduled || isDrafts ? <HeaderLabel label="Status" /> : null}
+        </div>
+        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-medium text-[var(--color-text-secondary)]">Action</span>
       </div>
       {viewModel.rows.map((row) => {
         const videoRow = row as VideoTestimonyRow;
-        const stat = (value: number | null) => (value == null ? "N/A" : value);
         return (
-          <div key={videoRow.id} className={`${gridClass} border-t border-white/10 px-4 py-[10px] text-[12px] text-[var(--color-text-secondary)]`}>
-            <span>{videoRow.id}</span>
-            <span className="pr-2">
-              <span className="relative block h-[24px] w-[40px] overflow-hidden rounded-[4px] bg-[var(--color-surface-muted)]">
-                <Image src={videoRow.thumbnailSrc} alt={videoRow.title} fill className="object-cover" />
+          <div key={videoRow.id} className="relative pr-[52px]">
+            <div className={`${gridClass} border-t border-white/10 px-4 py-[10px] text-[12px] text-[var(--color-text-secondary)]`}>
+              <span>{videoRow.id}</span>
+              <span className="pr-2">
+                <span className="relative block h-[24px] w-[40px] overflow-hidden rounded-[4px] bg-[var(--color-surface-muted)]">
+                  <Image src={videoRow.thumbnailSrc} alt={videoRow.title} fill sizes="56px" className="object-cover" />
+                </span>
               </span>
-            </span>
-            <span className="truncate pr-3">{videoRow.title}</span>
-            <span className="truncate pr-3">{videoRow.category}</span>
-            <span className="whitespace-nowrap">{videoRow.source}</span>
-            {isScheduled ? <span className="whitespace-nowrap">{videoRow.dateUploaded}</span> : null}
-            {!isScheduled && !isDrafts ? <span className="whitespace-nowrap">{videoRow.dateUploaded}</span> : null}
-            {isScheduled ? <span className="whitespace-nowrap">08:00 PM</span> : null}
-            {!isScheduled && !isDrafts ? <span className="truncate pr-2">{videoRow.uploadedBy}</span> : null}
-            {isAll || isUploaded ? <span className="whitespace-nowrap">{stat(videoRow.views)}</span> : null}
-            {isAll || isUploaded ? <span className="whitespace-nowrap">{stat(videoRow.likes)}</span> : null}
-            {isAll || isUploaded ? <span className="whitespace-nowrap">{stat(videoRow.comments)}</span> : null}
-            {isAll || isUploaded ? <span className="whitespace-nowrap">{stat(videoRow.shares)}</span> : null}
-            {isAll ? <span><StatusPill status={videoRow.status} /></span> : null}
-            <div className="relative flex justify-end text-[var(--color-text-secondary)]">
-              <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, q: viewModel.searchQuery, menu: videoRow.id })} aria-label={`Open actions for video testimony ${videoRow.id}`}>
+              <span className="truncate pr-3" title={videoRow.title}>{videoRow.title}</span>
+              <span className="truncate pr-3" title={videoRow.category}>{videoRow.category}</span>
+              <span className="truncate pr-3" title={videoRow.source}>{videoRow.source}</span>
+              {isScheduled ? <span className="whitespace-nowrap">{videoRow.dateUploaded}</span> : null}
+              {!isScheduled && !isDrafts ? <span className="whitespace-nowrap">{videoRow.dateUploaded}</span> : null}
+              {isScheduled ? <span className="whitespace-nowrap">08:00 PM</span> : null}
+              {!isScheduled && !isDrafts ? <span className="truncate pr-2" title={videoRow.uploadedBy}>{videoRow.uploadedBy}</span> : null}
+              {isAll || isUploaded ? <EngagementCell row={videoRow} /> : null}
+              {(isAll || isUploaded || isScheduled || isDrafts) ? <span><StatusPill status={videoRow.status} /></span> : null}
+            </div>
+            <div className="absolute right-4 top-1/2 z-10 -translate-y-1/2 text-[var(--color-text-secondary)]">
+              <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, q: viewModel.searchQuery, menu: videoRow.id })} aria-label={`Open actions for video testimony ${videoRow.id}`}>
                 <RowMenuIcon />
               </Link>
-              {viewModel.showActionMenu && viewModel.selectedRow?.id === videoRow.id && !isBottomActionRow(viewModel, videoRow) ? <VideoActionMenu row={videoRow} viewModel={viewModel} /> : null}
+            </div>
+            {viewModel.showActionMenu && viewModel.selectedRow?.id === videoRow.id && !isBottomActionRow(viewModel, videoRow) ? (
+              <div className="absolute right-4 top-[calc(100%+2px)] z-20">
+                <VideoActionMenu row={videoRow} viewModel={viewModel} />
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function VideoSliceTable({ viewModel }: { viewModel: TestimoniesViewModel }) {
+  const isAll = viewModel.activeVideoStatus === "All";
+  const isUploaded = viewModel.activeVideoStatus === "Uploaded";
+  const isScheduled = viewModel.activeVideoStatus === "Scheduled";
+  const isDrafts = viewModel.activeVideoStatus === "Drafts";
+
+  function EngagementCell({ row }: { row: VideoTestimonyRow }) {
+    const views = row.views ?? 0;
+    const likes = row.likes ?? 0;
+    const comments = row.comments ?? 0;
+    const shares = row.shares ?? 0;
+    const value =
+      viewModel.activeVideoEngagement === "views"
+        ? views
+        : viewModel.activeVideoEngagement === "likes"
+          ? likes
+          : viewModel.activeVideoEngagement === "comments"
+            ? comments
+            : viewModel.activeVideoEngagement === "shares"
+              ? shares
+              : views + likes + comments + shares;
+    return <span className="whitespace-nowrap text-[15px] font-semibold text-white/95">{value}</span>;
+  }
+
+  return (
+    <div className="space-y-3 px-3 pb-3">
+      <div className="grid grid-cols-[2fr_1fr_0.8fr_0.6fr_44px] items-center rounded-[10px] bg-[var(--color-surface-muted)] px-4 py-[10px] text-[10px] font-medium text-[var(--color-text-secondary)]">
+        <span>Video</span>
+        <span>Meta</span>
+        <span>Status</span>
+        <span>Engagement</span>
+        <span className="text-right">Action</span>
+      </div>
+      {viewModel.rows.map((row) => {
+        const videoRow = row as VideoTestimonyRow;
+        return (
+          <div key={videoRow.id} className="rounded-[12px] border border-white/10 bg-white/[0.02] px-4 py-3">
+            <div className="grid grid-cols-[2fr_1fr_0.8fr_0.6fr_44px] items-start gap-3">
+              <div className="min-w-0">
+                <div className="flex min-w-0 gap-3">
+                  <span className="relative mt-0.5 block h-[38px] w-[64px] shrink-0 overflow-hidden rounded-[6px] bg-[var(--color-surface-muted)]">
+                    <Image src={videoRow.thumbnailSrc} alt={videoRow.title} fill sizes="64px" className="object-cover" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-[14px] font-medium text-white/95" title={videoRow.title}>{videoRow.title}</p>
+                    <p className="mt-1 truncate text-[12px] text-white/65">{videoRow.category} • {videoRow.source}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="text-[12px] text-white/70">
+                <p>{isScheduled ? "Scheduled" : "Uploaded"}: {videoRow.dateUploaded}</p>
+                {!isScheduled && !isDrafts ? <p className="mt-1 truncate">{videoRow.uploadedBy}</p> : null}
+              </div>
+              <span><StatusPill status={videoRow.status} /></span>
+              <span>{isAll || isUploaded ? <EngagementCell row={videoRow} /> : <span className="text-white/50">—</span>}</span>
+              <div className="relative text-right text-[var(--color-text-secondary)]">
+                <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, q: viewModel.searchQuery, menu: videoRow.id })} aria-label={`Open actions for video testimony ${videoRow.id}`}>
+                  <RowMenuIcon />
+                </Link>
+                {viewModel.showActionMenu && viewModel.selectedRow?.id === videoRow.id && !isBottomActionRow(viewModel, videoRow) ? <VideoActionMenu row={videoRow} viewModel={viewModel} /> : null}
+              </div>
             </div>
           </div>
         );
@@ -346,10 +466,10 @@ export function TestimoniesTable({ viewModel }: { viewModel: TestimoniesViewMode
         <div className="flex flex-col gap-4 px-4 pt-5 md:flex-row md:items-center md:justify-between md:px-5 md:pt-5">
           <TopTabs viewModel={viewModel} />
           <div className="flex flex-wrap items-center gap-3">
-            <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, settings: true })} className="inline-flex min-h-[52px] items-center justify-center rounded-[12px] border border-[var(--color-primary)] px-5 text-[14px] leading-[1.25] text-[var(--color-primary)]">
+            <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, settings: true })} className="inline-flex min-h-[52px] items-center justify-center rounded-[12px] border border-[var(--color-primary)] px-5 text-[14px] leading-[1.25] text-[var(--color-primary)]">
               Manage Settings
             </Link>
-            <Link href={buildTestimoniesHref({ tab: "video", screen: "activity" })} className="inline-flex min-h-[44px] items-center justify-center rounded-[10px] bg-[var(--color-primary)] px-5 text-[14px] font-medium text-[var(--color-text-primary)]">
+            <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, screen: "activity" })} className="inline-flex min-h-[44px] items-center justify-center rounded-[10px] bg-[var(--color-primary)] px-5 text-[14px] font-medium text-[var(--color-text-primary)]">
               View Activity Log
             </Link>
           </div>
@@ -360,7 +480,10 @@ export function TestimoniesTable({ viewModel }: { viewModel: TestimoniesViewMode
           {isVideo ? (
             <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
               <VideoStatusTabs viewModel={viewModel} />
-              <SearchAndActions viewModel={viewModel} />
+              <div className="flex flex-wrap items-center gap-3">
+                <EngagementSelector viewModel={viewModel} />
+                <SearchAndActions viewModel={viewModel} />
+              </div>
             </div>
           ) : (
             <div className="flex items-center justify-between gap-3">
@@ -375,7 +498,7 @@ export function TestimoniesTable({ viewModel }: { viewModel: TestimoniesViewMode
           {viewModel.phaseState === "empty" ? <TestimoniesEmpty /> : null}
           {viewModel.phaseState === "error" ? <TestimoniesError message={viewModel.errorMessage} /> : null}
           {viewModel.phaseState === "populated" && !isVideo ? <TextTable viewModel={viewModel} /> : null}
-          {viewModel.phaseState === "populated" && isVideo ? <VideoTable viewModel={viewModel} /> : null}
+          {viewModel.phaseState === "populated" && isVideo ? <VideoSliceTable viewModel={viewModel} /> : null}
         </div>
 
         <div className="flex items-center justify-between px-4 py-10 text-[12px] text-[var(--color-text-muted)] md:px-5">
@@ -404,6 +527,7 @@ export function TestimoniesTable({ viewModel }: { viewModel: TestimoniesViewMode
           href={buildTestimoniesHref({
             tab: viewModel.activeTab,
             videoStatus: isVideo ? viewModel.activeVideoStatus : null,
+            engagement: isVideo ? viewModel.activeVideoEngagement : null,
             q: viewModel.searchQuery,
             statusFilter: viewModel.filterDraft.status,
           })}

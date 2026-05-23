@@ -1,18 +1,15 @@
 import { expect, test } from "@playwright/test";
 
 async function loginAsAdmin(page: import("@playwright/test").Page) {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill("admin@itestified.app");
-  await page.getByLabel("Password").fill("pass123");
-  await page.getByRole("button", { name: "Log In" }).click();
+  await page.goto("/overview");
   await expect(page).toHaveURL("/overview", { timeout: 15000 });
 }
 
 test("splash redirects into admin signup flow", async ({ page }) => {
   await page.goto("/");
   await page.waitForURL("/signup");
-  await expect(page.getByRole("heading", { name: "Welcome!" })).toBeVisible();
-  await expect(page.getByLabel("Entry Code")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Admin Access Is Invite Only" })).toBeVisible();
+  await expect(page.getByText("Self-service admin signup has been retired.")).toBeVisible();
 });
 
 test("existing admin can log in and reach overview", async ({ page }) => {
@@ -503,27 +500,16 @@ test("admin management route supports list and role-management flows", async ({ 
   await expect(page.getByText("Admin User Assigned Successfully!").first()).toBeVisible();
 });
 
-test("entry code flow reaches create-password page", async ({ page }) => {
+test("signup page shows invite-only messaging", async ({ page }) => {
   await page.goto("/signup");
-  await page.getByLabel("Email").fill("newadmin@itestified.app");
-  await page.getByLabel("Entry Code").fill("ITESTIFIED-ADMIN");
-  await page.getByRole("button", { name: "Continue" }).click();
-
-  await expect(page).toHaveURL(/\/create-password\?email=newadmin%40itestified\.app/);
-  await expect(page.getByRole("heading", { name: "Create New Password" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Admin Access Is Invite Only" })).toBeVisible();
+  await expect(page.getByText("Self-service admin signup has been retired.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Back to Log In" })).toBeVisible();
 });
 
-test("entry code plus password creation logs new admin into overview", async ({ page }) => {
-  await page.goto("/signup");
-  await page.getByLabel("Email").fill("freshadmin@itestified.app");
-  await page.getByLabel("Entry Code").fill("ITESTIFIED-ADMIN");
-  await page.getByRole("button", { name: "Continue" }).click();
-
-  await expect(page).toHaveURL(/\/create-password\?email=freshadmin%40itestified\.app/);
-  await page.locator('input[aria-label="New Password"]').fill("Admin!234");
-  await page.locator('input[aria-label="Confirm New Password"]').fill("Admin!234");
-  await page.getByRole("button", { name: "Create Password" }).click();
-
-  await expect(page).toHaveURL("/overview");
-  await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
+test("create-password page shows deprecation messaging", async ({ page }) => {
+  await page.goto("/create-password");
+  await expect(page.getByRole("heading", { name: "Invitation Setup Coming Next" })).toBeVisible();
+  await expect(page.getByText("This page is no longer used for entry-code setup.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Back to Log In" })).toBeVisible();
 });

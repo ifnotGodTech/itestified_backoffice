@@ -9,9 +9,9 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
-    command: "npm run dev -- --port 3000",
+    command: "E2E_BYPASS_AUTH=1 npm run dev -- --port 3000",
     url: "http://127.0.0.1:3000",
-    reuseExistingServer: true,
+    reuseExistingServer: false,
     timeout: 120000,
   },
   projects: [

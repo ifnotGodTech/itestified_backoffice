@@ -5,6 +5,7 @@ export type TestimonyState = "populated" | "empty" | "loading" | "error";
 export type VideoTestimonyScreen = "list" | "upload" | "activity";
 export type WrittenTestimonyStatus = "Pending" | "Approved" | "Rejected" | "Scheduled" | "Archived";
 export type VideoTestimonyStatus = "All" | "Uploaded" | "Scheduled" | "Drafts" | "Archived";
+export type VideoEngagementMetric = "total" | "views" | "likes" | "comments" | "shares";
 export type TestimonyStatus = WrittenTestimonyStatus | VideoTestimonyStatus;
 export type TestimonyOrigin = "list" | "notification";
 export type ModerationAction = "approved" | "rejected" | "scheduled" | "archived" | "auto_published";
@@ -46,6 +47,7 @@ export type VideoTestimonyRow = {
   title: string;
   category: string;
   source: string;
+  videoUrl?: string;
   dateUploaded: string;
   uploadedBy: string;
   views: number | null;
@@ -81,6 +83,7 @@ export type TestimoniesViewModel = {
   shell: AdminShellViewModel;
   activeTab: TestimonyTab;
   activeVideoStatus: VideoTestimonyStatus;
+  activeVideoEngagement: VideoEngagementMetric;
   activeVideoScreen: VideoTestimonyScreen;
   phaseState: TestimonyState;
   searchQuery: string;

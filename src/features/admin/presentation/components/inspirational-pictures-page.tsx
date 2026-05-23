@@ -80,7 +80,7 @@ function DetailModal({ row, viewModel }: { row: InspirationalPictureRow; viewMod
         </div>
         <div className="overflow-y-auto px-6 pb-7 pt-6">
           <div className="relative h-[297px] overflow-hidden rounded-[16px] bg-[radial-gradient(circle_at_top,#5d3d76_0%,#31213f_38%,#1f1f1f_100%)]">
-            <Image src={row.imageSrc} alt={row.title} fill className="object-contain p-10 opacity-90" />
+            <Image src={row.imageSrc} alt={row.title} fill sizes="280px" className="object-contain p-10 opacity-90" />
           </div>
           <dl className="mt-8 space-y-0 text-[16px] text-white/90">
             <div className="grid grid-cols-[1fr_auto] items-center gap-x-8 px-6 py-2">
@@ -320,7 +320,7 @@ function PicturesGrid({ viewModel }: { viewModel: InspirationalPicturesViewModel
                 <div className="text-[10px] leading-[1.36] text-white/70">{index + 1}</div>
                 <div className="flex items-center">
                   <div className="relative h-[50px] w-[67px] overflow-hidden rounded-[8px] bg-[radial-gradient(circle_at_top,#5d3d76_0%,#31213f_38%,#1f1f1f_100%)]">
-                    <Image src={row.imageSrc} alt={row.title} fill className="object-contain p-2 opacity-90" />
+                    <Image src={row.imageSrc} alt={row.title} fill sizes="56px" className="object-contain p-2 opacity-90" />
                   </div>
                 </div>
                 <div className="truncate text-[10px] leading-[1.36] text-white/80">{row.category}</div>

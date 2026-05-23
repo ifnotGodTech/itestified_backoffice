@@ -9,6 +9,7 @@ export default async function TestimoniesRoute({
   searchParams: Promise<{
     tab?: string;
     videoStatus?: string;
+    engagement?: string;
     screen?: string;
     state?: string;
     q?: string;
@@ -44,6 +45,7 @@ export default async function TestimoniesRoute({
   const viewModel = await getTestimoniesViewModelFromBackend({
     tab: params.tab,
     videoStatus: params.videoStatus,
+    engagement: params.engagement,
     screen: params.screen,
     state: params.state,
     q: params.q,

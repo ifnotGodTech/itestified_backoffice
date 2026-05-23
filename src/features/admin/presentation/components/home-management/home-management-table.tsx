@@ -18,7 +18,7 @@ function ThumbnailCell({ row }: { row: HomeManagementRow }) {
   return (
     <div className="flex items-center gap-2">
       <span className="relative h-8 w-8 overflow-hidden rounded bg-[#2b2b2b]">
-        {row.thumbnailSrc ? <Image src={row.thumbnailSrc} alt={row.thumbnailLabel} fill className="object-cover opacity-80" /> : null}
+        {row.thumbnailSrc ? <Image src={row.thumbnailSrc} alt={row.thumbnailLabel} fill sizes="64px" className="object-cover opacity-80" /> : null}
       </span>
     </div>
   );

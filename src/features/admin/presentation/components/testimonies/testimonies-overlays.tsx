@@ -67,33 +67,11 @@ function TimeIcon() {
   );
 }
 
-function PlayerControlBar() {
-  return (
-    <div className="px-3 pb-3 pt-2 text-white/88">
-      <div className="h-[4px] rounded-full bg-white">
-        <div className="h-[4px] w-[3%] rounded-full bg-[#9B68D5]" />
-      </div>
-      <div className="mt-3 flex items-center justify-between text-[14px]">
-        <div className="flex items-center gap-4">
-          <span className="text-[15px]">▶</span>
-          <span>↺5</span>
-          <span className="rounded-[4px] bg-white px-2 py-0.5 text-[12px] text-black">1x</span>
-          <span>↻5</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span>🔊</span>
-          <span>⚙</span>
-          <span>⛶</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function closeHref(viewModel: TestimoniesViewModel) {
   return buildTestimoniesHref({
     tab: viewModel.activeTab,
     videoStatus: viewModel.activeTab === "video" ? viewModel.activeVideoStatus : null,
+    engagement: viewModel.activeTab === "video" ? viewModel.activeVideoEngagement : null,
     q: viewModel.searchQuery,
     from: viewModel.filterDraft.from,
     to: viewModel.filterDraft.to,
@@ -216,7 +194,7 @@ function PendingDetailModal({ row, viewModel }: { row: TextTestimonyRow; viewMod
           </div>
           <div className="-mt-16 flex justify-center">
             <div className="relative h-[102px] w-[102px] overflow-hidden rounded-full border-[6px] border-white bg-white">
-              {row.avatarSrc ? <Image src={row.avatarSrc} alt={row.name} fill className="object-contain p-3" /> : null}
+              {row.avatarSrc ? <Image src={row.avatarSrc} alt={row.name} fill sizes="72px" className="object-contain p-3" /> : null}
             </div>
           </div>
 
@@ -273,7 +251,7 @@ function ApprovedDetailModal({ row, viewModel }: { row: TextTestimonyRow; viewMo
           </div>
           <div className="-mt-16 flex justify-center">
             <div className="relative h-[102px] w-[102px] overflow-hidden rounded-full border-[6px] border-white bg-white">
-              {row.avatarSrc ? <Image src={row.avatarSrc} alt={row.name} fill className="object-contain p-3" /> : null}
+              {row.avatarSrc ? <Image src={row.avatarSrc} alt={row.name} fill sizes="72px" className="object-contain p-3" /> : null}
             </div>
           </div>
 
@@ -542,7 +520,7 @@ function FilterModal({ viewModel }: { viewModel: TestimoniesViewModel }) {
         <div className="border-b border-white/10 px-5 py-5">
           <div className="mb-5 flex items-center justify-between">
             <p className="text-[14px] text-white">Date Range</p>
-            <Link href={buildTestimoniesHref({ tab: viewModel.activeTab, videoStatus: isVideo ? viewModel.activeVideoStatus : null, q: viewModel.searchQuery, filter: true, category: viewModel.filterDraft.category, source: viewModel.filterDraft.source, statusFilter: viewModel.filterDraft.status, categoryMenuOpen: viewModel.filterDraft.categoryMenuOpen, sourceMenuOpen: viewModel.filterDraft.sourceMenuOpen })} className="text-[14px] text-[#b27bff]">
+            <Link href={buildTestimoniesHref({ tab: viewModel.activeTab, videoStatus: isVideo ? viewModel.activeVideoStatus : null, engagement: isVideo ? viewModel.activeVideoEngagement : null, q: viewModel.searchQuery, filter: true, category: viewModel.filterDraft.category, source: viewModel.filterDraft.source, statusFilter: viewModel.filterDraft.status, categoryMenuOpen: viewModel.filterDraft.categoryMenuOpen, sourceMenuOpen: viewModel.filterDraft.sourceMenuOpen })} className="text-[14px] text-[#b27bff]">
               Clear
             </Link>
           </div>
@@ -566,7 +544,7 @@ function FilterModal({ viewModel }: { viewModel: TestimoniesViewModel }) {
         <div className="border-b border-white/10 px-5 py-5">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-[14px] text-white">Category</p>
-            <Link href={buildTestimoniesHref({ tab: viewModel.activeTab, videoStatus: isVideo ? viewModel.activeVideoStatus : null, q: viewModel.searchQuery, filter: true, from: viewModel.filterDraft.from, to: viewModel.filterDraft.to, source: viewModel.filterDraft.source, statusFilter: viewModel.filterDraft.status })} className="text-[14px] text-[#b27bff]">
+            <Link href={buildTestimoniesHref({ tab: viewModel.activeTab, videoStatus: isVideo ? viewModel.activeVideoStatus : null, engagement: isVideo ? viewModel.activeVideoEngagement : null, q: viewModel.searchQuery, filter: true, from: viewModel.filterDraft.from, to: viewModel.filterDraft.to, source: viewModel.filterDraft.source, statusFilter: viewModel.filterDraft.status })} className="text-[14px] text-[#b27bff]">
               Clear
             </Link>
           </div>
@@ -618,7 +596,7 @@ function FilterModal({ viewModel }: { viewModel: TestimoniesViewModel }) {
           <div className="border-b border-white/10 px-5 py-5">
             <div className="mb-4 flex items-center justify-between">
               <p className="text-[14px] text-white">Source</p>
-              <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, q: viewModel.searchQuery, filter: true, from: viewModel.filterDraft.from, to: viewModel.filterDraft.to, category: viewModel.filterDraft.category, categoryMenuOpen: viewModel.filterDraft.categoryMenuOpen })} className="text-[14px] text-[#b27bff]">
+              <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, q: viewModel.searchQuery, filter: true, from: viewModel.filterDraft.from, to: viewModel.filterDraft.to, category: viewModel.filterDraft.category, categoryMenuOpen: viewModel.filterDraft.categoryMenuOpen })} className="text-[14px] text-[#b27bff]">
                 Clear
               </Link>
             </div>
@@ -691,7 +669,7 @@ function FilterModal({ viewModel }: { viewModel: TestimoniesViewModel }) {
         </div>
         <div className="flex justify-end gap-3 px-5 pb-5">
           <Link
-            href={buildTestimoniesHref({ tab: viewModel.activeTab, videoStatus: isVideo ? viewModel.activeVideoStatus : null, q: viewModel.searchQuery, filter: true })}
+            href={buildTestimoniesHref({ tab: viewModel.activeTab, videoStatus: isVideo ? viewModel.activeVideoStatus : null, engagement: isVideo ? viewModel.activeVideoEngagement : null, q: viewModel.searchQuery, filter: true })}
             className="inline-flex min-w-[116px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-5 py-4 text-[16px] text-[#9B68D5]"
           >
             Clear All
@@ -1003,6 +981,7 @@ function TestimonySettingsModal({ viewModel }: { viewModel: TestimoniesViewModel
 
 function VideoDetailsModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel: TestimoniesViewModel }) {
   const stat = (value: number | null) => (value == null ? 0 : value);
+  const hasPlayableVideo = Boolean(row.videoUrl?.trim());
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
       <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close video details modal" />
@@ -1017,15 +996,31 @@ function VideoDetailsModal({ row, viewModel }: { row: VideoTestimonyRow; viewMod
           <DetailOriginBanner viewModel={viewModel} />
           <div className="overflow-hidden rounded-[20px] bg-[#202020]">
             <div className="relative h-[318px] bg-[#111]">
-              <Image src={row.thumbnailSrc} alt={row.title} fill className="object-cover" />
-              <div className="absolute inset-0 flex items-center justify-center text-[70px] text-white/95">▶</div>
+              {hasPlayableVideo ? (
+                <video
+                  controls
+                  preload="metadata"
+                  poster={row.thumbnailSrc}
+                  className="h-full w-full bg-black object-contain"
+                >
+                  <source src={row.videoUrl} />
+                  Your browser does not support HTML5 video playback.
+                </video>
+              ) : (
+                <>
+                  <Image src={row.thumbnailSrc} alt={row.title} fill sizes="240px" className="object-cover opacity-70" />
+                  <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-[14px] text-white/92">
+                    Video playback unavailable for this testimony.
+                  </div>
+                </>
+              )}
             </div>
-            <PlayerControlBar />
           </div>
           <dl className="mt-8 grid grid-cols-[1fr_auto] gap-x-8 gap-y-5 text-[16px] text-white/90">
             <dt>Title</dt><dd className="font-semibold text-right">{row.title}</dd>
             <dt>Category</dt><dd className="font-semibold text-right">{row.category}</dd>
             <dt>Source</dt><dd className="font-semibold text-right">{row.source === "You-tube" ? "Youtube" : row.source}</dd>
+            <dt>Video URL</dt><dd className="max-w-[280px] truncate text-right text-[14px] text-white/75">{row.videoUrl || "Not available"}</dd>
             <dt>{row.status === "Uploaded" ? "Upload Date" : "Status"}</dt>
             <dd className="font-semibold text-right">{row.status === "Uploaded" ? "08/08/24" : <StatusPill status={row.status} />}</dd>
             {row.status === "Uploaded" ? (
@@ -1107,7 +1102,7 @@ function EditVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel:
           <Link href={closeHref(viewModel)} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] text-[#9B68D5]">
             {row.status === "Uploaded" ? "Cancel" : "Upload"}
           </Link>
-          <Link href={buildTestimoniesHref({ tab: "video", videoStatus: row.status, success: row.status === "Uploaded" ? null : "upload" })} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 py-4 text-[16px] text-white">
+          <Link href={buildTestimoniesHref({ tab: "video", videoStatus: row.status, engagement: viewModel.activeVideoEngagement, success: row.status === "Uploaded" ? null : "upload" })} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 py-4 text-[16px] text-white">
             Save Changes
           </Link>
         </div>

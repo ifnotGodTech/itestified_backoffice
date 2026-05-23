@@ -3,6 +3,14 @@ import type { NextRequest } from "next/server";
 import { backendBaseUrl } from "@/core/auth/backend";
 import type { SessionData } from "@/core/auth/types";
 
+const e2eSession: SessionData = {
+  userId: "e2e-admin@itestified.app",
+  email: "e2e-admin@itestified.app",
+  role: "admin",
+  mustChangePassword: false,
+  fullName: "E2E Admin",
+};
+
 function mapBackendSession(payload: Record<string, unknown>): SessionData | null {
   const email = typeof payload.email === "string" ? payload.email : null;
   const role = payload.role === "admin" ? "admin" : null;
@@ -14,6 +22,10 @@ function mapBackendSession(payload: Record<string, unknown>): SessionData | null
 }
 
 async function fetchBackendSession(cookieHeader?: string | null): Promise<SessionData | null> {
+  if (process.env.E2E_BYPASS_AUTH === "1") {
+    return e2eSession;
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 3000);
   try {

@@ -26,7 +26,7 @@ function UserProfileModal({ row, viewModel }: { row: UserManagementRow; viewMode
         <div className="relative px-8 pb-8 pt-2">
           <div className="-mt-16 flex justify-center">
             <div className="relative h-[102px] w-[102px] overflow-hidden rounded-full border-[6px] border-white bg-white">
-              {row.avatarSrc ? <Image src={row.avatarSrc} alt={row.name} fill className="object-contain p-3" /> : null}
+              {row.avatarSrc ? <Image src={row.avatarSrc} alt={row.name} fill sizes="72px" className="object-contain p-3" /> : null}
             </div>
           </div>
           <dl className="mt-10 grid grid-cols-[1fr_auto] gap-x-8 gap-y-4 text-[16px] text-white/90">
@@ -60,7 +60,7 @@ function DeactivatedAccountDetailModal({ row, viewModel }: { row: UserManagement
         <div className="relative overflow-y-auto px-6 pb-8 pt-2">
           <div className="-mt-16 flex justify-center">
             <div className="relative h-[102px] w-[102px] overflow-hidden rounded-full border-[6px] border-white bg-white">
-              {row.avatarSrc ? <Image src={row.avatarSrc} alt={row.name} fill className="object-contain p-3" /> : null}
+              {row.avatarSrc ? <Image src={row.avatarSrc} alt={row.name} fill sizes="72px" className="object-contain p-3" /> : null}
             </div>
           </div>
           <dl className="mt-10 grid grid-cols-[1fr_auto] gap-x-8 gap-y-4 text-[16px] text-white/90">

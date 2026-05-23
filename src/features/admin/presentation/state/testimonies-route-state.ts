@@ -1,8 +1,16 @@
-import type { VideoTestimonyScreen, VideoTestimonyStatus, WrittenTestimonyStatus, TestimonyState, TestimonyTab } from "@/features/admin/domain/entities/testimonies";
+import type {
+  VideoEngagementMetric,
+  VideoTestimonyScreen,
+  VideoTestimonyStatus,
+  WrittenTestimonyStatus,
+  TestimonyState,
+  TestimonyTab,
+} from "@/features/admin/domain/entities/testimonies";
 
 export type TestimoniesRouteParams = {
   tab?: TestimonyTab;
   videoStatus?: VideoTestimonyStatus | null;
+  engagement?: VideoEngagementMetric | null;
   screen?: VideoTestimonyScreen | null;
   state?: TestimonyState | null;
   q?: string;
@@ -30,6 +38,7 @@ export function buildTestimoniesHref(params: TestimoniesRouteParams) {
   const search = new URLSearchParams();
   if (params.tab && params.tab !== "text") search.set("tab", params.tab);
   if (params.videoStatus && params.videoStatus !== "All") search.set("videoStatus", params.videoStatus);
+  if (params.engagement && params.engagement !== "total") search.set("engagement", params.engagement);
   if (params.screen && params.screen !== "list") search.set("screen", params.screen);
   if (params.state && params.state !== "populated") search.set("state", params.state);
   if (params.q) search.set("q", params.q);
