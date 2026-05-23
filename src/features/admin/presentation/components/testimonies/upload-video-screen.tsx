@@ -24,6 +24,18 @@ type VideoDraft = {
 
 const MAX_VIDEOS_PER_BATCH = 10;
 
+function extractApiErrorMessage(data: Record<string, unknown>): string {
+  if (typeof data.message === "string" && data.message.trim()) return data.message;
+  for (const value of Object.values(data)) {
+    if (typeof value === "string" && value.trim()) return value;
+    if (Array.isArray(value)) {
+      const first = value.find((item) => typeof item === "string" && item.trim());
+      if (typeof first === "string") return first;
+    }
+  }
+  return "Upload failed. Please review your details and try again.";
+}
+
 const pageCardClass =
   "rounded-[20px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]";
 const fieldClass =
@@ -152,11 +164,7 @@ export function UploadVideoScreen({ categories }: Props) {
 
         if (!response.ok) {
           const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
-          const maybeMessage =
-            (typeof data.message === "string" && data.message) ||
-            (Array.isArray(data.video_file) && typeof data.video_file[0] === "string" ? data.video_file[0] : "") ||
-            "Upload failed. Please review your details and try again.";
-          throw new Error(maybeMessage);
+          throw new Error(extractApiErrorMessage(data));
         }
       }
 
