@@ -594,9 +594,13 @@ function FilterModal({
   onClose: () => void;
 }) {
   const categoryOptions = viewModel.categories.filter((category) => category.isActive);
+  const [selectedCategory, setSelectedCategory] = useState(viewModel.filterDraft.category);
+  const [selectedSource, setSelectedSource] = useState(viewModel.filterDraft.source);
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const [sourceMenuOpen, setSourceMenuOpen] = useState(false);
   const selectedCategoryLabel =
-    viewModel.categories.find((category) => category.slug === viewModel.filterDraft.category)?.name ??
-    viewModel.filterDraft.category;
+    viewModel.categories.find((category) => category.slug === selectedCategory)?.name ??
+    selectedCategory;
   const sourceOptions = ["YouTube", "Instagram", "TikTok", "Facebook"];
   const isVideo = viewModel.activeTab === "video";
   return (
@@ -606,10 +610,8 @@ function FilterModal({
         <input type="hidden" name="tab" value={viewModel.activeTab} />
         <input type="hidden" name="q" value={viewModel.searchQuery} />
         {isVideo ? <input type="hidden" name="videoStatus" value={viewModel.activeVideoStatus} /> : null}
-        {viewModel.filterDraft.category ? <input type="hidden" name="category" value={viewModel.filterDraft.category} /> : null}
-        {isVideo && viewModel.filterDraft.source ? <input type="hidden" name="source" value={viewModel.filterDraft.source} /> : null}
-        {viewModel.filterDraft.categoryMenuOpen ? <input type="hidden" name="categoryMenuOpen" value="1" /> : null}
-        {viewModel.filterDraft.sourceMenuOpen ? <input type="hidden" name="sourceMenuOpen" value="1" /> : null}
+        {selectedCategory ? <input type="hidden" name="category" value={selectedCategory} /> : null}
+        {isVideo && selectedSource ? <input type="hidden" name="source" value={selectedSource} /> : null}
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 text-[14px] font-medium text-white">
           <span>Filter</span>
           <button type="button" onClick={onClose} className="text-white/80 hover:text-white" aria-label="Dismiss testimony filter">
@@ -643,50 +645,35 @@ function FilterModal({
         <div className="border-b border-white/10 px-5 py-5">
           <div className="mb-4 flex items-center justify-between">
             <p className="text-[14px] text-white">Category</p>
-            <Link href={buildTestimoniesHref({ tab: viewModel.activeTab, videoStatus: isVideo ? viewModel.activeVideoStatus : null, engagement: isVideo ? viewModel.activeVideoEngagement : null, q: viewModel.searchQuery, filter: true, from: viewModel.filterDraft.from, to: viewModel.filterDraft.to, source: viewModel.filterDraft.source, statusFilter: viewModel.filterDraft.status })} className="text-[14px] text-[#b27bff]">
+            <button type="button" onClick={() => setSelectedCategory("")} className="text-[14px] text-[#b27bff]">
               Clear
-            </Link>
+            </button>
           </div>
-          <Link
-            href={buildTestimoniesHref({
-              tab: viewModel.activeTab,
-              videoStatus: isVideo ? viewModel.activeVideoStatus : null,
-              q: viewModel.searchQuery,
-              filter: true,
-              from: viewModel.filterDraft.from,
-              to: viewModel.filterDraft.to,
-              category: viewModel.filterDraft.category,
-              source: viewModel.filterDraft.source,
-              statusFilter: viewModel.filterDraft.status,
-              categoryMenuOpen: !viewModel.filterDraft.categoryMenuOpen,
-              sourceMenuOpen: viewModel.filterDraft.sourceMenuOpen,
-            })}
+          <button
+            type="button"
+            onClick={() => {
+              setCategoryMenuOpen((open) => !open);
+              setSourceMenuOpen(false);
+            }}
             className="flex h-[32px] items-center justify-between rounded-[8px] bg-[#2a2a2a] px-3 text-[14px] text-white/78"
           >
             <span>{selectedCategoryLabel || "Select"}</span>
-            <span className="text-white/82">{viewModel.filterDraft.categoryMenuOpen ? <ChevronDownIcon /> : <ChevronDownIcon />}</span>
-          </Link>
-          {viewModel.filterDraft.categoryMenuOpen ? (
+            <span className="text-white/82"><ChevronDownIcon /></span>
+          </button>
+          {categoryMenuOpen ? (
             <div className="mt-2 overflow-hidden rounded-[8px] border border-white/15 bg-[#1f1f1f]">
               {categoryOptions.map((option) => (
-                <Link
+                <button
                   key={option.id}
-                  href={buildTestimoniesHref({
-                    tab: viewModel.activeTab,
-                    videoStatus: isVideo ? viewModel.activeVideoStatus : null,
-                    q: viewModel.searchQuery,
-                    filter: true,
-                    from: viewModel.filterDraft.from,
-                    to: viewModel.filterDraft.to,
-                    category: option.slug,
-                    source: viewModel.filterDraft.source,
-                    statusFilter: viewModel.filterDraft.status,
-                    sourceMenuOpen: viewModel.filterDraft.sourceMenuOpen,
-                  })}
-                  className="block border-t border-white/10 px-4 py-3 text-[14px] text-white/88 first:border-t-0 hover:bg-white/[0.03]"
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory(option.slug);
+                    setCategoryMenuOpen(false);
+                  }}
+                  className="block w-full border-t border-white/10 px-4 py-3 text-left text-[14px] text-white/88 first:border-t-0 hover:bg-white/[0.03]"
                 >
                   {option.name}
-                </Link>
+                </button>
               ))}
             </div>
           ) : null}
@@ -695,48 +682,35 @@ function FilterModal({
           <div className="border-b border-white/10 px-5 py-5">
             <div className="mb-4 flex items-center justify-between">
               <p className="text-[14px] text-white">Source</p>
-              <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, q: viewModel.searchQuery, filter: true, from: viewModel.filterDraft.from, to: viewModel.filterDraft.to, category: viewModel.filterDraft.category, categoryMenuOpen: viewModel.filterDraft.categoryMenuOpen })} className="text-[14px] text-[#b27bff]">
+              <button type="button" onClick={() => setSelectedSource("")} className="text-[14px] text-[#b27bff]">
                 Clear
-              </Link>
+              </button>
             </div>
-            <Link
-              href={buildTestimoniesHref({
-                tab: "video",
-                videoStatus: viewModel.activeVideoStatus,
-                q: viewModel.searchQuery,
-                filter: true,
-                from: viewModel.filterDraft.from,
-                to: viewModel.filterDraft.to,
-                category: viewModel.filterDraft.category,
-                source: viewModel.filterDraft.source,
-                sourceMenuOpen: !viewModel.filterDraft.sourceMenuOpen,
-                categoryMenuOpen: viewModel.filterDraft.categoryMenuOpen,
-              })}
+            <button
+              type="button"
+              onClick={() => {
+                setSourceMenuOpen((open) => !open);
+                setCategoryMenuOpen(false);
+              }}
               className="flex h-[32px] items-center justify-between rounded-[8px] bg-[#2a2a2a] px-3 text-[14px] text-white/78"
             >
-              <span>{viewModel.filterDraft.source || "Select"}</span>
+              <span>{selectedSource || "Select"}</span>
               <span className="text-white/82"><ChevronDownIcon /></span>
-            </Link>
-            {viewModel.filterDraft.sourceMenuOpen ? (
+            </button>
+            {sourceMenuOpen ? (
               <div className="mt-2 overflow-hidden rounded-[8px] border border-white/15 bg-[#1f1f1f]">
                 {sourceOptions.map((option) => (
-                  <Link
+                  <button
                     key={option}
-                    href={buildTestimoniesHref({
-                      tab: "video",
-                      videoStatus: viewModel.activeVideoStatus,
-                      q: viewModel.searchQuery,
-                      filter: true,
-                      from: viewModel.filterDraft.from,
-                      to: viewModel.filterDraft.to,
-                      category: viewModel.filterDraft.category,
-                      source: option,
-                      categoryMenuOpen: viewModel.filterDraft.categoryMenuOpen,
-                    })}
-                    className="block border-t border-white/10 px-4 py-3 text-[14px] text-white/88 first:border-t-0 hover:bg-white/[0.03]"
+                    type="button"
+                    onClick={() => {
+                      setSelectedSource(option);
+                      setSourceMenuOpen(false);
+                    }}
+                    className="block w-full border-t border-white/10 px-4 py-3 text-left text-[14px] text-white/88 first:border-t-0 hover:bg-white/[0.03]"
                   >
                     {option}
-                  </Link>
+                  </button>
                 ))}
               </div>
             ) : null}
