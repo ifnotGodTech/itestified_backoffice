@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
+import { cache } from "react";
 import { backendBaseUrl } from "@/core/auth/backend";
 import type { SessionData } from "@/core/auth/types";
 
@@ -21,7 +22,7 @@ function mapBackendSession(payload: Record<string, unknown>): SessionData | null
   return { userId: email, email, role, mustChangePassword, fullName };
 }
 
-async function fetchBackendSession(cookieHeader?: string | null): Promise<SessionData | null> {
+const fetchBackendSession = cache(async function fetchBackendSession(cookieHeader?: string | null): Promise<SessionData | null> {
   if (process.env.E2E_BYPASS_AUTH === "1") {
     return e2eSession;
   }
@@ -44,7 +45,7 @@ async function fetchBackendSession(cookieHeader?: string | null): Promise<Sessio
   } finally {
     clearTimeout(timeoutId);
   }
-}
+});
 
 export async function getServerSession() {
   const store = await cookies();

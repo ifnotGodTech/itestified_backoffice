@@ -22,14 +22,26 @@ export function HeaderNotificationBell() {
 
   useEffect(() => {
     let cancelled = false;
+    const cachedCount = Number(window.sessionStorage.getItem("adminUnreadTestimonyCount") ?? "0");
+
+    if (Number.isFinite(cachedCount) && cachedCount > 0) {
+      setCount(cachedCount);
+    }
+
     async function poll() {
+      const cacheAgeMs = Date.now() - Number(window.sessionStorage.getItem("adminUnreadTestimonyCountAt") ?? "0");
+      if (cacheAgeMs >= 0 && cacheAgeMs < 15000) return;
+
       const response = await fetch("/api/admin/notifications/unread-testimony-count", {
         method: "GET",
         cache: "no-store",
       }).catch(() => null);
       if (!response || !response.ok || cancelled) return;
       const payload = (await response.json().catch(() => ({}))) as { count?: number };
-      setCount(typeof payload.count === "number" ? payload.count : 0);
+      const nextCount = typeof payload.count === "number" ? payload.count : 0;
+      window.sessionStorage.setItem("adminUnreadTestimonyCount", String(nextCount));
+      window.sessionStorage.setItem("adminUnreadTestimonyCountAt", String(Date.now()));
+      setCount(nextCount);
     }
     poll();
     const id = setInterval(poll, 30000);

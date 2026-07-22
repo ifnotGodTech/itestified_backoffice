@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { AdminNavItem } from "@/features/admin/domain/entities/shell";
 import { AdminSidebarLogoutButton } from "@/features/admin/presentation/components/admin-sidebar-logout-button";
 
@@ -127,7 +127,6 @@ export function AdminSidebarNav({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [prevSidebarItems, setPrevSidebarItems] = useState(sidebarItems);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
     () =>
       Object.fromEntries(
@@ -137,18 +136,22 @@ export function AdminSidebarNav({
       ),
   );
 
-  if (prevSidebarItems !== sidebarItems) {
-    setPrevSidebarItems(sidebarItems);
-    const updates: Record<string, boolean> = {};
-    for (const item of sidebarItems) {
-      if (item.active && item.children?.length && expandedItems[item.href] === undefined) {
-        updates[item.href] = true;
+  useEffect(() => {
+    setExpandedItems((current) => {
+      const updates: Record<string, boolean> = {};
+      for (const item of sidebarItems) {
+        if (item.active && item.children?.length && current[item.href] === undefined) {
+          updates[item.href] = true;
+        }
       }
-    }
-    if (Object.keys(updates).length > 0) {
-      setExpandedItems((prev) => ({ ...prev, ...updates }));
-    }
-  }
+
+      if (Object.keys(updates).length === 0) {
+        return current;
+      }
+
+      return { ...current, ...updates };
+    });
+  }, [pathname, sidebarItems]);
 
   return (
     <>

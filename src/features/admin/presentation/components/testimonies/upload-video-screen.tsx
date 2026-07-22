@@ -25,9 +25,6 @@ type VideoDraft = {
 const MAX_VIDEOS_PER_BATCH = 10;
 const MAX_VIDEO_FILE_SIZE_BYTES = 200 * 1024 * 1024;
 const ALLOWED_VIDEO_CONTENT_TYPES = new Set(["video/mp4"]);
-const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "";
-const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "";
-const CLOUDINARY_UPLOAD_FOLDER = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_FOLDER ?? "";
 
 function extractApiErrorMessage(data: unknown): string {
   if (!data || typeof data !== "object") {
@@ -66,32 +63,6 @@ function validateVideoFile(file: File | null): string | null {
     return "Video file exceeds the 200MB limit.";
   }
   return null;
-}
-
-async function uploadDirectToCloudinary(file: File, resourceType: "video" | "image"): Promise<string> {
-  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
-    throw new Error(
-      "Cloudinary direct upload is not configured. Set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET.",
-    );
-  }
-  const formData = new FormData();
-  formData.set("file", file);
-  formData.set("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-  if (CLOUDINARY_UPLOAD_FOLDER.trim()) {
-    formData.set("folder", CLOUDINARY_UPLOAD_FOLDER.trim());
-  }
-  const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`, {
-    method: "POST",
-    body: formData,
-  });
-  const payload = (await response.json().catch(() => ({}))) as { secure_url?: string; error?: { message?: string } };
-  if (!response.ok) {
-    throw new Error(payload.error?.message || `Cloudinary ${resourceType} upload failed (${response.status}).`);
-  }
-  if (!payload.secure_url) {
-    throw new Error(`Cloudinary ${resourceType} upload did not return a secure URL.`);
-  }
-  return payload.secure_url;
 }
 
 const pageCardClass =
@@ -203,9 +174,6 @@ export function UploadVideoScreen({ categories }: Props) {
         throw new Error(`A maximum of ${MAX_VIDEOS_PER_BATCH} videos is allowed per upload batch.`);
       }
       for (const draft of workingDrafts) {
-        const videoUrl = await uploadDirectToCloudinary(draft.videoFile as File, "video");
-        const thumbnailUrl = draft.thumbnailFile ? await uploadDirectToCloudinary(draft.thumbnailFile, "image") : "";
-
         const composedBody = [
           draft.body.trim(),
           draft.source.trim() ? `Source: ${draft.source.trim()}` : "",
@@ -213,22 +181,23 @@ export function UploadVideoScreen({ categories }: Props) {
           .filter(Boolean)
           .join("\n");
 
-        const metadataPayload: Record<string, string> = {
-          title: draft.title.trim(),
-          category_id: draft.categoryId,
-          body: composedBody,
-          upload_status: uploadStatus,
-          video_url: videoUrl,
-          thumbnail_url: thumbnailUrl,
-        };
+        const formData = new FormData();
+        formData.set("title", draft.title.trim());
+        formData.set("category_id", draft.categoryId);
+        formData.set("body", composedBody);
+        formData.set("upload_status", uploadStatus);
+        formData.set("total_videos_in_batch", String(workingDrafts.length));
+        formData.set("video_file", draft.videoFile as File);
+        if (draft.thumbnailFile) {
+          formData.set("thumbnail_file", draft.thumbnailFile);
+        }
         if (uploadStatus === "schedule_for_later") {
-          metadataPayload.scheduled_publish_at = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
+          formData.set("scheduled_publish_at", new Date(`${scheduledDate}T${scheduledTime}`).toISOString());
         }
 
-        const response = await fetch("/api/admin/testimonies/create-video-from-url", {
+        const response = await fetch("/api/admin/testimonies/upload-video", {
           method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(metadataPayload),
+          body: formData,
         });
 
         if (!response.ok) {
