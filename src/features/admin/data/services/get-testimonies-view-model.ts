@@ -382,6 +382,7 @@ type BackendTestimony = {
   created_at: string;
   publish_at?: string | null;
   archived_at?: string | null;
+  source?: string;
   moderation_history?: Array<{
     id: number;
     action: "approved" | "rejected" | "scheduled" | "archived" | "auto_published";
@@ -441,6 +442,15 @@ function mapBackendStatusToVideo(status: BackendTestimony["status"]): Exclude<Vi
   return "Drafts";
 }
 
+function extractVideoSource(body: string | undefined): string {
+  const sourceLine = (body ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .find((line) => line.toLowerCase().startsWith("source:"));
+  const source = sourceLine?.slice("source:".length).trim();
+  return source || "Uploaded";
+}
+
 export async function getTestimoniesViewModelFromBackend(
   input: Parameters<typeof getTestimoniesViewModel>[0] & { cookieHeader?: string },
 ): Promise<TestimoniesViewModel> {
@@ -472,6 +482,9 @@ export async function getTestimoniesViewModelFromBackend(
   if (statusFilter) params.set("status", statusFilter);
   if (input.q?.trim()) params.set("search", input.q.trim());
   if (input.category?.trim()) params.set("category", input.category.trim());
+  if (input.from?.trim()) params.set("date_from", input.from.trim());
+  if (input.to?.trim()) params.set("date_to", input.to.trim());
+  if (activeTab === "video" && input.source?.trim()) params.set("source", input.source.trim());
   params.set("testimony_type", activeTab === "video" ? "video" : "written");
   params.set("page_size", String(TESTIMONIES_PAGE_SIZE));
   const categoryCacheKey = input.cookieHeader ?? "anonymous";
@@ -532,7 +545,7 @@ export async function getTestimoniesViewModelFromBackend(
             id: item.id,
             title: item.title,
             category: item.category,
-            source: "Mobile upload",
+            source: item.source?.trim() || extractVideoSource(item.body),
             videoUrl: item.video_url || "",
             dateUploaded: new Date(item.created_at).toLocaleDateString("en-GB"),
             uploadedBy: item.author_name,

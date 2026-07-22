@@ -597,7 +597,7 @@ function FilterModal({
   const selectedCategoryLabel =
     viewModel.categories.find((category) => category.slug === viewModel.filterDraft.category)?.name ??
     viewModel.filterDraft.category;
-  const sourceOptions = ["You-tube", "Instagram", "TikTok", "Facebook"];
+  const sourceOptions = ["YouTube", "Instagram", "TikTok", "Facebook"];
   const isVideo = viewModel.activeTab === "video";
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
@@ -606,6 +606,8 @@ function FilterModal({
         <input type="hidden" name="tab" value={viewModel.activeTab} />
         <input type="hidden" name="q" value={viewModel.searchQuery} />
         {isVideo ? <input type="hidden" name="videoStatus" value={viewModel.activeVideoStatus} /> : null}
+        {viewModel.filterDraft.category ? <input type="hidden" name="category" value={viewModel.filterDraft.category} /> : null}
+        {isVideo && viewModel.filterDraft.source ? <input type="hidden" name="source" value={viewModel.filterDraft.source} /> : null}
         {viewModel.filterDraft.categoryMenuOpen ? <input type="hidden" name="categoryMenuOpen" value="1" /> : null}
         {viewModel.filterDraft.sourceMenuOpen ? <input type="hidden" name="sourceMenuOpen" value="1" /> : null}
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 text-[14px] font-medium text-white">
