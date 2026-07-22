@@ -10,6 +10,13 @@ import { TestimoniesTable } from "@/features/admin/presentation/components/testi
 import { UploadVideoScreen } from "@/features/admin/presentation/components/testimonies/upload-video-screen";
 import { buildTestimoniesHref } from "@/features/admin/presentation/state/testimonies-route-state";
 
+type AdminTestimonyDetailPayload = {
+  body?: string;
+  video_url?: string;
+  thumbnail_url?: string;
+  moderation_history?: TestimonyRow["moderationHistory"];
+};
+
 const pageCardClass =
   "rounded-[20px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]";
 const subtleButtonClass =
@@ -124,6 +131,23 @@ function loadingViewModel(viewModel: TestimoniesViewModel, tab: TestimonyTab): T
   };
 }
 
+function mergeDetailPayload(row: TestimonyRow, payload: AdminTestimonyDetailPayload): TestimonyRow {
+  if (row.kind === "text") {
+    return {
+      ...row,
+      body: payload.body ?? row.body,
+      moderationHistory: payload.moderation_history ?? row.moderationHistory,
+    };
+  }
+
+  return {
+    ...row,
+    videoUrl: payload.video_url ?? row.videoUrl,
+    thumbnailSrc: payload.thumbnail_url ?? row.thumbnailSrc,
+    moderationHistory: payload.moderation_history ?? row.moderationHistory,
+  };
+}
+
 export function TestimoniesPage({ viewModel }: { viewModel: TestimoniesViewModel }) {
   const [currentViewModel, setCurrentViewModel] = useState(viewModel);
   const [tabCache, setTabCache] = useState<Partial<Record<TestimonyTab, TestimoniesViewModel>>>({
@@ -183,6 +207,17 @@ export function TestimoniesPage({ viewModel }: { viewModel: TestimoniesViewModel
     }
   }
 
+  async function openDetails(row: TestimonyRow) {
+    try {
+      const response = await fetch(`/api/admin/testimonies/${row.id}`);
+      if (!response.ok) throw new Error("Unable to load testimony details.");
+      const payload = (await response.json()) as AdminTestimonyDetailPayload;
+      setDetailRow(mergeDetailPayload(row, payload));
+    } catch {
+      setDetailRow(row);
+    }
+  }
+
   return (
     <AdminDashboardShell viewModel={currentViewModel.shell} pageTitle={showsDedicatedVideoHeading ? undefined : "Testimonies"}>
       <NewTestimonyToast />
@@ -192,7 +227,7 @@ export function TestimoniesPage({ viewModel }: { viewModel: TestimoniesViewModel
         <TestimoniesTable
           viewModel={currentViewModel}
           onOpenFilter={() => setShowFilterModal(true)}
-          onOpenDetails={(row) => setDetailRow(row)}
+          onOpenDetails={openDetails}
           onTabChange={switchTab}
         />
       ) : null}

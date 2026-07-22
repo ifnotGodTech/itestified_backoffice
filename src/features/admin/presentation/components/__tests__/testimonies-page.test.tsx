@@ -80,6 +80,26 @@ describe("TestimoniesPage", () => {
   test("opens and closes loaded testimony details on the client", async () => {
     const user = userEvent.setup();
     const viewModel = getTestimoniesViewModel({});
+    const fullDetailBody =
+      "This is the complete testimony body submitted by the user, including the full story that should appear in the admin details modal.";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.includes("/api/admin/testimonies/list")) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => getTestimoniesViewModel({ tab: "video" }),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            body: fullDetailBody,
+            moderation_history: [],
+          }),
+        });
+      }),
+    );
     render(<TestimoniesPage viewModel={viewModel} />);
 
     await user.click(screen.getByRole("button", { name: "Open actions for testimony 1" }));
@@ -88,7 +108,9 @@ describe("TestimoniesPage", () => {
     const selectedRow = viewModel.rows[0];
     expect(selectedRow.kind).toBe("text");
     if (selectedRow.kind === "text") {
-      expect(screen.getByText(selectedRow.body)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText(fullDetailBody)).toBeInTheDocument();
+      });
     }
     expect(screen.getByText("Approve Testimony")).toBeInTheDocument();
 
