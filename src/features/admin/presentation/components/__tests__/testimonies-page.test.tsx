@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { getTestimoniesViewModel } from "@/features/admin/data/services/get-testimonies-view-model";
@@ -14,6 +14,7 @@ vi.mock("next/navigation", () => ({
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });
 
 describe("TestimoniesPage", () => {
@@ -32,6 +33,67 @@ describe("TestimoniesPage", () => {
     expect(screen.getAllByText("Uploaded").length).toBeGreaterThan(0);
     expect(screen.getAllByText("God Healed Me").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Drafts").length).toBeGreaterThan(0);
+  });
+
+  test("switches between text and video testimonies on the client", async () => {
+    const user = userEvent.setup();
+    const videoViewModel = getTestimoniesViewModel({ tab: "video" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => videoViewModel,
+      }),
+    );
+    render(<TestimoniesPage viewModel={getTestimoniesViewModel({})} />);
+
+    await user.click(screen.getByRole("button", { name: "Video" }));
+
+    await waitFor(() => {
+      expect(screen.getAllByText("God Healed Me").length).toBeGreaterThan(0);
+    });
+    expect(screen.getByRole("button", { name: "Video" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("opens and closes testimony action menu on the client", async () => {
+    const user = userEvent.setup();
+    render(<TestimoniesPage viewModel={getTestimoniesViewModel({})} />);
+
+    expect(screen.queryByText("View")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Open actions for testimony 1" }));
+    expect(screen.getByText("View")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Close testimonies action menu" }));
+    expect(screen.queryByText("View")).not.toBeInTheDocument();
+  });
+
+  test("opens and closes the testimony filter modal on the client", async () => {
+    const user = userEvent.setup();
+    render(<TestimoniesPage viewModel={getTestimoniesViewModel({})} />);
+
+    expect(screen.queryByText("Date Range")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Filter" }));
+    expect(screen.getByText("Date Range")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Close testimony filter modal" }));
+    expect(screen.queryByText("Date Range")).not.toBeInTheDocument();
+  });
+
+  test("opens and closes loaded testimony details on the client", async () => {
+    const user = userEvent.setup();
+    const viewModel = getTestimoniesViewModel({});
+    render(<TestimoniesPage viewModel={viewModel} />);
+
+    await user.click(screen.getByRole("button", { name: "Open actions for testimony 1" }));
+    await user.click(screen.getByRole("button", { name: "View" }));
+
+    const selectedRow = viewModel.rows[0];
+    expect(selectedRow.kind).toBe("text");
+    if (selectedRow.kind === "text") {
+      expect(screen.getByText(selectedRow.body)).toBeInTheDocument();
+    }
+    expect(screen.getByText("Approve Testimony")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Close testimony detail modal" }));
+    expect(screen.queryByText("Approve Testimony")).not.toBeInTheDocument();
   });
 
   test("renders the pending testimony detail state", () => {

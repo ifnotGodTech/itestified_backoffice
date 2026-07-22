@@ -1,6 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import type { InspirationalPictureRow, InspirationalPicturesViewModel } from "@/features/admin/domain/entities/inspirational-pictures";
+import { useEffect, useState } from "react";
+import type { InspirationalPictureRow, InspirationalPicturesViewModel, InspirationalPictureStatus } from "@/features/admin/domain/entities/inspirational-pictures";
 import { AdminDashboardShell } from "@/features/admin/presentation/components/admin-dashboard-shell";
 import {
   AdminActionMenuBackdrop,
@@ -50,12 +53,50 @@ function closeHref(viewModel: InspirationalPicturesViewModel) {
   });
 }
 
-function ActionMenu({ row, viewModel }: { row: InspirationalPictureRow; viewModel: InspirationalPicturesViewModel }) {
+function picturesStatusHref(viewModel: InspirationalPicturesViewModel, status: InspirationalPictureStatus) {
+  return buildInspirationalPicturesHref({
+    status,
+    q: viewModel.searchQuery,
+  });
+}
+
+function picturesApiHref(viewModel: InspirationalPicturesViewModel, status: InspirationalPictureStatus) {
+  const params = new URLSearchParams();
+  params.set("status", status);
+  if (viewModel.searchQuery) params.set("q", viewModel.searchQuery);
+  return `/api/admin/inspirational-pictures/list?${params.toString()}`;
+}
+
+function loadingPicturesViewModel(viewModel: InspirationalPicturesViewModel, status: InspirationalPictureStatus): InspirationalPicturesViewModel {
+  return {
+    ...viewModel,
+    activeStatus: status,
+    phaseState: "loading",
+    rows: [],
+    selectedRow: null,
+    totalRows: 0,
+    showingLabel: "Loading pictures...",
+    showActionMenu: false,
+    showDetails: false,
+    showEditModal: false,
+    showDeleteModal: false,
+  };
+}
+
+function ActionMenu({
+  row,
+  viewModel,
+  onView,
+}: {
+  row: InspirationalPictureRow;
+  viewModel: InspirationalPicturesViewModel;
+  onView?: (row: InspirationalPictureRow) => void;
+}) {
   return (
     <AdminActionMenuPanel className="min-w-[99px] rounded-[10px] border-[#787878] bg-[#292929] shadow-[0_2px_10px_4px_rgba(0,0,0,0.1)]">
-      <Link href={buildInspirationalPicturesHref({ status: viewModel.activeStatus, q: viewModel.searchQuery, view: row.id })} className="block border-b border-[#787878] px-2 py-[6px] text-[10px] leading-[1.36] text-white hover:bg-white/[0.04]">
+      <button type="button" onClick={() => onView?.(row)} className="block w-full border-b border-[#787878] px-2 py-[6px] text-left text-[10px] leading-[1.36] text-white hover:bg-white/[0.04]">
         View
-      </Link>
+      </button>
       <Link href={buildInspirationalPicturesHref({ status: viewModel.activeStatus, q: viewModel.searchQuery, edit: row.id })} className="block border-b border-[#787878] px-2 py-[6px] text-[10px] leading-[1.36] text-white hover:bg-white/[0.04]">
         Edit
       </Link>
@@ -73,7 +114,7 @@ function isBottomActionRow(viewModel: InspirationalPicturesViewModel, row: Inspi
   return viewModel.rows.length - index <= 2;
 }
 
-function DetailModal({ row, viewModel }: { row: InspirationalPictureRow; viewModel: InspirationalPicturesViewModel }) {
+function DetailModal({ row, viewModel, onClose }: { row: InspirationalPictureRow; viewModel: InspirationalPicturesViewModel; onClose?: () => void }) {
   const detailRows =
     row.status === "Scheduled"
       ? [
@@ -92,11 +133,19 @@ function DetailModal({ row, viewModel }: { row: InspirationalPictureRow; viewMod
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close picture details modal" />
+      {onClose ? (
+        <button type="button" onClick={onClose} className="absolute inset-0" aria-label="Close picture details modal" />
+      ) : (
+        <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close picture details modal" />
+      )}
       <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[561px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_2px_10px_4px_rgba(0,0,0,0.1)]">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-6">
           <h2 className="text-[28px] font-semibold leading-[1.18] text-white">Picture Details</h2>
-          <Link href={closeHref(viewModel)} className="text-[34px] leading-none text-white/90">×</Link>
+          {onClose ? (
+            <button type="button" onClick={onClose} className="text-[34px] leading-none text-white/90" aria-label="Dismiss picture details">×</button>
+          ) : (
+            <Link href={closeHref(viewModel)} className="text-[34px] leading-none text-white/90" aria-label="Dismiss picture details">×</Link>
+          )}
         </div>
         <div className="overflow-y-auto px-6 pb-7 pt-6">
           <div className="relative h-[297px] overflow-hidden rounded-[16px] bg-[radial-gradient(circle_at_top,#5d3d76_0%,#31213f_38%,#1f1f1f_100%)]">
@@ -284,7 +333,17 @@ function UploadScreen() {
   );
 }
 
-function PicturesGrid({ viewModel }: { viewModel: InspirationalPicturesViewModel }) {
+function PicturesGrid({
+  viewModel,
+  onStatusChange,
+  onOpenMenu,
+  onView,
+}: {
+  viewModel: InspirationalPicturesViewModel;
+  onStatusChange?: (status: InspirationalPictureStatus) => void;
+  onOpenMenu?: (row: InspirationalPictureRow) => void;
+  onView?: (row: InspirationalPictureRow) => void;
+}) {
   const headers =
     viewModel.activeStatus === "Scheduled"
       ? ["S/N", "Thumbnail", "Category", "Scheduled Date", "Scheduled Time", "Source", "Status", "Actions"]
@@ -302,13 +361,15 @@ function PicturesGrid({ viewModel }: { viewModel: InspirationalPicturesViewModel
           <h2 className="text-[16px] font-normal leading-[1.36] text-white">Inspirational Pictures</h2>
           <div className="flex flex-wrap gap-x-6 gap-y-3 text-[14px]">
           {viewModel.statusTabs.map((tab) => (
-            <Link
+            <button
               key={tab.key}
-              href={buildInspirationalPicturesHref({ status: tab.key, q: viewModel.searchQuery })}
+              type="button"
+              onClick={() => onStatusChange?.(tab.key)}
+              aria-pressed={tab.key === viewModel.activeStatus}
               className={`border-b pb-1 text-[14px] font-normal leading-[1.36] ${tab.key === viewModel.activeStatus ? "border-[#9B68D5] text-white" : "border-transparent text-white/55"}`}
             >
               {tab.label}
-            </Link>
+            </button>
           ))}
           </div>
         </div>
@@ -359,12 +420,12 @@ function PicturesGrid({ viewModel }: { viewModel: InspirationalPicturesViewModel
                   </>
                 )}
                 <div className="relative justify-self-start text-white/82">
-                  <Link href={buildInspirationalPicturesHref({ status: viewModel.activeStatus, q: viewModel.searchQuery, menu: row.id })} aria-label={`Open actions for picture ${row.id}`} className="inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/[0.04]">
+                  <button type="button" onClick={() => onOpenMenu?.(row)} aria-label={`Open actions for picture ${row.id}`} className="inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/[0.04]">
                     <span className="scale-90"><AdminRowMenuIcon /></span>
-                  </Link>
+                  </button>
                   {viewModel.showActionMenu && viewModel.selectedRow?.id === row.id && !isBottomActionRow(viewModel, row) ? (
                     <div className="absolute right-0 top-[calc(100%+8px)] z-50">
-                      <ActionMenu row={row} viewModel={viewModel} />
+                      <ActionMenu row={row} viewModel={viewModel} onView={onView} />
                     </div>
                   ) : null}
                 </div>
@@ -386,35 +447,127 @@ function PicturesGrid({ viewModel }: { viewModel: InspirationalPicturesViewModel
 }
 
 export function InspirationalPicturesPage({ viewModel }: { viewModel: InspirationalPicturesViewModel }) {
-  const selectedRow = viewModel.selectedRow;
-  const showDetachedActionMenu = viewModel.showActionMenu && isBottomActionRow(viewModel, selectedRow);
+  const [currentViewModel, setCurrentViewModel] = useState(viewModel);
+  const [menuRow, setMenuRow] = useState<InspirationalPictureRow | null>(null);
+  const [detailRow, setDetailRow] = useState<InspirationalPictureRow | null>(null);
+  const [statusCache, setStatusCache] = useState<Partial<Record<InspirationalPictureStatus, InspirationalPicturesViewModel>>>({
+    [viewModel.activeStatus]: viewModel,
+  });
+
+  useEffect(() => {
+    setCurrentViewModel(viewModel);
+    setMenuRow(null);
+    setDetailRow(null);
+    setStatusCache({ [viewModel.activeStatus]: viewModel });
+  }, [viewModel]);
+
+  useEffect(() => {
+    if (currentViewModel.activeScreen !== "list") return;
+    const inactiveStatuses = currentViewModel.statusTabs
+      .map((tab) => tab.key)
+      .filter((status) => status !== currentViewModel.activeStatus && !statusCache[status]);
+    if (inactiveStatuses.length === 0 || typeof fetch !== "function") return;
+    const controller = new AbortController();
+    Promise.all(
+      inactiveStatuses.map((status) =>
+        fetch(picturesApiHref(currentViewModel, status), { signal: controller.signal })
+          .then((response) => (response.ok ? response.json() : null))
+          .then((nextViewModel: InspirationalPicturesViewModel | null) => ({ status, nextViewModel })),
+      ),
+    )
+      .then((results) => {
+        setStatusCache((current) => {
+          const next = { ...current };
+          for (const result of results) {
+            if (result.nextViewModel) next[result.status] = result.nextViewModel;
+          }
+          return next;
+        });
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [currentViewModel, statusCache]);
+
+  async function switchStatus(status: InspirationalPictureStatus) {
+    if (status === currentViewModel.activeStatus) return;
+    window.history.pushState(null, "", picturesStatusHref(currentViewModel, status));
+    setMenuRow(null);
+    setDetailRow(null);
+    const cached = statusCache[status];
+    if (cached) {
+      setCurrentViewModel(cached);
+      return;
+    }
+    setCurrentViewModel((current) => loadingPicturesViewModel(current, status));
+    try {
+      const response = await fetch(picturesApiHref(currentViewModel, status));
+      if (!response.ok) throw new Error("Unable to load inspirational pictures.");
+      const nextViewModel = (await response.json()) as InspirationalPicturesViewModel;
+      setStatusCache((current) => ({ ...current, [status]: nextViewModel }));
+      setCurrentViewModel(nextViewModel);
+    } catch {
+      setCurrentViewModel((current) => ({
+        ...loadingPicturesViewModel(current, status),
+        phaseState: "error",
+        errorMessage: "We could not load inspirational pictures right now. Please try again.",
+      }));
+    }
+  }
+
+  const interactiveViewModel: InspirationalPicturesViewModel = {
+    ...currentViewModel,
+    selectedRow: menuRow ?? detailRow ?? currentViewModel.selectedRow,
+    showActionMenu: Boolean(menuRow) || currentViewModel.showActionMenu,
+    showDetails: Boolean(detailRow) || currentViewModel.showDetails,
+  };
+  const selectedRow = interactiveViewModel.selectedRow;
+  const showDetachedActionMenu = interactiveViewModel.showActionMenu && isBottomActionRow(interactiveViewModel, selectedRow);
 
   return (
-    <AdminDashboardShell viewModel={viewModel.shell} pageTitle={viewModel.activeScreen === "upload" ? undefined : "Inspirational Pictures"}>
-      {viewModel.activeScreen === "upload" ? <UploadScreen /> : null}
-      {viewModel.activeScreen === "list" && viewModel.phaseState === "empty" ? <EmptyState /> : null}
-      {viewModel.activeScreen === "list" && viewModel.phaseState === "loading" ? <div className="rounded-[20px] bg-[#171717] px-8 py-16 text-center text-white/70">Loading pictures...</div> : null}
-      {viewModel.activeScreen === "list" && viewModel.phaseState === "error" ? <div className="rounded-[20px] bg-[#171717] px-8 py-16 text-center text-white/70">{viewModel.errorMessage}</div> : null}
-      {viewModel.activeScreen === "list" && viewModel.phaseState === "populated" ? (
+    <AdminDashboardShell viewModel={interactiveViewModel.shell} pageTitle={interactiveViewModel.activeScreen === "upload" ? undefined : "Inspirational Pictures"}>
+      {interactiveViewModel.activeScreen === "upload" ? <UploadScreen /> : null}
+      {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "empty" ? <EmptyState /> : null}
+      {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "loading" ? <div className="rounded-[20px] bg-[#171717] px-8 py-16 text-center text-white/70">Loading pictures...</div> : null}
+      {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "error" ? <div className="rounded-[20px] bg-[#171717] px-8 py-16 text-center text-white/70">{interactiveViewModel.errorMessage}</div> : null}
+      {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "populated" ? (
         <div className="relative">
-          <PicturesGrid viewModel={viewModel} />
+          <PicturesGrid
+            viewModel={interactiveViewModel}
+            onStatusChange={switchStatus}
+            onOpenMenu={(row) => setMenuRow(row)}
+            onView={(row) => {
+              setMenuRow(null);
+              setDetailRow(row);
+            }}
+          />
           {showDetachedActionMenu && selectedRow ? (
             <div className="fixed bottom-24 right-8 z-50 sm:right-10">
-              <ActionMenu row={selectedRow} viewModel={viewModel} />
+              <ActionMenu
+                row={selectedRow}
+                viewModel={interactiveViewModel}
+                onView={(row) => {
+                  setMenuRow(null);
+                  setDetailRow(row);
+                }}
+              />
             </div>
           ) : null}
         </div>
       ) : null}
 
-      {viewModel.showDetails && selectedRow ? <DetailModal row={selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showEditModal && selectedRow ? <EditModal row={selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showDeleteModal ? <DeleteModal viewModel={viewModel} /> : null}
-      {viewModel.showSuccess && viewModel.successMessage ? <SuccessModal viewModel={viewModel} /> : null}
-      {viewModel.showActionMenu ? (
-        <AdminActionMenuBackdrop
-          href={buildInspirationalPicturesHref({ status: viewModel.activeStatus, screen: viewModel.activeScreen, q: viewModel.searchQuery })}
-          label="Close inspirational pictures action menu"
-        />
+      {interactiveViewModel.showDetails && selectedRow ? <DetailModal row={selectedRow} viewModel={interactiveViewModel} onClose={detailRow ? () => setDetailRow(null) : undefined} /> : null}
+      {interactiveViewModel.showEditModal && selectedRow ? <EditModal row={selectedRow} viewModel={interactiveViewModel} /> : null}
+      {interactiveViewModel.showDeleteModal ? <DeleteModal viewModel={interactiveViewModel} /> : null}
+      {interactiveViewModel.showSuccess && interactiveViewModel.successMessage ? <SuccessModal viewModel={interactiveViewModel} /> : null}
+      {interactiveViewModel.showActionMenu ? (
+        menuRow ? (
+          <button type="button" onClick={() => setMenuRow(null)} className="fixed inset-0 z-40" aria-label="Close inspirational pictures action menu" />
+        ) : (
+          <AdminActionMenuBackdrop
+            href={buildInspirationalPicturesHref({ status: interactiveViewModel.activeStatus, screen: interactiveViewModel.activeScreen, q: interactiveViewModel.searchQuery })}
+            label="Close inspirational pictures action menu"
+          />
+        )
       ) : null}
     </AdminDashboardShell>
   );

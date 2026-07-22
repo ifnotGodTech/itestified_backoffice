@@ -1,4 +1,5 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { getInspirationalPicturesViewModel } from "@/features/admin/data/services/get-inspirational-pictures-view-model";
 import { InspirationalPicturesPage } from "@/features/admin/presentation/components/inspirational-pictures-page";
@@ -13,6 +14,7 @@ vi.mock("next/navigation", () => ({
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });
 
 describe("InspirationalPicturesPage", () => {
@@ -44,6 +46,62 @@ describe("InspirationalPicturesPage", () => {
     expect(screen.getByText("View")).toBeInTheDocument();
     expect(screen.getByText("Edit")).toBeInTheDocument();
     expect(screen.getByText("Delete")).toBeInTheDocument();
+  });
+
+  test("switches picture status tabs on the client", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: string) => {
+        const status = new URL(url, "http://localhost").searchParams.get("status") ?? "All";
+        return Promise.resolve({
+          ok: true,
+          json: async () => getInspirationalPicturesViewModel({ status }),
+        });
+      }),
+    );
+    render(<InspirationalPicturesPage viewModel={getInspirationalPicturesViewModel({})} />);
+
+    await user.click(screen.getByRole("button", { name: "Scheduled" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Scheduled" })).toHaveAttribute("aria-pressed", "true");
+    });
+    expect(screen.getByText("03:00PM")).toBeInTheDocument();
+  });
+
+  test("opens and closes picture action menu without an extra fetch", async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => getInspirationalPicturesViewModel({}) });
+    vi.stubGlobal("fetch", fetchSpy);
+    render(<InspirationalPicturesPage viewModel={getInspirationalPicturesViewModel({})} />);
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    fetchSpy.mockClear();
+
+    await user.click(screen.getByRole("button", { name: "Open actions for picture 1" }));
+
+    expect(screen.getByRole("button", { name: "View" })).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Close inspirational pictures action menu" }));
+
+    expect(screen.queryByRole("button", { name: "View" })).not.toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  test("opens loaded picture details without an extra fetch", async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => getInspirationalPicturesViewModel({}) });
+    vi.stubGlobal("fetch", fetchSpy);
+    render(<InspirationalPicturesPage viewModel={getInspirationalPicturesViewModel({})} />);
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    fetchSpy.mockClear();
+
+    await user.click(screen.getByRole("button", { name: "Open actions for picture 1" }));
+    await user.click(screen.getByRole("button", { name: "View" }));
+
+    expect(screen.getByRole("heading", { name: "Picture Details" })).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   test("renders the scheduled picture details state", () => {

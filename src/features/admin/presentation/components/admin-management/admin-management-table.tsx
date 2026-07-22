@@ -1,11 +1,10 @@
 import Link from "next/link";
 import {
-  AdminActionMenuBackdrop,
   AdminActionMenuPanel,
   AdminRowMenuIcon,
   AdminSearchIcon,
 } from "@/features/admin/presentation/components/shared/admin-table-primitives";
-import type { AdminManagementRow, AdminManagementViewModel } from "@/features/admin/domain/entities/admin-management";
+import type { AdminManagementRow, AdminManagementTab, AdminManagementViewModel } from "@/features/admin/domain/entities/admin-management";
 import { buildAdminManagementHref } from "@/features/admin/presentation/state/admin-management-route-state";
 
 function statusClasses(status: AdminManagementRow["status"]) {
@@ -25,16 +24,32 @@ function AdminStatusPill({ status }: { status: AdminManagementRow["status"] }) {
   return <span className={`inline-flex rounded-full border px-3 py-1 text-[10px] ${statusClasses(status)}`}>{status}</span>;
 }
 
-function AdminMenu({ row, viewModel }: { row: AdminManagementRow; viewModel: AdminManagementViewModel }) {
+function AdminMenu({
+  row,
+  viewModel,
+  onCloseMenu,
+  onAssignRole,
+  onViewPermissions,
+}: {
+  row: AdminManagementRow;
+  viewModel: AdminManagementViewModel;
+  onCloseMenu?: () => void;
+  onAssignRole?: (row: AdminManagementRow) => void;
+  onViewPermissions?: (row: AdminManagementRow) => void;
+}) {
   const openUp = viewModel.rows.length - viewModel.rows.indexOf(row) <= 1;
   return (
     <>
-      <AdminActionMenuBackdrop href={closeHref(viewModel)} label="Close admin actions menu" />
+      {onCloseMenu ? (
+        <button type="button" onClick={onCloseMenu} className="fixed inset-0 z-40" aria-label="Close admin actions menu" />
+      ) : (
+        <Link href={closeHref(viewModel)} className="fixed inset-0 z-40" aria-label="Close admin actions menu" />
+      )}
       <AdminActionMenuPanel className={`absolute right-0 z-50 min-w-[150px] rounded-[8px] border-[#626262] bg-[#2a2a2a] ${openUp ? "bottom-[calc(100%+6px)]" : "top-[calc(100%+6px)]"}`}>
         {row.canAssignRole ? (
-          <Link href={buildAdminManagementHref({ tab: viewModel.activeTab, q: viewModel.searchQuery || null, assignRole: row.id })} className="block border-b border-white/10 px-3 py-[10px] text-[10px] text-white/85">
+          <button type="button" onClick={() => onAssignRole?.(row)} className="block w-full border-b border-white/10 px-3 py-[10px] text-left text-[10px] text-white/85">
             Select Role
-          </Link>
+          </button>
         ) : null}
         {row.canManageRole ? (
           <Link href={buildAdminManagementHref({ tab: viewModel.activeTab, q: viewModel.searchQuery || null, manageRole: row.id })} className="block border-b border-white/10 px-3 py-[10px] text-[10px] text-white/85">
@@ -42,9 +57,9 @@ function AdminMenu({ row, viewModel }: { row: AdminManagementRow; viewModel: Adm
           </Link>
         ) : null}
         {row.canViewPermissions ? (
-          <Link href={buildAdminManagementHref({ tab: viewModel.activeTab, q: viewModel.searchQuery || null, permission: row.id })} className="block border-b border-white/10 px-3 py-[10px] text-[10px] text-white/85">
+          <button type="button" onClick={() => onViewPermissions?.(row)} className="block w-full border-b border-white/10 px-3 py-[10px] text-left text-[10px] text-white/85">
             View Permission Details
-          </Link>
+          </button>
         ) : null}
         {row.canRenameRole ? (
           <Link href={buildAdminManagementHref({ tab: viewModel.activeTab, q: viewModel.searchQuery || null, renameRole: row.id })} className="block border-b border-white/10 px-3 py-[10px] text-[10px] text-white/85">
@@ -61,7 +76,21 @@ function AdminMenu({ row, viewModel }: { row: AdminManagementRow; viewModel: Adm
   );
 }
 
-export function AdminManagementTable({ viewModel }: { viewModel: AdminManagementViewModel }) {
+export function AdminManagementTable({
+  viewModel,
+  onTabChange,
+  onOpenMenu,
+  onCloseMenu,
+  onAssignRole,
+  onViewPermissions,
+}: {
+  viewModel: AdminManagementViewModel;
+  onTabChange?: (tab: AdminManagementTab) => void;
+  onOpenMenu?: (row: AdminManagementRow) => void;
+  onCloseMenu?: () => void;
+  onAssignRole?: (row: AdminManagementRow) => void;
+  onViewPermissions?: (row: AdminManagementRow) => void;
+}) {
   return (
     <div className="max-w-[1248px] pt-6 md:pt-8">
       <div className="rounded-[20px] bg-[#1b1b1b] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
@@ -92,22 +121,24 @@ export function AdminManagementTable({ viewModel }: { viewModel: AdminManagement
         </div>
 
         <div className="flex items-center gap-2 px-[14px] pb-3">
-          {[
+          {([
             { key: "all", label: "All" },
             { key: "active", label: "Active" },
             { key: "deactivated", label: "Deactivated" },
-          ].map((tab) => {
+          ] as Array<{ key: AdminManagementTab; label: string }>).map((tab) => {
             const isActive = viewModel.activeTab === tab.key;
             return (
-              <Link
+              <button
                 key={tab.key}
-                href={buildAdminManagementHref({ tab: tab.key as never, q: viewModel.searchQuery || null })}
+                type="button"
+                onClick={() => onTabChange?.(tab.key)}
+                aria-pressed={isActive}
                 className={`inline-flex h-[30px] items-center rounded-full px-4 text-[12px] ${
                   isActive ? "bg-[#9B68D5] text-white" : "bg-[#262626] text-white/58"
                 }`}
               >
                 {tab.label}
-              </Link>
+              </button>
             );
           })}
         </div>
@@ -135,19 +166,21 @@ export function AdminManagementTable({ viewModel }: { viewModel: AdminManagement
                 <AdminStatusPill status={row.status} />
                 <span className="text-[12px] text-white/72">{row.lastActive}</span>
                 {row.canViewPermissions ? (
-                  <Link href={buildAdminManagementHref({ tab: viewModel.activeTab, q: viewModel.searchQuery || null, permission: row.id })} className="truncate text-[11px] text-[#b27bff]">
+                  <button type="button" onClick={() => onViewPermissions?.(row)} className="truncate text-left text-[11px] text-[#b27bff]">
                     View Permission Details
-                  </Link>
+                  </button>
                 ) : (
-                  <Link href={buildAdminManagementHref({ tab: viewModel.activeTab, q: viewModel.searchQuery || null, assignRole: row.id })} className="truncate text-[11px] text-[#b27bff]">
+                  <button type="button" onClick={() => onAssignRole?.(row)} className="truncate text-left text-[11px] text-[#b27bff]">
                     Select Role
-                  </Link>
+                  </button>
                 )}
                 <div className="relative flex justify-end">
-                  <Link href={buildAdminManagementHref({ tab: viewModel.activeTab, q: viewModel.searchQuery || null, menu: row.id })} aria-label={`Open admin actions ${row.id}`} className="text-white/60">
+                  <button type="button" onClick={() => onOpenMenu?.(row)} aria-label={`Open admin actions ${row.id}`} className="text-white/60">
                     <AdminRowMenuIcon />
-                  </Link>
-                  {viewModel.showMenuForId === row.id ? <AdminMenu row={row} viewModel={viewModel} /> : null}
+                  </button>
+                  {viewModel.showMenuForId === row.id ? (
+                    <AdminMenu row={row} viewModel={viewModel} onCloseMenu={onCloseMenu} onAssignRole={onAssignRole} onViewPermissions={onViewPermissions} />
+                  ) : null}
                 </div>
               </div>
             ))

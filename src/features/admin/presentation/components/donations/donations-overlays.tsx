@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import type { DonationsViewModel } from "@/features/admin/domain/entities/donations";
+import type { DonationRow, DonationsViewModel } from "@/features/admin/domain/entities/donations";
 import { buildDonationsHref } from "@/features/admin/presentation/state/donations-route-state";
 
 function closeHref(viewModel: DonationsViewModel) {
@@ -35,44 +35,90 @@ function CloseX() {
   return <span className="text-[36px] leading-none text-white/90">×</span>;
 }
 
-export function DonationsOverlays({ viewModel }: { viewModel: DonationsViewModel }) {
+function CloseControl({
+  href,
+  onClose,
+  className,
+  label,
+  children,
+}: {
+  href: string;
+  onClose?: () => void;
+  className: string;
+  label: string;
+  children: ReactNode;
+}) {
+  if (onClose) {
+    return (
+      <button type="button" onClick={onClose} className={className} aria-label={label}>
+        {children}
+      </button>
+    );
+  }
+  return (
+    <Link href={href} className={className} aria-label={label}>
+      {children}
+    </Link>
+  );
+}
+
+export function DonationsOverlays({
+  viewModel,
+  detailRow,
+  showFilterModal = false,
+  onCloseDetails,
+  onCloseFilter,
+}: {
+  viewModel: DonationsViewModel;
+  detailRow?: DonationRow | null;
+  showFilterModal?: boolean;
+  onCloseDetails?: () => void;
+  onCloseFilter?: () => void;
+}) {
+  const selectedRow = detailRow ?? viewModel.selectedRow;
+  const showDetails = Boolean(detailRow) || viewModel.showDetails;
+  const showFilter = showFilterModal || viewModel.showFilterModal;
+  const close = closeHref(viewModel);
   return (
     <>
-      {viewModel.showDetails && viewModel.selectedRow ? (
+      {showDetails && selectedRow ? (
         <OverlayShell closeLabel="Close donation detail modal">
           <div className="relative z-10 w-full max-w-[620px] rounded-[20px] bg-[#1f1f1f] px-6 pb-6 pt-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-            <Link href={closeHref(viewModel)} className="absolute right-8 top-5" aria-label="Close donation detail modal">
+            <CloseControl href={close} onClose={detailRow ? onCloseDetails : undefined} className="absolute right-8 top-5" label="Close donation detail modal">
               <CloseX />
-            </Link>
+            </CloseControl>
             <h2 className="text-[20px] font-semibold text-white">Donation Detail</h2>
             <div className="mt-5 rounded-[10px] border border-white/15 px-4 py-4">
               <dl className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-4 text-[14px]">
                 <dt className="text-white/45">Donor name</dt>
-                <dd className="text-white">{viewModel.selectedRow.donor}</dd>
+                <dd className="text-white">{selectedRow.donor}</dd>
                 <dt className="text-white/45">Email</dt>
-                <dd className="text-white">{viewModel.selectedRow.email}</dd>
+                <dd className="text-white">{selectedRow.email}</dd>
                 <dt className="text-white/45">Payment reference</dt>
-                <dd className="text-white">{viewModel.selectedRow.reference}</dd>
+                <dd className="text-white">{selectedRow.reference}</dd>
                 <dt className="text-white/45">Amount</dt>
-                <dd className="text-white">{viewModel.selectedRow.amount}</dd>
+                <dd className="text-white">{selectedRow.amount}</dd>
                 <dt className="text-white/45">Currency</dt>
-                <dd className="text-white">{viewModel.selectedRow.currency}</dd>
+                <dd className="text-white">{selectedRow.currency}</dd>
                 <dt className="text-white/45">Status</dt>
-                <dd className="text-white">{viewModel.selectedRow.status}</dd>
+                <dd className="text-white">{selectedRow.status}</dd>
                 <dt className="text-white/45">Date</dt>
-                <dd className="text-white">{viewModel.selectedRow.date}</dd>
+                <dd className="text-white">{selectedRow.date}</dd>
               </dl>
             </div>
           </div>
         </OverlayShell>
       ) : null}
 
-      {viewModel.showFilterModal ? (
+      {showFilter ? (
         <OverlayShell closeLabel="Close donations filter modal">
           <form action="/donations" className="relative z-10 w-full max-w-[380px] overflow-hidden rounded-[20px] border border-white/15 bg-[#1d1d1d] shadow-[0_14px_40px_rgba(0,0,0,0.45)]">
             <input type="hidden" name="tab" value={viewModel.activeTab} />
-            <div className="border-b border-white/10 px-6 py-4">
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <h2 className="text-[14px] font-normal text-white">Filter</h2>
+              <CloseControl href={close} onClose={showFilterModal ? onCloseFilter : undefined} className="text-white/80 hover:text-white" label="Dismiss donations filter">
+                <CloseX />
+              </CloseControl>
             </div>
             <div className="px-6 py-4">
               <div className="border-b border-white/10 pb-4">
@@ -153,7 +199,9 @@ export function DonationsOverlays({ viewModel }: { viewModel: DonationsViewModel
               </button>
             </div>
           </form>
-          <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close donations filter modal" />
+          <CloseControl href={close} onClose={showFilterModal ? onCloseFilter : undefined} className="absolute inset-0" label="Close donations filter modal">
+            <span className="sr-only">Close donations filter modal</span>
+          </CloseControl>
         </OverlayShell>
       ) : null}
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { DonationRow, DonationsViewModel } from "@/features/admin/domain/entities/donations";
+import type { DonationRow, DonationTab, DonationsViewModel } from "@/features/admin/domain/entities/donations";
 import {
   AdminActionMenuBackdrop,
   AdminActionMenuPanel,
@@ -54,17 +54,26 @@ function PaymentMethodCell({ row }: { row: DonationRow }) {
   );
 }
 
-function DonationActionMenu({ row, viewModel }: { row: DonationRow; viewModel: DonationsViewModel }) {
+function DonationActionMenu({
+  row,
+  viewModel,
+  onView,
+}: {
+  row: DonationRow;
+  viewModel: DonationsViewModel;
+  onView?: (row: DonationRow) => void;
+}) {
   const openUp = viewModel.rows.length - viewModel.rows.indexOf(row) <= 1;
 
   return (
     <AdminActionMenuPanel className={`absolute right-0 z-50 min-w-[156px] rounded-[12px] border-[#626262] bg-[#2a2a2a] ${openUp ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"}`}>
-      <Link
-        href={buildDonationsHref({ tab: viewModel.activeTab, detail: row.id })}
-        className="block border-b border-white/10 px-4 py-3 text-[14px] text-white/80 hover:bg-white/[0.04]"
+      <button
+        type="button"
+        onClick={() => onView?.(row)}
+        className="block w-full border-b border-white/10 px-4 py-3 text-left text-[14px] text-white/80 hover:bg-white/[0.04]"
       >
         View details
-      </Link>
+      </button>
       {row.status === "successful" ? (
         <Link
           href={buildDonationsHref({ tab: viewModel.activeTab, reverse: row.id })}
@@ -140,7 +149,21 @@ function HeroCard({ viewModel }: { viewModel: DonationsViewModel }) {
   );
 }
 
-export function DonationsTable({ viewModel }: { viewModel: DonationsViewModel }) {
+export function DonationsTable({
+  viewModel,
+  onTabChange,
+  onOpenFilter,
+  onOpenMenu,
+  onCloseMenu,
+  onView,
+}: {
+  viewModel: DonationsViewModel;
+  onTabChange?: (tab: DonationTab) => void;
+  onOpenFilter?: () => void;
+  onOpenMenu?: (row: DonationRow) => void;
+  onCloseMenu?: () => void;
+  onView?: (row: DonationRow) => void;
+}) {
   const showHeaderBadges = viewModel.activeTab !== "all";
   const tableGridClass =
     "grid min-w-[936px] grid-cols-[36px_54px_1fr_1fr_1.1fr_86px_96px_1fr_94px_98px_36px]";
@@ -162,15 +185,17 @@ export function DonationsTable({ viewModel }: { viewModel: DonationsViewModel })
       <div className="mt-8 border-b border-white/10">
         <div className="flex flex-wrap gap-x-8 gap-y-3">
           {viewModel.tabs.map((tab) => (
-            <Link
+            <button
               key={tab.key}
-              href={buildDonationsHref({ tab: tab.key, q: viewModel.searchQuery })}
+              type="button"
+              onClick={() => onTabChange?.(tab.key)}
+              aria-pressed={tab.key === viewModel.activeTab}
               className={`border-b pb-4 text-[14px] font-semibold ${
                 tab.key === viewModel.activeTab ? "border-[#9B68D5] text-[#b27bff]" : "border-transparent text-white/50"
               }`}
             >
               {tab.label}
-            </Link>
+            </button>
           ))}
         </div>
       </div>
@@ -194,12 +219,13 @@ export function DonationsTable({ viewModel }: { viewModel: DonationsViewModel })
           >
             Export
           </button>
-          <Link
-            href={buildDonationsHref({ tab: viewModel.activeTab, filter: true })}
+          <button
+            type="button"
+            onClick={onOpenFilter}
             className="inline-flex h-[42px] items-center justify-center rounded-[10px] border border-white/15 px-5 text-[14px] text-white/88"
           >
             Filter
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -259,11 +285,11 @@ export function DonationsTable({ viewModel }: { viewModel: DonationsViewModel })
                     <DonationStatusBadge status={row.status} />
                   </span>
                   <div className="relative flex justify-end text-white/70">
-                    <Link href={buildDonationsHref({ tab: viewModel.activeTab, menu: row.id })} aria-label={`Open actions for donation ${row.id}`}>
+                    <button type="button" onClick={() => onOpenMenu?.(row)} aria-label={`Open actions for donation ${row.id}`}>
                       <AdminRowMenuIcon />
-                    </Link>
+                    </button>
                     {viewModel.showActionMenu && viewModel.selectedRow?.id === row.id ? (
-                      <DonationActionMenu row={row} viewModel={viewModel} />
+                      <DonationActionMenu row={row} viewModel={viewModel} onView={onView} />
                     ) : null}
                   </div>
                 </div>
@@ -285,7 +311,11 @@ export function DonationsTable({ viewModel }: { viewModel: DonationsViewModel })
         </div>
 
         {viewModel.showActionMenu && viewModel.selectedRow ? (
-          <AdminActionMenuBackdrop href={buildDonationsHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} label="Close donations action menu" />
+          onCloseMenu ? (
+            <button type="button" onClick={onCloseMenu} className="fixed inset-0 z-40" aria-label="Close donations action menu" />
+          ) : (
+            <AdminActionMenuBackdrop href={buildDonationsHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} label="Close donations action menu" />
+          )
         ) : null}
         {viewModel.showMonthMenu ? (
           <AdminActionMenuBackdrop

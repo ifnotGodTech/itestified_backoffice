@@ -84,17 +84,26 @@ function DeactivatedHeader() {
   );
 }
 
-function UserActionMenu({ row, viewModel }: { row: UserManagementRow; viewModel: UserManagementViewModel }) {
+function UserActionMenu({
+  row,
+  viewModel,
+  onView,
+}: {
+  row: UserManagementRow;
+  viewModel: UserManagementViewModel;
+  onView?: (row: UserManagementRow) => void;
+}) {
   const openUp = viewModel.rows.length - viewModel.rows.indexOf(row) <= 1;
 
   return (
     <AdminActionMenuPanel className={`absolute right-0 z-50 ${openUp ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"}`}>
-      <Link
-        href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, view: row.id })}
-        className="block border-b border-white/10 px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]"
+      <button
+        type="button"
+        onClick={() => onView?.(row)}
+        className="block w-full border-b border-white/10 px-4 py-2 text-left text-[14px] text-white/90 hover:bg-white/[0.04]"
       >
         View Profile
-      </Link>
+      </button>
       {viewModel.activeTab === "registered" ? (
         <Link
           href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, deactivate: row.id })}
@@ -135,7 +144,15 @@ function SearchBar({ viewModel }: { viewModel: UserManagementViewModel }) {
   );
 }
 
-function RegisteredRows({ viewModel }: { viewModel: UserManagementViewModel }) {
+function RegisteredRows({
+  viewModel,
+  onOpenMenu,
+  onView,
+}: {
+  viewModel: UserManagementViewModel;
+  onOpenMenu?: (row: UserManagementRow) => void;
+  onView?: (row: UserManagementRow) => void;
+}) {
   return (
     <>
       {viewModel.rows.map((row) => (
@@ -146,10 +163,10 @@ function RegisteredRows({ viewModel }: { viewModel: UserManagementViewModel }) {
           <span>{row.name}</span>
           <span>{row.email}</span>
           <div className="relative flex justify-end text-white/82">
-            <Link href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, menu: row.id })} aria-label={`Open actions for user ${row.id}`}>
+            <button type="button" onClick={() => onOpenMenu?.(row)} aria-label={`Open actions for user ${row.id}`}>
               <AdminRowMenuIcon />
-            </Link>
-            {viewModel.showActionMenu && viewModel.selectedRow?.id === row.id ? <UserActionMenu row={row} viewModel={viewModel} /> : null}
+            </button>
+            {viewModel.showActionMenu && viewModel.selectedRow?.id === row.id ? <UserActionMenu row={row} viewModel={viewModel} onView={onView} /> : null}
           </div>
         </div>
       ))}
@@ -157,7 +174,15 @@ function RegisteredRows({ viewModel }: { viewModel: UserManagementViewModel }) {
   );
 }
 
-function DeletedRows({ viewModel }: { viewModel: UserManagementViewModel }) {
+function DeletedRows({
+  viewModel,
+  onOpenMenu,
+  onView,
+}: {
+  viewModel: UserManagementViewModel;
+  onOpenMenu?: (row: UserManagementRow) => void;
+  onView?: (row: UserManagementRow) => void;
+}) {
   return (
     <>
       {viewModel.rows.map((row) => (
@@ -172,10 +197,10 @@ function DeletedRows({ viewModel }: { viewModel: UserManagementViewModel }) {
           <span>{row.deletionDate}</span>
           <span>{row.deletionReason}</span>
           <div className="relative flex justify-end text-white/82">
-            <Link href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, menu: row.id })} aria-label={`Open actions for user ${row.id}`}>
+            <button type="button" onClick={() => onOpenMenu?.(row)} aria-label={`Open actions for user ${row.id}`}>
               <AdminRowMenuIcon />
-            </Link>
-            {viewModel.showActionMenu && viewModel.selectedRow?.id === row.id ? <UserActionMenu row={row} viewModel={viewModel} /> : null}
+            </button>
+            {viewModel.showActionMenu && viewModel.selectedRow?.id === row.id ? <UserActionMenu row={row} viewModel={viewModel} onView={onView} /> : null}
           </div>
         </div>
       ))}
@@ -183,7 +208,15 @@ function DeletedRows({ viewModel }: { viewModel: UserManagementViewModel }) {
   );
 }
 
-function DeactivatedRows({ viewModel }: { viewModel: UserManagementViewModel }) {
+function DeactivatedRows({
+  viewModel,
+  onOpenMenu,
+  onView,
+}: {
+  viewModel: UserManagementViewModel;
+  onOpenMenu?: (row: UserManagementRow) => void;
+  onView?: (row: UserManagementRow) => void;
+}) {
   return (
     <>
       {viewModel.rows.map((row) => (
@@ -194,10 +227,10 @@ function DeactivatedRows({ viewModel }: { viewModel: UserManagementViewModel }) 
           <span>{row.email}</span>
           <span>{row.deactivatedOn}</span>
           <div className="relative flex justify-end text-white/82">
-            <Link href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, menu: row.id })} aria-label={`Open actions for user ${row.id}`}>
+            <button type="button" onClick={() => onOpenMenu?.(row)} aria-label={`Open actions for user ${row.id}`}>
               <AdminRowMenuIcon />
-            </Link>
-            {viewModel.showActionMenu && viewModel.selectedRow?.id === row.id ? <UserActionMenu row={row} viewModel={viewModel} /> : null}
+            </button>
+            {viewModel.showActionMenu && viewModel.selectedRow?.id === row.id ? <UserActionMenu row={row} viewModel={viewModel} onView={onView} /> : null}
           </div>
         </div>
       ))}
@@ -205,7 +238,17 @@ function DeactivatedRows({ viewModel }: { viewModel: UserManagementViewModel }) 
   );
 }
 
-export function UsersTable({ viewModel }: { viewModel: UserManagementViewModel }) {
+export function UsersTable({
+  viewModel,
+  onOpenMenu,
+  onCloseMenu,
+  onView,
+}: {
+  viewModel: UserManagementViewModel;
+  onOpenMenu?: (row: UserManagementRow) => void;
+  onCloseMenu?: () => void;
+  onView?: (row: UserManagementRow) => void;
+}) {
   return (
     <div className="relative max-w-[1080px] rounded-[18px] bg-[#171717]">
       <div className="overflow-hidden rounded-[18px]">
@@ -225,9 +268,9 @@ export function UsersTable({ viewModel }: { viewModel: UserManagementViewModel }
           {viewModel.phaseState === "loading" ? <UsersTableLoading /> : null}
           {viewModel.phaseState === "empty" ? <UsersTableEmpty /> : null}
           {viewModel.phaseState === "error" ? <UsersTableError message={viewModel.errorMessage} /> : null}
-          {viewModel.phaseState === "populated" && viewModel.activeTab === "registered" ? <><RegisteredHeader /><RegisteredRows viewModel={viewModel} /></> : null}
-          {viewModel.phaseState === "populated" && viewModel.activeTab === "deleted" ? <><DeletedHeader /><DeletedRows viewModel={viewModel} /></> : null}
-          {viewModel.phaseState === "populated" && viewModel.activeTab === "deactivated" ? <><DeactivatedHeader /><DeactivatedRows viewModel={viewModel} /></> : null}
+          {viewModel.phaseState === "populated" && viewModel.activeTab === "registered" ? <><RegisteredHeader /><RegisteredRows viewModel={viewModel} onOpenMenu={onOpenMenu} onView={onView} /></> : null}
+          {viewModel.phaseState === "populated" && viewModel.activeTab === "deleted" ? <><DeletedHeader /><DeletedRows viewModel={viewModel} onOpenMenu={onOpenMenu} onView={onView} /></> : null}
+          {viewModel.phaseState === "populated" && viewModel.activeTab === "deactivated" ? <><DeactivatedHeader /><DeactivatedRows viewModel={viewModel} onOpenMenu={onOpenMenu} onView={onView} /></> : null}
         </div>
 
         <div className="flex items-center justify-between px-4 py-4 text-[12px] text-white/65">
@@ -243,7 +286,13 @@ export function UsersTable({ viewModel }: { viewModel: UserManagementViewModel }
         </div>
       </div>
 
-      {viewModel.showActionMenu && viewModel.selectedRow ? <AdminActionMenuBackdrop href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} label="Close users action menu" /> : null}
+      {viewModel.showActionMenu && viewModel.selectedRow ? (
+        onCloseMenu ? (
+          <button type="button" onClick={onCloseMenu} className="fixed inset-0 z-40" aria-label="Close users action menu" />
+        ) : (
+          <AdminActionMenuBackdrop href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} label="Close users action menu" />
+        )
+      ) : null}
     </div>
   );
 }

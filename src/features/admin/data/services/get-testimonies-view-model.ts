@@ -406,6 +406,15 @@ type BackendCategory = {
   is_active: boolean;
 };
 
+type CachedCategories = {
+  expiresAt: number;
+  categories: TestimonyCategoryOption[];
+};
+
+const CATEGORY_CACHE_TTL_MS = 60_000;
+const TESTIMONIES_PAGE_SIZE = 20;
+const categoryCache = new Map<string, CachedCategories>();
+
 function normalizeBackendCategoriesPayload(payload: unknown): BackendCategory[] {
   if (Array.isArray(payload)) return payload as BackendCategory[];
   if (payload && typeof payload === "object") {
@@ -463,20 +472,28 @@ export async function getTestimoniesViewModelFromBackend(
   if (statusFilter) params.set("status", statusFilter);
   if (input.q?.trim()) params.set("search", input.q.trim());
   if (input.category?.trim()) params.set("category", input.category.trim());
-  params.set("page_size", "100");
+  params.set("testimony_type", activeTab === "video" ? "video" : "written");
+  params.set("page_size", String(TESTIMONIES_PAGE_SIZE));
+  const categoryCacheKey = input.cookieHeader ?? "anonymous";
+  const cachedCategories = categoryCache.get(categoryCacheKey);
+  const shouldFetchCategories = !cachedCategories || cachedCategories.expiresAt <= Date.now();
 
   try {
+    const testimoniesResponsePromise = fetch(`${backendBaseUrl}/testimonies/admin/testimonies/?${params.toString()}`, {
+        headers: input.cookieHeader ? { cookie: input.cookieHeader } : {},
+        cache: "no-store",
+    });
+    const categoriesResponsePromise = shouldFetchCategories
+      ? fetch(`${backendBaseUrl}/testimonies/admin/categories/`, {
+          headers: input.cookieHeader ? { cookie: input.cookieHeader } : {},
+          cache: "no-store",
+        })
+      : Promise.resolve(null);
     const [testimoniesResponse, categoriesResponse] = await Promise.all([
-      fetch(`${backendBaseUrl}/testimonies/admin/testimonies/?${params.toString()}`, {
-        headers: input.cookieHeader ? { cookie: input.cookieHeader } : {},
-        cache: "no-store",
-      }),
-      fetch(`${backendBaseUrl}/testimonies/admin/categories/`, {
-        headers: input.cookieHeader ? { cookie: input.cookieHeader } : {},
-        cache: "no-store",
-      }),
+      testimoniesResponsePromise,
+      categoriesResponsePromise,
     ]);
-    if (!testimoniesResponse.ok || !categoriesResponse.ok) {
+    if (!testimoniesResponse.ok || (categoriesResponse && !categoriesResponse.ok)) {
       return {
         ...base,
         phaseState: "error",
@@ -485,17 +502,27 @@ export async function getTestimoniesViewModelFromBackend(
         showingLabel: "Showing 0 of 0",
       };
     }
-    const testimoniesPayload = (await testimoniesResponse.json()) as { results?: BackendTestimony[] };
-    const categoriesPayloadRaw = (await categoriesResponse.json()) as unknown;
-    const categoriesPayload = normalizeBackendCategoriesPayload(categoriesPayloadRaw);
+    const testimoniesPayload = (await testimoniesResponse.json()) as {
+      count?: number;
+      results?: BackendTestimony[];
+    };
+    const categories =
+      cachedCategories && !shouldFetchCategories
+        ? cachedCategories.categories
+        : normalizeBackendCategoriesPayload((await categoriesResponse?.json()) as unknown).map((category) => ({
+            id: category.id,
+            name: category.name,
+            slug: category.slug,
+            description: category.description ?? "",
+            isActive: category.is_active,
+          }));
     const backendRows = testimoniesPayload.results ?? [];
-    const categories: TestimonyCategoryOption[] = (categoriesPayload ?? []).map((category) => ({
-      id: category.id,
-      name: category.name,
-      slug: category.slug,
-      description: category.description ?? "",
-      isActive: category.is_active,
-    }));
+    if (shouldFetchCategories) {
+      categoryCache.set(categoryCacheKey, {
+        expiresAt: Date.now() + CATEGORY_CACHE_TTL_MS,
+        categories,
+      });
+    }
     const typedRows: TestimonyRow[] = backendRows
       .filter((item) => (activeTab === "video" ? item.testimony_type === "video" : item.testimony_type === "written"))
       .map((item) => {
@@ -574,8 +601,11 @@ export async function getTestimoniesViewModelFromBackend(
       categories,
       rows: finalRows,
       selectedRow,
-      totalRows: finalRows.length,
-      showingLabel: finalRows.length === 0 ? "Showing 0 of 0" : `Showing 1-${finalRows.length} of ${finalRows.length}`,
+      totalRows: testimoniesPayload.count ?? finalRows.length,
+      showingLabel:
+        finalRows.length === 0
+          ? "Showing 0 of 0"
+          : `Showing 1-${finalRows.length} of ${testimoniesPayload.count ?? finalRows.length}`,
     };
   } catch {
     return {

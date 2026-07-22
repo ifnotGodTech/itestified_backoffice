@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { getNotificationsHistoryViewModel } from "@/features/admin/data/services/get-notifications-history-view-model";
 import { NotificationsHistoryPage } from "@/features/admin/presentation/components/notifications-history-page";
@@ -47,6 +48,24 @@ describe("NotificationsHistoryPage", () => {
     cleanup();
     render(<NotificationsHistoryPage viewModel={getNotificationsHistoryViewModel({ deleteAll: "1", selected: "1,2" })} />);
     expect(screen.getByRole("heading", { name: "Delete Notification" })).toBeInTheDocument();
+  });
+
+  test("selects notifications and opens filter locally", async () => {
+    const user = userEvent.setup();
+    render(<NotificationsHistoryPage viewModel={getNotificationsHistoryViewModel({})} />);
+
+    await user.click(screen.getByRole("button", { name: "Select notification 1" }));
+
+    expect(screen.getByRole("link", { name: "Delete" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Mark as read" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Filter" }));
+
+    expect(screen.getByRole("heading", { name: "Filter" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Dismiss notifications filter" }));
+
+    expect(screen.queryByRole("heading", { name: "Filter" })).not.toBeInTheDocument();
   });
 
   test("renders success state", () => {

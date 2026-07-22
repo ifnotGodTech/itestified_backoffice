@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { ReviewsViewModel } from "@/features/admin/domain/entities/reviews";
 import { buildReviewsHref } from "@/features/admin/presentation/state/reviews-route-state";
 
@@ -10,6 +11,34 @@ function closeHref(viewModel: ReviewsViewModel) {
     to: viewModel.filterDraft.to,
     selected: viewModel.selectedIds.join(",") || null,
   });
+}
+
+function CloseControl({
+  href,
+  onClose,
+  className,
+  label,
+  children,
+}: {
+  href: string;
+  onClose?: () => void;
+  className: string;
+  label: string;
+  children?: ReactNode;
+}) {
+  if (onClose) {
+    return (
+      <button type="button" onClick={onClose} className={className} aria-label={label}>
+        {children}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={href} className={className} aria-label={label}>
+      {children}
+    </Link>
+  );
 }
 
 function RatingOptions({ selected }: { selected?: number }) {
@@ -28,16 +57,29 @@ function RatingOptions({ selected }: { selected?: number }) {
   );
 }
 
-export function ReviewsOverlays({ viewModel }: { viewModel: ReviewsViewModel }) {
+export function ReviewsOverlays({
+  viewModel,
+  showFilterModal = false,
+  onCloseFilter,
+  onCloseDetails,
+}: {
+  viewModel: ReviewsViewModel;
+  showFilterModal?: boolean;
+  onCloseFilter?: () => void;
+  onCloseDetails?: () => void;
+}) {
+  const showFilter = showFilterModal || viewModel.showFilterModal;
+  const rootCloseHref = closeHref(viewModel);
   return (
     <>
-      {viewModel.showFilterModal ? (
+      {showFilter ? (
         <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 px-6 py-24">
-          <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close reviews filter modal" />
+          <CloseControl href={rootCloseHref} onClose={showFilterModal ? onCloseFilter : undefined} className="absolute inset-0" label="Close reviews filter modal" />
           <form action="/reviews" className="relative z-10 w-full max-w-[353px] overflow-hidden rounded-[20px] border border-white/15 bg-[#1d1d1d] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <input type="hidden" name="selected" value={viewModel.selectedIds.join(",")} />
-            <div className="border-b border-white/10 px-4 py-4">
+            <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
               <h2 className="text-[14px] font-normal text-white">Filter</h2>
+              <CloseControl href={rootCloseHref} onClose={showFilterModal ? onCloseFilter : undefined} className="text-[24px] leading-none text-white/80 hover:text-white" label="Dismiss reviews filter">×</CloseControl>
             </div>
             <div className="px-4 py-4">
               <div className="border-b border-white/10 pb-4">
@@ -82,9 +124,9 @@ export function ReviewsOverlays({ viewModel }: { viewModel: ReviewsViewModel }) 
 
       {viewModel.showDetailForId && viewModel.selectedRow ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
-          <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close review detail modal" />
+          <CloseControl href={rootCloseHref} onClose={onCloseDetails} className="absolute inset-0" label="Close review detail modal" />
           <div className="relative z-10 w-full max-w-[561px] max-h-[calc(100vh-48px)] overflow-y-auto rounded-[24px] bg-[#1c1c1c] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-            <Link href={closeHref(viewModel)} className="absolute right-[14px] top-[8px] text-[34px] leading-none text-white/90" aria-label="Close review detail modal">×</Link>
+            <CloseControl href={rootCloseHref} onClose={onCloseDetails} className="absolute right-[14px] top-[8px] text-[34px] leading-none text-white/90" label="Dismiss review detail">×</CloseControl>
             <div className="flex h-[110px] items-end justify-center bg-[#272727]">
               <div className="translate-y-[50px] overflow-hidden rounded-full border-[6px] border-white bg-white">
                 <Image src="/admin-avatar.png" alt={viewModel.selectedRow.name} width={100} height={100} className="h-[100px] w-[100px] object-cover" />

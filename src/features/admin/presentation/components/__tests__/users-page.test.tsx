@@ -1,4 +1,5 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { getUsersViewModel } from "@/features/admin/data/services/get-users-view-model";
 import { UsersPage } from "@/features/admin/presentation/components/users-page";
@@ -13,6 +14,7 @@ vi.mock("next/navigation", () => ({
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });
 
 describe("UsersPage", () => {
@@ -31,6 +33,28 @@ describe("UsersPage", () => {
     expect(screen.getByText("Deleted accounts")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
     expect(screen.getByText("Felix Stone")).toBeInTheDocument();
+  });
+
+  test("switches user tabs on the client", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: string) => {
+        const tab = new URL(url, "http://localhost").searchParams.get("tab") ?? "registered";
+        return Promise.resolve({
+          ok: true,
+          json: async () => getUsersViewModel({ tab }),
+        });
+      }),
+    );
+    render(<UsersPage viewModel={getUsersViewModel({})} />);
+
+    await user.click(screen.getByRole("button", { name: "Deleted accounts" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Felix Stone")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "Deleted accounts" })).toHaveAttribute("aria-pressed", "true");
   });
 
   test("renders the empty state", () => {

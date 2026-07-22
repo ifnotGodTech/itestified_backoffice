@@ -2,11 +2,46 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { UserManagementRow, UserManagementViewModel } from "@/features/admin/domain/entities/users";
 import { buildUsersHref } from "@/features/admin/presentation/state/users-route-state";
 
-function UserProfileModal({ row, viewModel }: { row: UserManagementRow; viewModel: UserManagementViewModel }) {
+function CloseControl({
+  href,
+  onClose,
+  className,
+  label,
+  children,
+}: {
+  href: string;
+  onClose?: () => void;
+  className: string;
+  label: string;
+  children: ReactNode;
+}) {
+  if (onClose) {
+    return (
+      <button type="button" onClick={onClose} className={className} aria-label={label}>
+        {children}
+      </button>
+    );
+  }
+  return (
+    <Link href={href} className={className} aria-label={label}>
+      {children}
+    </Link>
+  );
+}
+
+function UserProfileModal({
+  row,
+  viewModel,
+  onClose,
+}: {
+  row: UserManagementRow;
+  viewModel: UserManagementViewModel;
+  onClose?: () => void;
+}) {
   const statusClass =
     row.status === "Registered"
       ? "text-[#0cbc32]"
@@ -14,14 +49,18 @@ function UserProfileModal({ row, viewModel }: { row: UserManagementRow; viewMode
         ? "text-[#ef4335]"
         : "text-[#ef4335]";
 
+  const href = buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery });
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} className="absolute inset-0" aria-label="Close user profile modal" />
+      <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close user profile modal">
+        <span className="sr-only">Close user profile modal</span>
+      </CloseControl>
       <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="relative min-h-[110px] bg-[#262626]">
-          <Link href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} className="absolute right-6 top-4 text-[34px] leading-none text-white/90">
+          <CloseControl href={href} onClose={onClose} className="absolute right-6 top-4 text-[34px] leading-none text-white/90" label="Dismiss user profile">
             ×
-          </Link>
+          </CloseControl>
         </div>
         <div className="relative px-8 pb-8 pt-2">
           <div className="-mt-16 flex justify-center">
@@ -47,15 +86,26 @@ function UserProfileModal({ row, viewModel }: { row: UserManagementRow; viewMode
   );
 }
 
-function DeactivatedAccountDetailModal({ row, viewModel }: { row: UserManagementRow; viewModel: UserManagementViewModel }) {
+function DeactivatedAccountDetailModal({
+  row,
+  viewModel,
+  onClose,
+}: {
+  row: UserManagementRow;
+  viewModel: UserManagementViewModel;
+  onClose?: () => void;
+}) {
+  const href = buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery });
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} className="absolute inset-0" aria-label="Close deactivated account modal" />
+      <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close deactivated account modal">
+        <span className="sr-only">Close deactivated account modal</span>
+      </CloseControl>
       <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="relative min-h-[110px] bg-[#262626]">
-          <Link href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} className="absolute right-6 top-4 text-[34px] leading-none text-white/90">
+          <CloseControl href={href} onClose={onClose} className="absolute right-6 top-4 text-[34px] leading-none text-white/90" label="Dismiss deactivated account detail">
             ×
-          </Link>
+          </CloseControl>
         </div>
         <div className="relative overflow-y-auto px-6 pb-8 pt-2">
           <div className="-mt-16 flex justify-center">
@@ -281,11 +331,21 @@ function SuccessModal({ viewModel }: { viewModel: UserManagementViewModel }) {
   );
 }
 
-export function UsersOverlays({ viewModel }: { viewModel: UserManagementViewModel }) {
+export function UsersOverlays({
+  viewModel,
+  detailRow,
+  onCloseDetails,
+}: {
+  viewModel: UserManagementViewModel;
+  detailRow?: UserManagementRow | null;
+  onCloseDetails?: () => void;
+}) {
+  const selectedRow = detailRow ?? viewModel.selectedRow;
+  const showDetails = Boolean(detailRow) || viewModel.showDetails;
   return (
     <>
-      {viewModel.showDetails && viewModel.selectedRow && viewModel.activeTab !== "deactivated" ? <UserProfileModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showDetails && viewModel.selectedRow && viewModel.activeTab === "deactivated" ? <DeactivatedAccountDetailModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
+      {showDetails && selectedRow && viewModel.activeTab !== "deactivated" ? <UserProfileModal row={selectedRow} viewModel={viewModel} onClose={detailRow ? onCloseDetails : undefined} /> : null}
+      {showDetails && selectedRow && viewModel.activeTab === "deactivated" ? <DeactivatedAccountDetailModal row={selectedRow} viewModel={viewModel} onClose={detailRow ? onCloseDetails : undefined} /> : null}
       {viewModel.showDeactivateConfirm && viewModel.selectedRow ? <DeactivateAccountModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
       {viewModel.showReactivateConfirm && viewModel.selectedRow ? <ReactivateAccountModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
       {viewModel.showSuccess && viewModel.successMessage ? <SuccessModal viewModel={viewModel} /> : null}

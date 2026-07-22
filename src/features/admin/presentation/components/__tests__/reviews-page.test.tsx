@@ -1,4 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { getReviewsViewModel } from "@/features/admin/data/services/get-reviews-view-model";
 import { ReviewsPage } from "@/features/admin/presentation/components/reviews-page";
@@ -36,6 +37,34 @@ describe("ReviewsPage", () => {
     render(<ReviewsPage viewModel={getReviewsViewModel({ view: "1" })} />);
     expect(screen.getByRole("heading", { name: "Review" })).toBeInTheDocument();
     expect(screen.getByText("Email Address")).toBeInTheDocument();
+  });
+
+  test("opens and closes review menu locally", async () => {
+    const user = userEvent.setup();
+    render(<ReviewsPage viewModel={getReviewsViewModel({})} />);
+
+    await user.click(screen.getByRole("button", { name: "Open review actions 1" }));
+
+    expect(screen.getByRole("button", { name: "View details" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Close review action menu" }));
+
+    expect(screen.queryByRole("button", { name: "View details" })).not.toBeInTheDocument();
+  });
+
+  test("opens review filter and loaded details locally", async () => {
+    const user = userEvent.setup();
+    render(<ReviewsPage viewModel={getReviewsViewModel({})} />);
+
+    await user.click(screen.getByRole("button", { name: "Filter" }));
+
+    expect(screen.getByRole("heading", { name: "Filter" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Dismiss reviews filter" }));
+    await user.click(screen.getByRole("button", { name: "Open review actions 1" }));
+    await user.click(screen.getByRole("button", { name: "View details" }));
+
+    expect(screen.getByRole("heading", { name: "Review" })).toBeInTheDocument();
   });
 
   test("renders delete, empty, and error states", () => {

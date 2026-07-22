@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { NotificationsHistoryViewModel } from "@/features/admin/domain/entities/notifications-history";
 import { buildNotificationsHistoryHref } from "@/features/admin/presentation/state/notifications-history-route-state";
 
@@ -15,18 +16,57 @@ function closeHref(viewModel: NotificationsHistoryViewModel) {
   });
 }
 
-export function NotificationsHistoryOverlays({ viewModel }: { viewModel: NotificationsHistoryViewModel }) {
+function CloseControl({
+  href,
+  onClose,
+  className,
+  label,
+  children,
+}: {
+  href: string;
+  onClose?: () => void;
+  className: string;
+  label: string;
+  children?: ReactNode;
+}) {
+  if (onClose) {
+    return (
+      <button type="button" onClick={onClose} className={className} aria-label={label}>
+        {children}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={href} className={className} aria-label={label}>
+      {children}
+    </Link>
+  );
+}
+
+export function NotificationsHistoryOverlays({
+  viewModel,
+  showFilterModal = false,
+  onCloseFilter,
+}: {
+  viewModel: NotificationsHistoryViewModel;
+  showFilterModal?: boolean;
+  onCloseFilter?: () => void;
+}) {
   const readIds = viewModel.rows.filter((row) => row.status === "read").map((row) => row.id).join(",") || null;
+  const showFilter = showFilterModal || viewModel.showFilterModal;
+  const rootCloseHref = closeHref(viewModel);
   return (
     <>
-      {viewModel.showFilterModal ? (
+      {showFilter ? (
         <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 px-6 py-24">
-          <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close notifications filter modal" />
+          <CloseControl href={rootCloseHref} onClose={showFilterModal ? onCloseFilter : undefined} className="absolute inset-0" label="Close notifications filter modal" />
           <form action="/notifications-history" className="relative z-10 w-full max-w-[324px] overflow-hidden rounded-[18px] border border-white/15 bg-[#1d1d1d] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <input type="hidden" name="selected" value={viewModel.selectedIds.join(",")} />
             {viewModel.showPanel ? <input type="hidden" name="panel" value="1" /> : null}
-            <div className="border-b border-white/10 px-3 py-3">
+            <div className="flex items-center justify-between border-b border-white/10 px-3 py-3">
               <h2 className="text-[14px] font-normal text-white">Filter</h2>
+              <CloseControl href={rootCloseHref} onClose={showFilterModal ? onCloseFilter : undefined} className="text-[22px] leading-none text-white/80 hover:text-white" label="Dismiss notifications filter">×</CloseControl>
             </div>
             <div className="px-3 py-3">
               <div className="border-b border-white/10 pb-3">

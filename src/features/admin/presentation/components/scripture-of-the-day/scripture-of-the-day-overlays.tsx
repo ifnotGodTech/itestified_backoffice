@@ -1,6 +1,35 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { ScriptureDraft, ScriptureOfTheDayViewModel, ScriptureRow, ScriptureStatus } from "@/features/admin/domain/entities/scripture-of-the-day";
 import { buildScriptureOfTheDayHref } from "@/features/admin/presentation/state/scripture-of-the-day-route-state";
+
+function CloseControl({
+  href,
+  onClose,
+  className,
+  label,
+  children,
+}: {
+  href: string;
+  onClose?: () => void;
+  className: string;
+  label: string;
+  children?: ReactNode;
+}) {
+  if (onClose) {
+    return (
+      <button type="button" onClick={onClose} className={className} aria-label={label}>
+        {children}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={href} className={className} aria-label={label}>
+      {children}
+    </Link>
+  );
+}
 
 function StatusPill({ status }: { status: ScriptureStatus }) {
   const cls =
@@ -20,16 +49,17 @@ function DetailRow({ label, value, divider = true }: { label: string; value: str
   );
 }
 
-function DetailModal({ viewModel, row }: { viewModel: ScriptureOfTheDayViewModel; row: ScriptureRow }) {
+function DetailModal({ viewModel, row, onClose }: { viewModel: ScriptureOfTheDayViewModel; row: ScriptureRow; onClose?: () => void }) {
+  const closeHref = buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery });
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} className="absolute inset-0" aria-label="Close scripture details modal" />
+      <CloseControl href={closeHref} onClose={onClose} className="absolute inset-0" label="Close scripture details modal" />
       <div className="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[760px] flex-col overflow-hidden rounded-[22px] bg-[#171717] shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:max-h-[calc(100vh-4rem)]">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#171717] px-6 py-5">
           <h2 className="text-[26px] font-semibold text-white">Scripture Details</h2>
-          <Link href={buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} className="text-[34px] leading-none text-white/90">
+          <CloseControl href={closeHref} onClose={onClose} className="text-[34px] leading-none text-white/90" label="Dismiss scripture details">
             ×
-          </Link>
+          </CloseControl>
         </div>
         <dl className="overflow-y-auto">
           <DetailRow label="Scripture" value={row.scripture} divider={false} />
@@ -154,14 +184,20 @@ function DeleteSuccessModal({ viewModel }: { viewModel: ScriptureOfTheDayViewMod
   );
 }
 
-function FilterModal({ viewModel }: { viewModel: ScriptureOfTheDayViewModel }) {
+function FilterModal({ viewModel, onClose }: { viewModel: ScriptureOfTheDayViewModel; onClose?: () => void }) {
+  const closeHref = buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery });
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-      <Link href={buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} className="absolute inset-0" aria-label="Close scripture filter modal" />
+      <CloseControl href={closeHref} onClose={onClose} className="absolute inset-0" label="Close scripture filter modal" />
       <form action="/scripture-of-the-day" className="relative z-10 w-full max-w-[380px] overflow-hidden rounded-[20px] border border-white/10 bg-[#171717] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <input type="hidden" name="tab" value={viewModel.activeTab} />
         <input type="hidden" name="q" value={viewModel.searchQuery} />
-        <div className="border-b border-white/10 px-5 py-4 text-[14px] font-medium text-white">Filter</div>
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 text-[14px] font-medium text-white">
+          <span>Filter</span>
+          <CloseControl href={closeHref} onClose={onClose} className="text-[24px] leading-none text-white/80 hover:text-white" label="Dismiss scripture filter">
+            ×
+          </CloseControl>
+        </div>
         <div className="border-b border-white/10 px-5 py-4">
           <div className="mb-4 flex items-center justify-between">
             <span className="text-[15px] text-white">Date Range</span>
@@ -204,12 +240,14 @@ function FilterModal({ viewModel }: { viewModel: ScriptureOfTheDayViewModel }) {
             </label>
           </div>
           <div className="mt-12 flex justify-end gap-4">
-            <Link
-              href={buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })}
+            <CloseControl
+              href={closeHref}
+              onClose={onClose}
               className="inline-flex min-w-[96px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-4 py-3 text-[14px] text-[#c996ff]"
+              label="Clear scripture filters"
             >
               Clear All
-            </Link>
+            </CloseControl>
             <button type="submit" className="inline-flex min-w-[96px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-4 py-3 text-[14px] text-white">
               Apply
             </button>
@@ -220,14 +258,30 @@ function FilterModal({ viewModel }: { viewModel: ScriptureOfTheDayViewModel }) {
   );
 }
 
-export function ScriptureOfTheDayOverlays({ viewModel }: { viewModel: ScriptureOfTheDayViewModel }) {
+export function ScriptureOfTheDayOverlays({
+  viewModel,
+  detailRow,
+  showFilterModal = false,
+  onCloseDetails,
+  onCloseFilter,
+}: {
+  viewModel: ScriptureOfTheDayViewModel;
+  detailRow?: ScriptureRow | null;
+  showFilterModal?: boolean;
+  onCloseDetails?: () => void;
+  onCloseFilter?: () => void;
+}) {
+  const selectedRow = detailRow ?? viewModel.selectedRow;
+  const showDetails = Boolean(detailRow) || viewModel.showDetails;
+  const showFilter = showFilterModal || viewModel.showFilterModal;
+
   return (
     <>
-      {viewModel.showDetails && viewModel.selectedRow ? <DetailModal viewModel={viewModel} row={viewModel.selectedRow} /> : null}
+      {showDetails && selectedRow ? <DetailModal viewModel={viewModel} row={selectedRow} onClose={detailRow ? onCloseDetails : undefined} /> : null}
       {viewModel.showEdit && !viewModel.showScheduleBuilder ? <EditModal viewModel={viewModel} /> : null}
       {viewModel.showDeleteConfirm && viewModel.selectedRow ? <DeleteConfirmModal viewModel={viewModel} row={viewModel.selectedRow} /> : null}
       {viewModel.deleteSuccess ? <DeleteSuccessModal viewModel={viewModel} /> : null}
-      {viewModel.showFilterModal ? <FilterModal viewModel={viewModel} /> : null}
+      {showFilter ? <FilterModal viewModel={viewModel} onClose={showFilterModal ? onCloseFilter : undefined} /> : null}
     </>
   );
 }

@@ -1,4 +1,5 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { getAdminManagementViewModel } from "@/features/admin/data/services/get-admin-management-view-model";
 import { AdminManagementPage } from "@/features/admin/presentation/components/admin-management-page";
@@ -11,7 +12,10 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/admin",
 }));
 
-afterEach(() => cleanup());
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe("admin management page", () => {
   test("renders admin list and key role actions", () => {
@@ -19,8 +23,8 @@ describe("admin management page", () => {
     expect(screen.getByText("All Admin Users")).toBeInTheDocument();
     expect(screen.getByText("Invite New User")).toBeInTheDocument();
     expect(screen.getByText("Create Role")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Active" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Deactivated" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Active" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Deactivated" })).toBeInTheDocument();
     expect(screen.getAllByText("Elvis Igiebor").length).toBeGreaterThan(0);
     cleanup();
 
@@ -34,6 +38,67 @@ describe("admin management page", () => {
     render(<AdminManagementPage viewModel={getAdminManagementViewModel({ menu: "3" })} />);
     expect(screen.getAllByText("Select Role").length).toBeGreaterThan(0);
     expect(screen.getByText("Delete Admin User")).toBeInTheDocument();
+  });
+
+  test("switches admin tabs on the client", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: string) => {
+        const tab = new URL(url, "http://localhost").searchParams.get("tab") ?? "all";
+        return Promise.resolve({
+          ok: true,
+          json: async () => getAdminManagementViewModel({ tab }),
+        });
+      }),
+    );
+    render(<AdminManagementPage viewModel={getAdminManagementViewModel({})} />);
+
+    await user.click(screen.getByRole("button", { name: "Deactivated" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("John Stone")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "Deactivated" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("opens and closes admin row menu without an extra fetch", async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => getAdminManagementViewModel({}) });
+    vi.stubGlobal("fetch", fetchSpy);
+    render(<AdminManagementPage viewModel={getAdminManagementViewModel({})} />);
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    fetchSpy.mockClear();
+
+    await user.click(screen.getByRole("button", { name: "Open admin actions 1" }));
+
+    expect(screen.getAllByRole("button", { name: "View Permission Details" }).length).toBeGreaterThan(1);
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Close admin actions menu" }));
+
+    expect(screen.queryByRole("button", { name: "Change Member Roles" })).not.toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  test("opens loaded admin permission and assign-role modals without an extra fetch", async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => getAdminManagementViewModel({}) });
+    vi.stubGlobal("fetch", fetchSpy);
+    render(<AdminManagementPage viewModel={getAdminManagementViewModel({})} />);
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    fetchSpy.mockClear();
+
+    await user.click(screen.getAllByRole("button", { name: "View Permission Details" })[0]);
+
+    expect(screen.getByRole("heading", { name: "Permission Details" })).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Close permission details" }));
+    await user.click(screen.getAllByRole("button", { name: "Select Role" })[0]);
+
+    expect(screen.getByRole("heading", { name: "Select Role" })).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   test("renders role creation and lifecycle overlays", () => {

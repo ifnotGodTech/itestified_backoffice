@@ -1,7 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
 import type { HomeManagementRow, HomeManagementViewModel } from "@/features/admin/domain/entities/home-management";
-import { buildHomeManagementHref } from "@/features/admin/presentation/state/home-management-route-state";
 
 function ThumbnailCell({ row }: { row: HomeManagementRow }) {
   if (row.kind === "picture") {
@@ -75,7 +73,13 @@ function HomeManagementTableError({ message }: { message?: string }) {
   );
 }
 
-function HomeManagementPictureTable({ viewModel }: { viewModel: HomeManagementViewModel }) {
+function HomeManagementPictureTable({
+  viewModel,
+  onOpenMenu,
+}: {
+  viewModel: HomeManagementViewModel;
+  onOpenMenu?: (row: HomeManagementRow) => void;
+}) {
   return (
     <>
       <div className="grid grid-cols-[64px_72px_1.3fr_1fr_1fr_1.2fr_0.9fr_0.8fr_54px] bg-[#2a2a2a] px-3 py-[9px] text-[10px] font-medium text-white/70">
@@ -103,7 +107,9 @@ function HomeManagementPictureTable({ viewModel }: { viewModel: HomeManagementVi
           <span>{row.downloads ?? 0}</span>
           <span>{row.shares}</span>
           <div className="text-right text-[18px]">
-            <Link href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount, menuId: row.id })}>⋯</Link>
+            <button type="button" onClick={() => onOpenMenu?.(row)} aria-label={`Open home content actions ${row.id}`}>
+              ⋯
+            </button>
           </div>
         </div>
       ))}
@@ -111,7 +117,13 @@ function HomeManagementPictureTable({ viewModel }: { viewModel: HomeManagementVi
   );
 }
 
-function HomeManagementTestimonyTable({ viewModel }: { viewModel: HomeManagementViewModel }) {
+function HomeManagementTestimonyTable({
+  viewModel,
+  onOpenMenu,
+}: {
+  viewModel: HomeManagementViewModel;
+  onOpenMenu?: (row: HomeManagementRow) => void;
+}) {
   return (
     <>
       <div className="grid grid-cols-[64px_72px_1.1fr_0.85fr_0.8fr_0.95fr_1fr_0.6fr_0.6fr_0.9fr_0.7fr_54px] bg-[#2a2a2a] px-3 py-[9px] text-[10px] font-medium text-white/70">
@@ -145,7 +157,9 @@ function HomeManagementTestimonyTable({ viewModel }: { viewModel: HomeManagement
           <span>{row.comments}</span>
           <span>{row.shares}</span>
           <div className="text-right text-[18px]">
-            <Link href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount, menuId: row.id })}>⋯</Link>
+            <button type="button" onClick={() => onOpenMenu?.(row)} aria-label={`Open home content actions ${row.id}`}>
+              ⋯
+            </button>
           </div>
         </div>
       ))}
@@ -153,7 +167,13 @@ function HomeManagementTestimonyTable({ viewModel }: { viewModel: HomeManagement
   );
 }
 
-export function HomeManagementContentTable({ viewModel }: { viewModel: HomeManagementViewModel }) {
+export function HomeManagementContentTable({
+  viewModel,
+  onOpenMenu,
+}: {
+  viewModel: HomeManagementViewModel;
+  onOpenMenu?: (row: HomeManagementRow) => void;
+}) {
   const pictureMode = viewModel.activeTab === "pictures";
   const showTableData = viewModel.phaseState === "populated";
 
@@ -164,8 +184,8 @@ export function HomeManagementContentTable({ viewModel }: { viewModel: HomeManag
         {viewModel.phaseState === "loading" ? <HomeManagementTableLoading pictureMode={pictureMode} /> : null}
         {viewModel.phaseState === "empty" ? <HomeManagementTableEmpty activeTab={viewModel.activeTab} /> : null}
         {viewModel.phaseState === "error" ? <HomeManagementTableError message={viewModel.errorMessage} /> : null}
-        {showTableData && pictureMode ? <HomeManagementPictureTable viewModel={viewModel} /> : null}
-        {showTableData && !pictureMode ? <HomeManagementTestimonyTable viewModel={viewModel} /> : null}
+        {showTableData && pictureMode ? <HomeManagementPictureTable viewModel={viewModel} onOpenMenu={onOpenMenu} /> : null}
+        {showTableData && !pictureMode ? <HomeManagementTestimonyTable viewModel={viewModel} onOpenMenu={onOpenMenu} /> : null}
       </div>
     </div>
   );

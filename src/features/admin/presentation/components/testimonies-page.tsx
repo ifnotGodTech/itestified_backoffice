@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import type { TestimoniesViewModel } from "@/features/admin/domain/entities/testimonies";
+import { useEffect, useState } from "react";
+import type { TestimoniesViewModel, TestimonyRow, TestimonyTab } from "@/features/admin/domain/entities/testimonies";
 import { AdminDashboardShell } from "@/features/admin/presentation/components/admin-dashboard-shell";
 import { NewTestimonyToast } from "@/features/admin/presentation/components/testimonies/new-testimony-toast";
 import { TestimoniesOverlays } from "@/features/admin/presentation/components/testimonies/testimonies-overlays";
@@ -75,16 +78,131 @@ function ActivityLogScreen() {
   );
 }
 
+function tabHref(viewModel: TestimoniesViewModel, tab: TestimonyTab) {
+  return buildTestimoniesHref({
+    tab,
+    videoStatus: tab === "video" ? viewModel.activeVideoStatus : null,
+    engagement: tab === "video" ? viewModel.activeVideoEngagement : null,
+    q: viewModel.searchQuery,
+    from: viewModel.filterDraft.from,
+    to: viewModel.filterDraft.to,
+    category: viewModel.filterDraft.category,
+    source: tab === "video" ? viewModel.filterDraft.source : undefined,
+    statusFilter: tab === "text" ? viewModel.filterDraft.status : undefined,
+  });
+}
+
+function tabListApiHref(viewModel: TestimoniesViewModel, tab: TestimonyTab) {
+  const params = new URLSearchParams();
+  params.set("tab", tab);
+  if (tab === "video") {
+    params.set("videoStatus", viewModel.activeVideoStatus);
+    params.set("engagement", viewModel.activeVideoEngagement);
+    if (viewModel.filterDraft.source) params.set("source", viewModel.filterDraft.source);
+  }
+  if (tab === "text" && viewModel.filterDraft.status) params.set("statusFilter", viewModel.filterDraft.status);
+  if (viewModel.searchQuery) params.set("q", viewModel.searchQuery);
+  if (viewModel.filterDraft.from) params.set("from", viewModel.filterDraft.from);
+  if (viewModel.filterDraft.to) params.set("to", viewModel.filterDraft.to);
+  if (viewModel.filterDraft.category) params.set("category", viewModel.filterDraft.category);
+  return `/api/admin/testimonies/list?${params.toString()}`;
+}
+
+function loadingViewModel(viewModel: TestimoniesViewModel, tab: TestimonyTab): TestimoniesViewModel {
+  return {
+    ...viewModel,
+    activeTab: tab,
+    activeVideoScreen: "list",
+    phaseState: "loading",
+    rows: [],
+    selectedRow: null,
+    totalRows: 0,
+    showingLabel: "Loading testimonies...",
+    showActionMenu: false,
+    showDetails: false,
+    showFilterModal: false,
+  };
+}
+
 export function TestimoniesPage({ viewModel }: { viewModel: TestimoniesViewModel }) {
-  const showsDedicatedVideoHeading = viewModel.activeTab === "video" && viewModel.activeVideoScreen !== "list";
+  const [currentViewModel, setCurrentViewModel] = useState(viewModel);
+  const [tabCache, setTabCache] = useState<Partial<Record<TestimonyTab, TestimoniesViewModel>>>({
+    [viewModel.activeTab]: viewModel,
+  });
+  const showsDedicatedVideoHeading = currentViewModel.activeTab === "video" && currentViewModel.activeVideoScreen !== "list";
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [detailRow, setDetailRow] = useState<TestimonyRow | null>(null);
+  const inactiveTab = currentViewModel.activeTab === "video" ? "text" : "video";
+  const canClientSwitchTabs = currentViewModel.activeVideoScreen === "list";
+
+  useEffect(() => {
+    setCurrentViewModel(viewModel);
+    setTabCache({ [viewModel.activeTab]: viewModel });
+  }, [viewModel]);
+
+  useEffect(() => {
+    if (!canClientSwitchTabs || tabCache[inactiveTab] || typeof fetch !== "function") return;
+    const controller = new AbortController();
+    fetch(tabListApiHref(currentViewModel, inactiveTab), { signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((nextViewModel: TestimoniesViewModel | null) => {
+        if (!nextViewModel) return;
+        setTabCache((current) => ({ ...current, [inactiveTab]: nextViewModel }));
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [canClientSwitchTabs, currentViewModel, inactiveTab, tabCache]);
+
+  async function switchTab(tab: TestimonyTab) {
+    if (tab === currentViewModel.activeTab) return;
+    setShowFilterModal(false);
+    setDetailRow(null);
+    const href = tabHref(currentViewModel, tab);
+    window.history.pushState(null, "", href);
+
+    const cached = tabCache[tab];
+    if (cached) {
+      setCurrentViewModel(cached);
+      return;
+    }
+
+    setCurrentViewModel((current) => loadingViewModel(current, tab));
+    try {
+      const response = await fetch(tabListApiHref(currentViewModel, tab));
+      if (!response.ok) throw new Error("Unable to load testimonies.");
+      const nextViewModel = (await response.json()) as TestimoniesViewModel;
+      setTabCache((current) => ({ ...current, [tab]: nextViewModel }));
+      setCurrentViewModel(nextViewModel);
+    } catch {
+      setCurrentViewModel((current) => ({
+        ...loadingViewModel(current, tab),
+        phaseState: "error",
+        errorMessage: "We could not load testimonies right now. Please try again.",
+        showingLabel: "Showing 0 of 0",
+      }));
+    }
+  }
 
   return (
-    <AdminDashboardShell viewModel={viewModel.shell} pageTitle={showsDedicatedVideoHeading ? undefined : "Testimonies"}>
+    <AdminDashboardShell viewModel={currentViewModel.shell} pageTitle={showsDedicatedVideoHeading ? undefined : "Testimonies"}>
       <NewTestimonyToast />
-      {viewModel.activeTab === "video" && viewModel.activeVideoScreen === "upload" ? <UploadVideoScreen categories={viewModel.categories} /> : null}
-      {viewModel.activeTab === "video" && viewModel.activeVideoScreen === "activity" ? <ActivityLogScreen /> : null}
-      {!(viewModel.activeTab === "video" && viewModel.activeVideoScreen !== "list") ? <TestimoniesTable viewModel={viewModel} /> : null}
-      <TestimoniesOverlays viewModel={viewModel} />
+      {currentViewModel.activeTab === "video" && currentViewModel.activeVideoScreen === "upload" ? <UploadVideoScreen categories={currentViewModel.categories} /> : null}
+      {currentViewModel.activeTab === "video" && currentViewModel.activeVideoScreen === "activity" ? <ActivityLogScreen /> : null}
+      {!(currentViewModel.activeTab === "video" && currentViewModel.activeVideoScreen !== "list") ? (
+        <TestimoniesTable
+          viewModel={currentViewModel}
+          onOpenFilter={() => setShowFilterModal(true)}
+          onOpenDetails={(row) => setDetailRow(row)}
+          onTabChange={switchTab}
+        />
+      ) : null}
+      <TestimoniesOverlays
+        viewModel={currentViewModel}
+        showFilterModal={showFilterModal}
+        onCloseFilterModal={() => setShowFilterModal(false)}
+        detailRow={detailRow}
+        onCloseDetailModal={() => setDetailRow(null)}
+      />
     </AdminDashboardShell>
   );
 }

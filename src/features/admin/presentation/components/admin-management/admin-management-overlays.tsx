@@ -10,6 +10,34 @@ function closeHref(viewModel: AdminManagementViewModel) {
   });
 }
 
+function CloseControl({
+  href,
+  onClose,
+  className,
+  label,
+  children,
+}: {
+  href: string;
+  onClose?: () => void;
+  className: string;
+  label: string;
+  children?: ReactNode;
+}) {
+  if (onClose) {
+    return (
+      <button type="button" onClick={onClose} className={className} aria-label={label}>
+        {children}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={href} className={className} aria-label={label}>
+      {children}
+    </Link>
+  );
+}
+
 function ModalShell({
   title,
   subtitle,
@@ -34,7 +62,16 @@ function ModalShell({
   );
 }
 
-export function AdminManagementOverlays({ viewModel }: { viewModel: AdminManagementViewModel }) {
+export function AdminManagementOverlays({
+  viewModel,
+  onClosePermissionDetails,
+  onCloseAssignRole,
+}: {
+  viewModel: AdminManagementViewModel;
+  onClosePermissionDetails?: () => void;
+  onCloseAssignRole?: () => void;
+}) {
+  const rootCloseHref = closeHref(viewModel);
   return (
     <>
       {viewModel.showInviteUserModal ? (
@@ -72,7 +109,7 @@ export function AdminManagementOverlays({ viewModel }: { viewModel: AdminManagem
 
       {viewModel.showPermissionDetailsModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
-          <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close permission details modal" />
+          <CloseControl href={rootCloseHref} onClose={onClosePermissionDetails} className="absolute inset-0" label="Close permission details modal" />
           <ModalShell title="Permission Details" subtitle="Permission Page" maxWidth="max-w-[520px]">
             <div className="space-y-4 px-5 py-5">
               <div>
@@ -93,7 +130,7 @@ export function AdminManagementOverlays({ viewModel }: { viewModel: AdminManagem
               </div>
             </div>
             <div className="flex justify-end gap-3 border-t border-white/10 px-5 py-4">
-              <Link href={closeHref(viewModel)} className="inline-flex h-[38px] items-center rounded-[8px] border border-[#9B68D5] px-5 text-[12px] text-[#c590ff]">Close</Link>
+              <CloseControl href={rootCloseHref} onClose={onClosePermissionDetails} className="inline-flex h-[38px] items-center rounded-[8px] border border-[#9B68D5] px-5 text-[12px] text-[#c590ff]" label="Close permission details">Close</CloseControl>
               <Link href={buildAdminManagementHref({ tab: viewModel.activeTab, q: viewModel.searchQuery || null, managePermissions: viewModel.selectedRow?.id ?? null })} className="inline-flex h-[38px] items-center rounded-[8px] bg-[#9B68D5] px-5 text-[12px] text-white">Manage Permissions</Link>
             </div>
           </ModalShell>
@@ -128,7 +165,7 @@ export function AdminManagementOverlays({ viewModel }: { viewModel: AdminManagem
 
       {viewModel.showAssignRoleModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
-          <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close assign role modal" />
+          <CloseControl href={rootCloseHref} onClose={onCloseAssignRole} className="absolute inset-0" label="Close assign role modal" />
           <ModalShell title="Select Role" subtitle="Admin Users" maxWidth="max-w-[420px]">
             <div className="space-y-4 px-5 py-5">
               <div>
@@ -144,7 +181,7 @@ export function AdminManagementOverlays({ viewModel }: { viewModel: AdminManagem
               </label>
             </div>
             <div className="flex justify-end gap-3 border-t border-white/10 px-5 py-4">
-              <Link href={closeHref(viewModel)} className="inline-flex h-[38px] items-center rounded-[8px] border border-[#9B68D5] px-5 text-[12px] text-[#c590ff]">Cancel</Link>
+              <CloseControl href={rootCloseHref} onClose={onCloseAssignRole} className="inline-flex h-[38px] items-center rounded-[8px] border border-[#9B68D5] px-5 text-[12px] text-[#c590ff]" label="Cancel assign role">Cancel</CloseControl>
               <Link href={buildAdminManagementHref({ tab: viewModel.activeTab, q: viewModel.searchQuery || null, success: true, successType: "admin-assigned" })} className="inline-flex h-[38px] items-center rounded-[8px] bg-[#9B68D5] px-5 text-[12px] text-white">Assign Role</Link>
             </div>
           </ModalShell>

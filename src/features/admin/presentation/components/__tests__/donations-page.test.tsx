@@ -1,4 +1,5 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { getDonationsViewModel } from "@/features/admin/data/services/get-donations-view-model";
 import { DonationsPage } from "@/features/admin/presentation/components/donations-page";
@@ -13,6 +14,7 @@ vi.mock("next/navigation", () => ({
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });
 
 describe("DonationsPage", () => {
@@ -29,6 +31,28 @@ describe("DonationsPage", () => {
     expect(screen.getByRole("link", { name: /June/ })).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByRole("menuitem", { name: "May" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "August" })).toBeInTheDocument();
+  });
+
+  test("switches donation tabs on the client", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: string) => {
+        const tab = new URL(url, "http://localhost").searchParams.get("tab") ?? "all";
+        return Promise.resolve({
+          ok: true,
+          json: async () => getDonationsViewModel({ tab }),
+        });
+      }),
+    );
+    render(<DonationsPage viewModel={getDonationsViewModel({})} />);
+
+    await user.click(screen.getByRole("button", { name: "Pending" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Pending Donations" })).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "Pending" })).toHaveAttribute("aria-pressed", "true");
   });
 
   test("renders empty and error states", () => {

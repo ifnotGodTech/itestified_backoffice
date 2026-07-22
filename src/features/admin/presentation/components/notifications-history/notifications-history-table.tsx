@@ -2,39 +2,6 @@ import Link from "next/link";
 import type { NotificationHistoryRow, NotificationsHistoryViewModel } from "@/features/admin/domain/entities/notifications-history";
 import { buildNotificationsHistoryHref } from "@/features/admin/presentation/state/notifications-history-route-state";
 
-function selectionHref(viewModel: NotificationsHistoryViewModel, id: number) {
-  const current = new Set(viewModel.selectedIds);
-  if (current.has(id)) current.delete(id);
-  else current.add(id);
-
-  return buildNotificationsHistoryHref({
-    q: viewModel.searchQuery,
-    panel: viewModel.showPanel ? true : null,
-    statusFilter: viewModel.filterDraft.status,
-    from: viewModel.filterDraft.from,
-    to: viewModel.filterDraft.to,
-    read: viewModel.rows.filter((row) => row.status === "read").map((row) => row.id).join(",") || null,
-    selected: Array.from(current).sort((a, b) => a - b).join(",") || null,
-  });
-}
-
-function selectAllHref(viewModel: NotificationsHistoryViewModel) {
-  const nextSelected =
-    viewModel.selectedIds.length === viewModel.rows.length
-      ? null
-      : viewModel.rows.map((row) => row.id).join(",");
-
-  return buildNotificationsHistoryHref({
-    q: viewModel.searchQuery,
-    panel: viewModel.showPanel ? true : null,
-    statusFilter: viewModel.filterDraft.status,
-    from: viewModel.filterDraft.from,
-    to: viewModel.filterDraft.to,
-    read: viewModel.rows.filter((row) => row.status === "read").map((row) => row.id).join(",") || null,
-    selected: nextSelected,
-  });
-}
-
 function NotificationCheckbox({ checked }: { checked: boolean }) {
   return (
     <span
@@ -64,11 +31,23 @@ function FilterIcon() {
   );
 }
 
-export function NotificationsHistoryTable({ viewModel }: { viewModel: NotificationsHistoryViewModel }) {
-  const hasSelection = viewModel.selectedIds.length > 0;
+export function NotificationsHistoryTable({
+  viewModel,
+  selectedIds = viewModel.selectedIds,
+  onToggleSelection,
+  onToggleAll,
+  onOpenFilter,
+}: {
+  viewModel: NotificationsHistoryViewModel;
+  selectedIds?: number[];
+  onToggleSelection?: (id: number) => void;
+  onToggleAll?: () => void;
+  onOpenFilter?: () => void;
+}) {
+  const hasSelection = selectedIds.length > 0;
   const readIds = viewModel.rows.filter((row) => row.status === "read").map((row) => row.id).join(",") || null;
   const selectionCopy =
-    viewModel.selectedIds.length > 1
+    selectedIds.length > 1
       ? { deleteLabel: "Delete All", readLabel: "Mark All as read" }
       : { deleteLabel: "Delete", readLabel: "Mark as read" };
 
@@ -80,7 +59,7 @@ export function NotificationsHistoryTable({ viewModel }: { viewModel: Notificati
           <div className="flex items-center gap-3">
             {hasSelection ? (
               <>
-                <Link href={buildNotificationsHistoryHref({ selected: viewModel.selectedIds.join(","), deleteAll: true })} className="inline-flex h-[28px] items-center rounded-[8px] bg-[#ef3931] px-4 text-[12px] text-white">
+                <Link href={buildNotificationsHistoryHref({ selected: selectedIds.join(","), deleteAll: true })} className="inline-flex h-[28px] items-center rounded-[8px] bg-[#ef3931] px-4 text-[12px] text-white">
                   {selectionCopy.deleteLabel}
                 </Link>
                 <Link
@@ -90,8 +69,8 @@ export function NotificationsHistoryTable({ viewModel }: { viewModel: Notificati
                     statusFilter: viewModel.filterDraft.status,
                     from: viewModel.filterDraft.from,
                     to: viewModel.filterDraft.to,
-                    read: viewModel.selectedIds.length > 0 ? "selected" : null,
-                    selected: viewModel.selectedIds.join(",") || null,
+                    read: selectedIds.length > 0 ? "selected" : null,
+                    selected: selectedIds.join(",") || null,
                     success: "read",
                   })}
                   className="inline-flex h-[28px] items-center rounded-[8px] border border-[#9B68D5] px-4 text-[12px] text-[#b27bff]"
@@ -100,17 +79,17 @@ export function NotificationsHistoryTable({ viewModel }: { viewModel: Notificati
                 </Link>
               </>
             ) : null}
-            <Link href={buildNotificationsHistoryHref({ filter: true, panel: viewModel.showPanel ? true : null, statusFilter: viewModel.filterDraft.status, from: viewModel.filterDraft.from, to: viewModel.filterDraft.to, read: readIds, selected: viewModel.selectedIds.join(",") || null })} className="inline-flex h-[28px] items-center gap-2 rounded-[8px] border border-[#9B68D5] px-3 text-[12px] text-[#b27bff]">
+            <button type="button" onClick={onOpenFilter} className="inline-flex h-[28px] items-center gap-2 rounded-[8px] border border-[#9B68D5] px-3 text-[12px] text-[#b27bff]">
               <FilterIcon />
               Filter
-            </Link>
+            </button>
           </div>
         </div>
 
         <div className="grid grid-cols-[32px_1fr_20px] items-center bg-[#262626] px-[10px] py-[8px] text-[10px] text-white/90">
-          <Link href={selectAllHref(viewModel)} aria-label="Select all notifications" className="inline-flex items-center justify-center">
-            <NotificationCheckbox checked={viewModel.selectedIds.length === viewModel.rows.length && viewModel.rows.length > 0} />
-          </Link>
+          <button type="button" onClick={onToggleAll} aria-label="Select all notifications" className="inline-flex items-center justify-center">
+            <NotificationCheckbox checked={selectedIds.length === viewModel.rows.length && viewModel.rows.length > 0} />
+          </button>
           <span>All Notifications ↕</span>
           <span />
         </div>
@@ -122,17 +101,17 @@ export function NotificationsHistoryTable({ viewModel }: { viewModel: Notificati
         {viewModel.phaseState === "populated"
           ? viewModel.rows.map((row) => (
               <div key={row.id} className="grid grid-cols-[32px_1fr_20px] gap-[10px] border-t border-white/10 px-[10px] py-[14px]">
-                <Link href={selectionHref(viewModel, row.id)} aria-label={`Select notification ${row.id}`} className="inline-flex items-start justify-center pt-1">
-                  <NotificationCheckbox checked={viewModel.selectedIds.includes(row.id)} />
-                </Link>
+                <button type="button" onClick={() => onToggleSelection?.(row.id)} aria-label={`Select notification ${row.id}`} className="inline-flex items-start justify-center pt-1">
+                  <NotificationCheckbox checked={selectedIds.includes(row.id)} />
+                </button>
                 <div>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                     {row.href ? (
-                      <Link href={row.href} className={`text-[14px] font-semibold leading-[1.25] ${row.status === "unread" || viewModel.selectedIds.includes(row.id) ? "text-[#9B68D5]" : "text-white"}`}>
+                      <Link href={row.href} className={`text-[14px] font-semibold leading-[1.25] ${row.status === "unread" || selectedIds.includes(row.id) ? "text-[#9B68D5]" : "text-white"}`}>
                         {row.title}
                       </Link>
                     ) : (
-                      <p className={`text-[14px] font-semibold leading-[1.25] ${row.status === "unread" || viewModel.selectedIds.includes(row.id) ? "text-[#9B68D5]" : "text-white"}`}>{row.title}</p>
+                      <p className={`text-[14px] font-semibold leading-[1.25] ${row.status === "unread" || selectedIds.includes(row.id) ? "text-[#9B68D5]" : "text-white"}`}>{row.title}</p>
                     )}
                     <div className="flex items-center gap-2 text-[10px] text-white/52">
                       <span>{row.date}</span>
@@ -143,7 +122,7 @@ export function NotificationsHistoryTable({ viewModel }: { viewModel: Notificati
                   <p className="mt-[6px] text-[14px] leading-[1.35] text-white/62">{row.message}</p>
                 </div>
                 <div className="flex items-start justify-end pt-[2px]">
-                  <Link href={buildNotificationsHistoryHref({ panel: viewModel.showPanel ? true : null, q: viewModel.searchQuery || null, statusFilter: viewModel.filterDraft.status, from: viewModel.filterDraft.from, to: viewModel.filterDraft.to, read: readIds, delete: row.id, selected: viewModel.selectedIds.join(",") || null })} aria-label={`Delete notification ${row.id}`}>
+                  <Link href={buildNotificationsHistoryHref({ panel: viewModel.showPanel ? true : null, q: viewModel.searchQuery || null, statusFilter: viewModel.filterDraft.status, from: viewModel.filterDraft.from, to: viewModel.filterDraft.to, read: readIds, delete: row.id, selected: selectedIds.join(",") || null })} aria-label={`Delete notification ${row.id}`}>
                     <NotificationDot status={row.status} />
                   </Link>
                 </div>

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import type { NotificationsHistoryViewModel } from "@/features/admin/domain/entities/notifications-history";
 import { AdminDashboardShell } from "@/features/admin/presentation/components/admin-dashboard-shell";
 import { NotificationsHistoryOverlays } from "@/features/admin/presentation/components/notifications-history/notifications-history-overlays";
@@ -70,10 +73,47 @@ function NotificationPanel({ viewModel }: { viewModel: NotificationsHistoryViewM
 }
 
 export function NotificationsHistoryPage({ viewModel }: { viewModel: NotificationsHistoryViewModel }) {
+  const [selectedIds, setSelectedIds] = useState(viewModel.selectedIds);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+
+  useEffect(() => {
+    setSelectedIds(viewModel.selectedIds);
+    setShowFilterModal(false);
+  }, [viewModel]);
+
+  const interactiveViewModel: NotificationsHistoryViewModel = {
+    ...viewModel,
+    selectedIds,
+    showFilterModal: showFilterModal || viewModel.showFilterModal,
+  };
+
+  function toggleSelection(id: number) {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return Array.from(next).sort((a, b) => a - b);
+    });
+  }
+
+  function toggleAll() {
+    setSelectedIds((current) => (current.length === viewModel.rows.length ? [] : viewModel.rows.map((row) => row.id)));
+  }
+
   return (
-    <AdminDashboardShell viewModel={viewModel.shell}>
-      {viewModel.showPanel ? <NotificationPanel viewModel={viewModel} /> : <NotificationsHistoryTable viewModel={viewModel} />}
-      <NotificationsHistoryOverlays viewModel={viewModel} />
+    <AdminDashboardShell viewModel={interactiveViewModel.shell}>
+      {interactiveViewModel.showPanel ? (
+        <NotificationPanel viewModel={interactiveViewModel} />
+      ) : (
+        <NotificationsHistoryTable
+          viewModel={interactiveViewModel}
+          selectedIds={selectedIds}
+          onToggleSelection={toggleSelection}
+          onToggleAll={toggleAll}
+          onOpenFilter={() => setShowFilterModal(true)}
+        />
+      )}
+      <NotificationsHistoryOverlays viewModel={interactiveViewModel} showFilterModal={showFilterModal} onCloseFilter={() => setShowFilterModal(false)} />
     </AdminDashboardShell>
   );
 }

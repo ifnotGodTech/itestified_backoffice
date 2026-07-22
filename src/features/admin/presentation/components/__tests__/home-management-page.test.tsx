@@ -1,4 +1,5 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { getHomeManagementViewModel } from "@/features/admin";
 import { HomeManagementPage } from "@/features/admin/presentation/components/home-management-page";
@@ -13,6 +14,7 @@ vi.mock("next/navigation", () => ({
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });
 
 describe("HomeManagementPage", () => {
@@ -30,6 +32,28 @@ describe("HomeManagementPage", () => {
     render(<HomeManagementPage viewModel={getHomeManagementViewModel({ rule: "Most Shared" })} />);
 
     expect(screen.getByRole("combobox", { name: "Display Rule" })).toHaveValue("Most Shared");
+  });
+
+  test("switches home management tabs on the client", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: string) => {
+        const tab = new URL(url, "http://localhost").searchParams.get("tab") ?? "video";
+        return Promise.resolve({
+          ok: true,
+          json: async () => getHomeManagementViewModel({ tab }),
+        });
+      }),
+    );
+    render(<HomeManagementPage viewModel={getHomeManagementViewModel({})} />);
+
+    await user.click(screen.getByRole("button", { name: "Inspirational Pictures" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Available Pictures")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "Inspirational Pictures" })).toHaveAttribute("aria-pressed", "true");
   });
 
   test("renders the selected testimony count and limits visible rows", () => {

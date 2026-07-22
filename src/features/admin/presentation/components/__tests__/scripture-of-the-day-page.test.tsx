@@ -1,5 +1,6 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { getScriptureOfTheDayViewModel } from "@/features/admin";
 import { ScriptureOfTheDayPage } from "@/features/admin/presentation/components/scripture-of-the-day-page";
@@ -14,6 +15,7 @@ vi.mock("next/navigation", () => ({
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
 });
 
 describe("ScriptureOfTheDayPage", () => {
@@ -29,9 +31,83 @@ describe("ScriptureOfTheDayPage", () => {
   test("renders the scripture action menu state", () => {
     render(<ScriptureOfTheDayPage viewModel={getScriptureOfTheDayViewModel({ menu: "1" })} />);
 
-    expect(screen.getByRole("link", { name: "View" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Edit" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Delete" })).toBeInTheDocument();
+  });
+
+  test("opens and closes the scripture action menu without fetching", async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => getScriptureOfTheDayViewModel({}) });
+    vi.stubGlobal("fetch", fetchSpy);
+    render(<ScriptureOfTheDayPage viewModel={getScriptureOfTheDayViewModel({})} />);
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    fetchSpy.mockClear();
+
+    await user.click(screen.getByRole("button", { name: "Open actions for scripture 1" }));
+
+    expect(screen.getByRole("button", { name: "View" })).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Close scripture action menu" }));
+
+    expect(screen.queryByRole("button", { name: "View" })).not.toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  test("opens loaded scripture details without fetching", async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => getScriptureOfTheDayViewModel({}) });
+    vi.stubGlobal("fetch", fetchSpy);
+    render(<ScriptureOfTheDayPage viewModel={getScriptureOfTheDayViewModel({})} />);
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    fetchSpy.mockClear();
+
+    await user.click(screen.getByRole("button", { name: "Open actions for scripture 1" }));
+    await user.click(screen.getByRole("button", { name: "View" }));
+
+    expect(screen.getByRole("heading", { name: "Scripture Details" })).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  test("opens and closes the scripture filter without fetching", async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => getScriptureOfTheDayViewModel({}) });
+    vi.stubGlobal("fetch", fetchSpy);
+    render(<ScriptureOfTheDayPage viewModel={getScriptureOfTheDayViewModel({})} />);
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    fetchSpy.mockClear();
+
+    await user.click(screen.getByRole("button", { name: "Filter" }));
+
+    expect(screen.getByText("Date Range")).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Dismiss scripture filter" }));
+
+    expect(screen.queryByText("Date Range")).not.toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  test("switches scripture tabs on the client", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: string) => {
+        const tab = new URL(url, "http://localhost").searchParams.get("tab") ?? "all";
+        return Promise.resolve({
+          ok: true,
+          json: async () => getScriptureOfTheDayViewModel({ tab }),
+        });
+      }),
+    );
+    render(<ScriptureOfTheDayPage viewModel={getScriptureOfTheDayViewModel({})} />);
+
+    await user.click(screen.getByRole("button", { name: "Scheduled" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Scheduled" })).toHaveAttribute("aria-pressed", "true");
+    });
   });
 
   test("renders the scheduled scripture detail state", () => {

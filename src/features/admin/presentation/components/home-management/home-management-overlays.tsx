@@ -1,20 +1,63 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { HomeManagementRow, HomeManagementViewModel } from "@/features/admin/domain/entities/home-management";
 import { buildHomeManagementHref } from "@/features/admin/presentation/state/home-management-route-state";
 
 const TEST_VIDEO_URL = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4";
 
-function HomeManagementVideoModal({ row, viewModel }: { row: HomeManagementRow; viewModel: HomeManagementViewModel }) {
+function CloseControl({
+  href,
+  onClose,
+  className,
+  label,
+  children,
+}: {
+  href: string;
+  onClose?: () => void;
+  className: string;
+  label: string;
+  children: ReactNode;
+}) {
+  if (onClose) {
+    return (
+      <button type="button" onClick={onClose} className={className} aria-label={label}>
+        {children}
+      </button>
+    );
+  }
+  return (
+    <Link href={href} className={className} aria-label={label}>
+      {children}
+    </Link>
+  );
+}
+
+function detailCloseHref(viewModel: HomeManagementViewModel) {
+  return buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount });
+}
+
+function HomeManagementVideoModal({
+  row,
+  viewModel,
+  onClose,
+}: {
+  row: HomeManagementRow;
+  viewModel: HomeManagementViewModel;
+  onClose?: () => void;
+}) {
+  const href = detailCloseHref(viewModel);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount })} className="absolute inset-0" aria-label="Close details modal" />
+      <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close details modal">
+        <span className="sr-only">Close details modal</span>
+      </CloseControl>
       <div className="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[460px] flex-col overflow-hidden rounded-[28px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)] sm:max-h-[calc(100vh-4rem)]">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#1e1e1e] px-6 py-5">
           <h2 className="text-[24px] font-semibold text-white">Video Details</h2>
-          <Link href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount })} className="text-[34px] leading-none text-white/90">
+          <CloseControl href={href} onClose={onClose} className="text-[34px] leading-none text-white/90" label="Dismiss video details">
             ×
-          </Link>
+          </CloseControl>
         </div>
 
         <div className="overflow-y-auto px-6 pb-8 pt-5">
@@ -56,15 +99,26 @@ function HomeManagementVideoModal({ row, viewModel }: { row: HomeManagementRow; 
   );
 }
 
-function HomeManagementTextModal({ row, viewModel }: { row: HomeManagementRow; viewModel: HomeManagementViewModel }) {
+function HomeManagementTextModal({
+  row,
+  viewModel,
+  onClose,
+}: {
+  row: HomeManagementRow;
+  viewModel: HomeManagementViewModel;
+  onClose?: () => void;
+}) {
+  const href = detailCloseHref(viewModel);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount })} className="absolute inset-0" aria-label="Close text details modal" />
+      <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close text details modal">
+        <span className="sr-only">Close text details modal</span>
+      </CloseControl>
       <div className="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[560px] flex-col overflow-hidden rounded-[28px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)] sm:max-h-[calc(100vh-4rem)]">
         <div className="sticky top-0 z-10 flex min-h-[78px] items-start justify-end bg-[#262626] px-6 py-4">
-          <Link href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount })} className="text-[34px] leading-none text-white/90">
+          <CloseControl href={href} onClose={onClose} className="text-[34px] leading-none text-white/90" label="Dismiss text details">
             ×
-          </Link>
+          </CloseControl>
         </div>
         <div className="overflow-y-auto px-6 pb-8">
           <div className="relative -mt-14 flex justify-center">
@@ -114,16 +168,27 @@ function PictureDetailArt() {
   );
 }
 
-function HomeManagementPictureModal({ row, viewModel }: { row: HomeManagementRow; viewModel: HomeManagementViewModel }) {
+function HomeManagementPictureModal({
+  row,
+  viewModel,
+  onClose,
+}: {
+  row: HomeManagementRow;
+  viewModel: HomeManagementViewModel;
+  onClose?: () => void;
+}) {
+  const href = detailCloseHref(viewModel);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount })} className="absolute inset-0" aria-label="Close picture details modal" />
+      <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close picture details modal">
+        <span className="sr-only">Close picture details modal</span>
+      </CloseControl>
       <div className="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[560px] flex-col overflow-hidden rounded-[28px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)] sm:max-h-[calc(100vh-4rem)]">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#1e1e1e] px-6 py-5">
           <h2 className="text-[24px] font-semibold text-white">Picture Details</h2>
-          <Link href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount })} className="text-[34px] leading-none text-white/90">
+          <CloseControl href={href} onClose={onClose} className="text-[34px] leading-none text-white/90" label="Dismiss picture details">
             ×
-          </Link>
+          </CloseControl>
         </div>
         <div className="overflow-y-auto px-6 pb-8 pt-5">
           <PictureDetailArt />
@@ -205,17 +270,32 @@ function HomeManagementSuccessModal({ viewModel }: { viewModel: HomeManagementVi
   );
 }
 
-function HomeManagementActionMenu({ row, viewModel }: { row: HomeManagementRow; viewModel: HomeManagementViewModel }) {
+function HomeManagementActionMenu({
+  row,
+  viewModel,
+  onClose,
+  onView,
+}: {
+  row: HomeManagementRow;
+  viewModel: HomeManagementViewModel;
+  onClose?: () => void;
+  onView?: (row: HomeManagementRow) => void;
+}) {
   return (
     <div className="fixed inset-0 z-40">
-      <Link href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount })} className="absolute inset-0" aria-label="Close action menu" />
+      {onClose ? (
+        <button type="button" onClick={onClose} className="absolute inset-0" aria-label="Close action menu" />
+      ) : (
+        <Link href={detailCloseHref(viewModel)} className="absolute inset-0" aria-label="Close action menu" />
+      )}
       <div className="absolute bottom-8 right-8 z-50 min-w-[102px] overflow-hidden rounded-[12px] border border-[#5b5b5b] bg-[#242424] shadow-[0_14px_24px_rgba(0,0,0,0.35)]">
-        <Link
-          href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount, viewId: row.id })}
-          className="block border-b border-white/10 px-5 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]"
+        <button
+          type="button"
+          onClick={() => onView?.(row)}
+          className="block w-full border-b border-white/10 px-5 py-2 text-left text-[14px] text-white/90 hover:bg-white/[0.04]"
         >
           View
-        </Link>
+        </button>
         <Link
           href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount, removeId: row.id })}
           className="block px-5 py-2 text-[14px] text-[#ef4335] hover:bg-white/[0.04]"
@@ -227,13 +307,27 @@ function HomeManagementActionMenu({ row, viewModel }: { row: HomeManagementRow; 
   );
 }
 
-export function HomeManagementOverlays({ viewModel }: { viewModel: HomeManagementViewModel }) {
+export function HomeManagementOverlays({
+  viewModel,
+  detailRow,
+  onCloseMenu,
+  onView,
+  onCloseDetails,
+}: {
+  viewModel: HomeManagementViewModel;
+  detailRow?: HomeManagementRow | null;
+  onCloseMenu?: () => void;
+  onView?: (row: HomeManagementRow) => void;
+  onCloseDetails?: () => void;
+}) {
+  const selectedRow = detailRow ?? viewModel.selectedRow;
+  const showDetails = Boolean(detailRow) || viewModel.showDetails;
   return (
     <>
-      {viewModel.showActionMenu && viewModel.selectedRow ? <HomeManagementActionMenu row={viewModel.selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showDetails && viewModel.selectedRow?.kind === "picture" ? <HomeManagementPictureModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showDetails && viewModel.selectedRow?.kind === "text" ? <HomeManagementTextModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showDetails && viewModel.selectedRow?.kind === "video" ? <HomeManagementVideoModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
+      {viewModel.showActionMenu && viewModel.selectedRow ? <HomeManagementActionMenu row={viewModel.selectedRow} viewModel={viewModel} onClose={onCloseMenu} onView={onView} /> : null}
+      {showDetails && selectedRow?.kind === "picture" ? <HomeManagementPictureModal row={selectedRow} viewModel={viewModel} onClose={detailRow ? onCloseDetails : undefined} /> : null}
+      {showDetails && selectedRow?.kind === "text" ? <HomeManagementTextModal row={selectedRow} viewModel={viewModel} onClose={detailRow ? onCloseDetails : undefined} /> : null}
+      {showDetails && selectedRow?.kind === "video" ? <HomeManagementVideoModal row={selectedRow} viewModel={viewModel} onClose={detailRow ? onCloseDetails : undefined} /> : null}
       {viewModel.showRemoveConfirm && viewModel.selectedRow ? <HomeManagementRemoveModal viewModel={viewModel} /> : null}
       {viewModel.showSuccess ? <HomeManagementSuccessModal viewModel={viewModel} /> : null}
     </>

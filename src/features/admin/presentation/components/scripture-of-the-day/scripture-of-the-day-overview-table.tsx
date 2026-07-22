@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ScriptureOfTheDayViewModel, ScriptureRow, ScriptureStatus } from "@/features/admin/domain/entities/scripture-of-the-day";
+import type { ScriptureOfTheDayViewModel, ScriptureRow, ScriptureStatus, ScriptureTab } from "@/features/admin/domain/entities/scripture-of-the-day";
 import { buildScriptureOfTheDayHref } from "@/features/admin/presentation/state/scripture-of-the-day-route-state";
 
 function SearchIcon() {
@@ -38,25 +38,33 @@ function StatusPill({ status }: { status: ScriptureStatus }) {
   return <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] leading-none ${cls}`}>{status}</span>;
 }
 
-function ActionTabs({ viewModel }: { viewModel: ScriptureOfTheDayViewModel }) {
+function ActionTabs({
+  viewModel,
+  onTabChange,
+}: {
+  viewModel: ScriptureOfTheDayViewModel;
+  onTabChange?: (tab: ScriptureTab) => void;
+}) {
   return (
     <div className="mb-4 flex items-center gap-4">
       <div className="flex gap-4 text-[13px]">
         {viewModel.tabs.map((tab) => (
-          <Link
+          <button
             key={tab.key}
-            href={buildScriptureOfTheDayHref({ tab: tab.key, q: viewModel.searchQuery })}
+            type="button"
+            onClick={() => onTabChange?.(tab.key)}
+            aria-pressed={tab.key === viewModel.activeTab}
             className={`border-b pb-1 ${tab.key === viewModel.activeTab ? "border-[#9B68D5] text-white" : "border-transparent text-white/45"}`}
           >
             {tab.label}
-          </Link>
+          </button>
         ))}
       </div>
     </div>
   );
 }
 
-function SearchAndFilter({ viewModel }: { viewModel: ScriptureOfTheDayViewModel }) {
+function SearchAndFilter({ viewModel, onOpenFilter }: { viewModel: ScriptureOfTheDayViewModel; onOpenFilter?: () => void }) {
   return (
     <form action="/scripture-of-the-day" className="mb-4 flex items-center justify-between gap-3">
       <input type="hidden" name="tab" value={viewModel.activeTab} />
@@ -71,32 +79,40 @@ function SearchAndFilter({ viewModel }: { viewModel: ScriptureOfTheDayViewModel 
           className="h-[38px] w-full rounded-[8px] bg-[#242424] pl-9 pr-4 text-[12px] text-white/75 outline-none placeholder:text-white/30"
         />
       </div>
-      <Link
-        href={buildScriptureOfTheDayHref({
-          tab: viewModel.activeTab,
-          q: viewModel.searchQuery,
-          filter: true,
-          from: viewModel.filterDraft.from,
-          to: viewModel.filterDraft.to,
-          statusFilter: viewModel.filterDraft.status,
-        })}
+      <button
+        type="button"
+        onClick={onOpenFilter}
         className="inline-flex h-[38px] min-w-[80px] items-center justify-center gap-2 rounded-[8px] border border-[#9B68D5] px-4 text-[14px] text-[#d8b8ff]"
       >
         <FilterIcon />
         <span>Filter</span>
-      </Link>
+      </button>
     </form>
   );
 }
 
-export function ScriptureOfTheDayOverviewTable({ viewModel }: { viewModel: ScriptureOfTheDayViewModel }) {
+export function ScriptureOfTheDayOverviewTable({
+  viewModel,
+  onTabChange,
+  onOpenMenu,
+  onCloseMenu,
+  onView,
+  onOpenFilter,
+}: {
+  viewModel: ScriptureOfTheDayViewModel;
+  onTabChange?: (tab: ScriptureTab) => void;
+  onOpenMenu?: (row: ScriptureRow) => void;
+  onCloseMenu?: () => void;
+  onView?: (row: ScriptureRow) => void;
+  onOpenFilter?: () => void;
+}) {
   return (
     <div className="relative rounded-[18px] bg-[#171717]">
       <div className="overflow-hidden rounded-[18px]">
         <div className="px-4 pb-2 pt-4 text-[18px] font-medium text-white">Scripture of the day</div>
         <div className="px-4 pb-4">
-          <ActionTabs viewModel={viewModel} />
-          <SearchAndFilter viewModel={viewModel} />
+          <ActionTabs viewModel={viewModel} onTabChange={onTabChange} />
+          <SearchAndFilter viewModel={viewModel} onOpenFilter={onOpenFilter} />
         </div>
         <div className="border-t border-white/5">
           <div className="grid grid-cols-[64px_116px_116px_1.2fr_100px_1.05fr_110px_54px] bg-[#2a2a2a] px-3 py-[9px] text-[10px] font-medium text-white/70">
@@ -124,24 +140,27 @@ export function ScriptureOfTheDayOverviewTable({ viewModel }: { viewModel: Scrip
                 <StatusPill status={row.status} />
               </span>
               <div className="relative flex justify-end text-white/82">
-                <Link
-                  href={buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, menu: row.id })}
+                <button
+                  type="button"
+                  onClick={() => onOpenMenu?.(row)}
                   aria-label={`Open actions for scripture ${row.id}`}
+                  className="inline-flex h-6 w-6 items-center justify-center"
                 >
                   <RowMenuIcon />
-                </Link>
+                </button>
                 {viewModel.showActionMenu && viewModel.selectedRow?.id === row.id ? (
                   <div
                     className={`absolute right-0 z-50 min-w-[126px] overflow-hidden rounded-[12px] border border-[#5b5b5b] bg-[#242424] text-left shadow-[0_14px_24px_rgba(0,0,0,0.35)] ${
                       viewModel.rows.length - viewModel.rows.indexOf(row) <= 1 ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"
                     }`}
                   >
-                    <Link
-                      href={buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, view: row.id })}
-                      className="block border-b border-white/10 px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]"
+                    <button
+                      type="button"
+                      onClick={() => onView?.(row)}
+                      className="block w-full border-b border-white/10 px-4 py-2 text-left text-[14px] text-white/90 hover:bg-white/[0.04]"
                     >
                       View
-                    </Link>
+                    </button>
                     <Link
                       href={buildScriptureOfTheDayHref({
                         tab: viewModel.activeTab,
@@ -182,11 +201,15 @@ export function ScriptureOfTheDayOverviewTable({ viewModel }: { viewModel: Scrip
       </div>
 
       {viewModel.showActionMenu && viewModel.selectedRow ? (
-        <Link
-          href={buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })}
-          className="fixed inset-0 z-40"
-          aria-label="Close scripture action menu"
-        />
+        onCloseMenu ? (
+          <button type="button" onClick={onCloseMenu} className="fixed inset-0 z-40" aria-label="Close scripture action menu" />
+        ) : (
+          <Link
+            href={buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })}
+            className="fixed inset-0 z-40"
+            aria-label="Close scripture action menu"
+          />
+        )
       ) : null}
     </div>
   );

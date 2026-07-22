@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  AdminActionMenuBackdrop,
   AdminActionMenuPanel,
   AdminRowMenuIcon,
   AdminSearchIcon,
@@ -50,15 +49,29 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-function ReviewMenu({ row, viewModel }: { row: ReviewRow; viewModel: ReviewsViewModel }) {
+function ReviewMenu({
+  row,
+  viewModel,
+  onCloseMenu,
+  onView,
+}: {
+  row: ReviewRow;
+  viewModel: ReviewsViewModel;
+  onCloseMenu?: () => void;
+  onView?: (row: ReviewRow) => void;
+}) {
   const openUp = viewModel.rows.length - viewModel.rows.indexOf(row) <= 1;
   return (
     <>
-      <AdminActionMenuBackdrop href={buildReviewsHref({ selected: viewModel.selectedIds.join(",") || null })} label="Close review action menu" />
+      {onCloseMenu ? (
+        <button type="button" onClick={onCloseMenu} className="fixed inset-0 z-40" aria-label="Close review action menu" />
+      ) : (
+        <Link href={buildReviewsHref({ selected: viewModel.selectedIds.join(",") || null })} className="fixed inset-0 z-40" aria-label="Close review action menu" />
+      )}
       <AdminActionMenuPanel className={`absolute right-0 z-50 min-w-[104px] rounded-[8px] border-[#626262] bg-[#2a2a2a] ${openUp ? "bottom-[calc(100%+6px)]" : "top-[calc(100%+6px)]"}`}>
-        <Link href={buildReviewsHref({ view: row.id, selected: viewModel.selectedIds.join(",") || null })} className="block border-b border-white/10 px-3 py-[10px] text-[10px] text-white/85">
+        <button type="button" onClick={() => onView?.(row)} className="block w-full border-b border-white/10 px-3 py-[10px] text-left text-[10px] text-white/85">
           View details
-        </Link>
+        </button>
         <Link href={buildReviewsHref({ remove: row.id, selected: viewModel.selectedIds.join(",") || null })} className="block px-3 py-[10px] text-[10px] text-[#ef4335]">
           Delete
         </Link>
@@ -67,7 +80,19 @@ function ReviewMenu({ row, viewModel }: { row: ReviewRow; viewModel: ReviewsView
   );
 }
 
-export function ReviewsTable({ viewModel }: { viewModel: ReviewsViewModel }) {
+export function ReviewsTable({
+  viewModel,
+  onOpenFilter,
+  onOpenMenu,
+  onCloseMenu,
+  onView,
+}: {
+  viewModel: ReviewsViewModel;
+  onOpenFilter?: () => void;
+  onOpenMenu?: (row: ReviewRow) => void;
+  onCloseMenu?: () => void;
+  onView?: (row: ReviewRow) => void;
+}) {
   const hasSelection = viewModel.selectedIds.length > 0;
   const tableColumns = hasSelection
     ? "grid-cols-[32px_42px_1fr_1.7fr_132px_132px_40px]"
@@ -97,12 +122,12 @@ export function ReviewsTable({ viewModel }: { viewModel: ReviewsViewModel }) {
                 className="h-[28px] w-full rounded-[8px] bg-[#262626] pl-9 pr-3 text-[10px] text-white/70 placeholder:text-white/28 outline-none"
               />
             </div>
-            <Link href={buildReviewsHref({ filter: true, selected: viewModel.selectedIds.join(",") || null })} className="inline-flex h-[28px] items-center gap-2 rounded-[8px] border border-[#9B68D5] px-3 text-[12px] text-[#b27bff]">
+            <button type="button" onClick={onOpenFilter} className="inline-flex h-[28px] items-center gap-2 rounded-[8px] border border-[#9B68D5] px-3 text-[12px] text-[#b27bff]">
               <svg viewBox="0 0 16 16" className="h-[12px] w-[12px]" fill="none" aria-hidden="true">
                 <path d="M3 4h10M5 8h6M6.5 12h3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
               </svg>
               Filter
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -136,10 +161,10 @@ export function ReviewsTable({ viewModel }: { viewModel: ReviewsViewModel }) {
                 <Stars rating={row.rating} />
                 <span className="text-[12px] text-white/72">{row.dateSubmitted}</span>
                 <div className="relative flex justify-end">
-                  <Link href={buildReviewsHref({ menu: row.id, selected: viewModel.selectedIds.join(",") || null })} aria-label={`Open review actions ${row.id}`} className="text-white/60">
+                  <button type="button" onClick={() => onOpenMenu?.(row)} aria-label={`Open review actions ${row.id}`} className="text-white/60">
                     <AdminRowMenuIcon />
-                  </Link>
-                  {viewModel.showMenuForId === row.id ? <ReviewMenu row={row} viewModel={viewModel} /> : null}
+                  </button>
+                  {viewModel.showMenuForId === row.id ? <ReviewMenu row={row} viewModel={viewModel} onCloseMenu={onCloseMenu} onView={onView} /> : null}
                 </div>
               </div>
             ))

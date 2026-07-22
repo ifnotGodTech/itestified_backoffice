@@ -1,6 +1,16 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
-import type { TestimoniesViewModel, TestimonyRow, TestimonyStatus, TextTestimonyRow, VideoTestimonyRow } from "@/features/admin/domain/entities/testimonies";
+import { useState } from "react";
+import type {
+  TestimoniesViewModel,
+  TestimonyRow,
+  TestimonyStatus,
+  TestimonyTab,
+  TextTestimonyRow,
+  VideoTestimonyRow,
+} from "@/features/admin/domain/entities/testimonies";
 import { buildTestimoniesHref } from "@/features/admin/presentation/state/testimonies-route-state";
 
 function SearchIcon() {
@@ -92,15 +102,23 @@ function TestimoniesError({ message }: { message?: string }) {
   );
 }
 
-function TextActionMenu({ row, viewModel }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel }) {
+function TextActionMenu({
+  row,
+  viewModel,
+  onView,
+}: {
+  row: TextTestimonyRow;
+  viewModel: TestimoniesViewModel;
+  onView: (row: TestimonyRow) => void;
+}) {
   const openUp = viewModel.rows.length - viewModel.rows.indexOf(row) <= 2;
   const canArchive = row.status === "Approved" || row.status === "Scheduled";
 
   return (
     <div className={`absolute right-0 z-50 min-w-[118px] overflow-hidden rounded-[12px] border border-[#5b5b5b] bg-[#242424] text-left shadow-[0_14px_24px_rgba(0,0,0,0.35)] ${openUp ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"}`}>
-      <Link href={buildTestimoniesHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status, view: row.id })} className="block border-b border-white/10 px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]">
+      <button type="button" onClick={() => onView(row)} className="block w-full border-b border-white/10 px-4 py-2 text-left text-[14px] text-white/90 hover:bg-white/[0.04]">
         View
-      </Link>
+      </button>
       {canArchive ? (
         <Link href={buildTestimoniesHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status, archive: row.id })} className="block border-b border-white/10 px-4 py-2 text-[14px] text-[#f0c400] hover:bg-white/[0.04]">
           Archive
@@ -113,15 +131,23 @@ function TextActionMenu({ row, viewModel }: { row: TextTestimonyRow; viewModel: 
   );
 }
 
-function VideoActionMenu({ row, viewModel }: { row: VideoTestimonyRow; viewModel: TestimoniesViewModel }) {
+function VideoActionMenu({
+  row,
+  viewModel,
+  onView,
+}: {
+  row: VideoTestimonyRow;
+  viewModel: TestimoniesViewModel;
+  onView: (row: TestimonyRow) => void;
+}) {
   const openUp = viewModel.rows.length - viewModel.rows.indexOf(row) <= 2;
   const showUpload = row.status === "Drafts" || row.status === "Scheduled";
 
   return (
     <div className={`absolute right-0 z-50 min-w-[126px] overflow-hidden rounded-[12px] border border-[#5b5b5b] bg-[#242424] text-left shadow-[0_14px_24px_rgba(0,0,0,0.35)] ${openUp ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"}`}>
-      <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, q: viewModel.searchQuery, view: row.id })} className="block border-b border-white/10 px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]">
+      <button type="button" onClick={() => onView(row)} className="block w-full border-b border-white/10 px-4 py-2 text-left text-[14px] text-white/90 hover:bg-white/[0.04]">
         View
-      </Link>
+      </button>
       <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, q: viewModel.searchQuery, edit: row.id })} className="block border-b border-white/10 px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]">
         Edit
       </Link>
@@ -146,31 +172,41 @@ function HeaderLabel({ label }: { label: string }) {
   );
 }
 
-function TopTabs({ viewModel }: { viewModel: TestimoniesViewModel }) {
+function TopTabs({
+  viewModel,
+  onTabChange,
+}: {
+  viewModel: TestimoniesViewModel;
+  onTabChange: (tab: TestimonyTab) => void;
+}) {
   return (
     <div className="flex rounded-[10px] bg-[var(--color-surface-muted)] p-1">
       {viewModel.tabs.map((tab) => {
-        const href = buildTestimoniesHref({
-          tab: tab.key,
-          videoStatus: tab.key === "video" ? viewModel.activeVideoStatus : null,
-          engagement: tab.key === "video" ? viewModel.activeVideoEngagement : null,
-          state: viewModel.phaseState === "populated" ? null : viewModel.phaseState,
-          q: viewModel.searchQuery,
-          statusFilter: viewModel.filterDraft.status,
-        });
         const active = tab.key === viewModel.activeTab;
 
         return (
-          <Link key={tab.key} href={href} className={`min-w-[76px] rounded-[7px] px-5 py-[7px] text-center text-[13px] ${active ? "bg-[var(--color-primary)] text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}>
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => onTabChange(tab.key)}
+            aria-pressed={active}
+            className={`min-w-[76px] rounded-[7px] px-5 py-[7px] text-center text-[13px] ${active ? "bg-[var(--color-primary)] text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}`}
+          >
             {tab.label}
-          </Link>
+          </button>
         );
       })}
     </div>
   );
 }
 
-function SearchAndActions({ viewModel }: { viewModel: TestimoniesViewModel }) {
+function SearchAndActions({
+  viewModel,
+  onOpenFilter,
+}: {
+  viewModel: TestimoniesViewModel;
+  onOpenFilter: () => void;
+}) {
   return (
     <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
       <div className="relative w-full sm:w-[290px]">
@@ -185,29 +221,29 @@ function SearchAndActions({ viewModel }: { viewModel: TestimoniesViewModel }) {
           className="h-[36px] w-full rounded-[8px] bg-[var(--color-surface-panel)] pl-9 pr-4 text-[12px] text-[var(--color-text-secondary)] outline-none placeholder:text-[var(--color-text-muted)]"
         />
       </div>
-      <Link
-        href={buildTestimoniesHref({
-          tab: viewModel.activeTab,
-          videoStatus: viewModel.activeTab === "video" ? viewModel.activeVideoStatus : null,
-          engagement: viewModel.activeTab === "video" ? viewModel.activeVideoEngagement : null,
-          q: viewModel.searchQuery,
-          from: viewModel.filterDraft.from,
-          to: viewModel.filterDraft.to,
-          category: viewModel.filterDraft.category,
-          source: viewModel.filterDraft.source,
-          filter: true,
-          statusFilter: viewModel.filterDraft.status,
-        })}
+      <button
+        type="button"
+        onClick={onOpenFilter}
         className="inline-flex h-[36px] min-w-[86px] items-center justify-center gap-2 rounded-[8px] border border-[var(--color-primary)] px-4 text-[14px] text-[var(--color-primary)]"
       >
         <FilterIcon />
         <span>Filter</span>
-      </Link>
+      </button>
     </div>
   );
 }
 
-function TextTable({ viewModel }: { viewModel: TestimoniesViewModel }) {
+function TextTable({
+  viewModel,
+  openMenuId,
+  onToggleMenu,
+  onView,
+}: {
+  viewModel: TestimoniesViewModel;
+  openMenuId: number | null;
+  onToggleMenu: (row: TestimonyRow) => void;
+  onView: (row: TestimonyRow) => void;
+}) {
   return (
     <>
       <div className="grid grid-cols-[64px_1.1fr_1fr_1fr_0.8fr_0.9fr_0.8fr_110px_54px] bg-[#2a2a2a] px-3 py-[9px] text-[10px] font-medium text-white/70">
@@ -234,10 +270,10 @@ function TextTable({ viewModel }: { viewModel: TestimoniesViewModel }) {
             <span>{textRow.shares}</span>
             <span><StatusPill status={textRow.status} /></span>
             <div className="relative flex justify-end text-white/82">
-              <Link href={buildTestimoniesHref({ tab: "text", q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status, menu: textRow.id })} aria-label={`Open actions for testimony ${textRow.id}`}>
+              <button type="button" onClick={() => onToggleMenu(textRow)} aria-label={`Open actions for testimony ${textRow.id}`}>
                 <RowMenuIcon />
-              </Link>
-              {viewModel.showActionMenu && viewModel.selectedRow?.id === textRow.id && !isBottomActionRow(viewModel, textRow) ? <TextActionMenu row={textRow} viewModel={viewModel} /> : null}
+              </button>
+              {openMenuId === textRow.id && !isBottomActionRow(viewModel, textRow) ? <TextActionMenu row={textRow} viewModel={viewModel} onView={onView} /> : null}
             </div>
           </div>
         );
@@ -370,7 +406,7 @@ function VideoTable({ viewModel }: { viewModel: TestimoniesViewModel }) {
             </div>
             {viewModel.showActionMenu && viewModel.selectedRow?.id === videoRow.id && !isBottomActionRow(viewModel, videoRow) ? (
               <div className="absolute right-4 top-[calc(100%+2px)] z-20">
-                <VideoActionMenu row={videoRow} viewModel={viewModel} />
+                <VideoActionMenu row={videoRow} viewModel={viewModel} onView={() => undefined} />
               </div>
             ) : null}
           </div>
@@ -380,7 +416,17 @@ function VideoTable({ viewModel }: { viewModel: TestimoniesViewModel }) {
   );
 }
 
-function VideoSliceTable({ viewModel }: { viewModel: TestimoniesViewModel }) {
+function VideoSliceTable({
+  viewModel,
+  openMenuId,
+  onToggleMenu,
+  onView,
+}: {
+  viewModel: TestimoniesViewModel;
+  openMenuId: number | null;
+  onToggleMenu: (row: TestimonyRow) => void;
+  onView: (row: TestimonyRow) => void;
+}) {
   const isAll = viewModel.activeVideoStatus === "All";
   const isUploaded = viewModel.activeVideoStatus === "Uploaded";
   const isScheduled = viewModel.activeVideoStatus === "Scheduled";
@@ -436,10 +482,10 @@ function VideoSliceTable({ viewModel }: { viewModel: TestimoniesViewModel }) {
               <span><StatusPill status={videoRow.status} /></span>
               <span>{isAll || isUploaded ? <EngagementCell row={videoRow} /> : <span className="text-white/50">—</span>}</span>
               <div className="relative text-right text-[var(--color-text-secondary)]">
-                <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, q: viewModel.searchQuery, menu: videoRow.id })} aria-label={`Open actions for video testimony ${videoRow.id}`}>
+                <button type="button" onClick={() => onToggleMenu(videoRow)} aria-label={`Open actions for video testimony ${videoRow.id}`}>
                   <RowMenuIcon />
-                </Link>
-                {viewModel.showActionMenu && viewModel.selectedRow?.id === videoRow.id && !isBottomActionRow(viewModel, videoRow) ? <VideoActionMenu row={videoRow} viewModel={viewModel} /> : null}
+                </button>
+                {openMenuId === videoRow.id && !isBottomActionRow(viewModel, videoRow) ? <VideoActionMenu row={videoRow} viewModel={viewModel} onView={onView} /> : null}
               </div>
             </div>
           </div>
@@ -456,15 +502,38 @@ function isBottomActionRow(viewModel: TestimoniesViewModel, row: TestimonyRow | 
   return viewModel.rows.length - index <= 2;
 }
 
-export function TestimoniesTable({ viewModel }: { viewModel: TestimoniesViewModel }) {
+export function TestimoniesTable({
+  viewModel,
+  onOpenFilter,
+  onOpenDetails,
+  onTabChange,
+}: {
+  viewModel: TestimoniesViewModel;
+  onOpenFilter: () => void;
+  onOpenDetails: (row: TestimonyRow) => void;
+  onTabChange: (tab: TestimonyTab) => void;
+}) {
   const isVideo = viewModel.activeTab === "video";
-  const showDetachedActionMenu = viewModel.showActionMenu && isBottomActionRow(viewModel, viewModel.selectedRow);
+  const [openMenuId, setOpenMenuId] = useState<number | null>(
+    viewModel.showActionMenu && viewModel.selectedRow ? viewModel.selectedRow.id : null,
+  );
+  const openMenuRow = openMenuId ? viewModel.rows.find((row) => row.id === openMenuId) ?? null : null;
+  const showDetachedActionMenu = isBottomActionRow(viewModel, openMenuRow);
+
+  function toggleActionMenu(row: TestimonyRow) {
+    setOpenMenuId((current) => (current === row.id ? null : row.id));
+  }
+
+  function openDetails(row: TestimonyRow) {
+    setOpenMenuId(null);
+    onOpenDetails(row);
+  }
 
   return (
     <div className="relative max-w-[1248px] rounded-[20px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
       <div className="rounded-[20px]">
         <div className="flex flex-col gap-4 px-4 pt-5 md:flex-row md:items-center md:justify-between md:px-5 md:pt-5">
-          <TopTabs viewModel={viewModel} />
+          <TopTabs viewModel={viewModel} onTabChange={onTabChange} />
           <div className="flex flex-wrap items-center gap-3">
             <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, settings: true })} className="inline-flex min-h-[52px] items-center justify-center rounded-[12px] border border-[var(--color-primary)] px-5 text-[14px] leading-[1.25] text-[var(--color-primary)]">
               Manage Settings
@@ -482,13 +551,13 @@ export function TestimoniesTable({ viewModel }: { viewModel: TestimoniesViewMode
               <VideoStatusTabs viewModel={viewModel} />
               <div className="flex flex-wrap items-center gap-3">
                 <EngagementSelector viewModel={viewModel} />
-                <SearchAndActions viewModel={viewModel} />
+                <SearchAndActions viewModel={viewModel} onOpenFilter={onOpenFilter} />
               </div>
             </div>
           ) : (
             <div className="flex items-center justify-between gap-3">
               <div />
-              <SearchAndActions viewModel={viewModel} />
+              <SearchAndActions viewModel={viewModel} onOpenFilter={onOpenFilter} />
             </div>
           )}
         </div>
@@ -497,8 +566,12 @@ export function TestimoniesTable({ viewModel }: { viewModel: TestimoniesViewMode
           {viewModel.phaseState === "loading" ? <TestimoniesLoading video={isVideo} /> : null}
           {viewModel.phaseState === "empty" ? <TestimoniesEmpty /> : null}
           {viewModel.phaseState === "error" ? <TestimoniesError message={viewModel.errorMessage} /> : null}
-          {viewModel.phaseState === "populated" && !isVideo ? <TextTable viewModel={viewModel} /> : null}
-          {viewModel.phaseState === "populated" && isVideo ? <VideoSliceTable viewModel={viewModel} /> : null}
+          {viewModel.phaseState === "populated" && !isVideo ? (
+            <TextTable viewModel={viewModel} openMenuId={openMenuId} onToggleMenu={toggleActionMenu} onView={openDetails} />
+          ) : null}
+          {viewModel.phaseState === "populated" && isVideo ? (
+            <VideoSliceTable viewModel={viewModel} openMenuId={openMenuId} onToggleMenu={toggleActionMenu} onView={openDetails} />
+          ) : null}
         </div>
 
         <div className="flex items-center justify-between px-4 py-10 text-[12px] text-[var(--color-text-muted)] md:px-5">
@@ -510,27 +583,22 @@ export function TestimoniesTable({ viewModel }: { viewModel: TestimoniesViewMode
         </div>
       </div>
 
-      {showDetachedActionMenu && viewModel.selectedRow?.kind === "text" ? (
+      {showDetachedActionMenu && openMenuRow?.kind === "text" ? (
         <div className="absolute bottom-[92px] right-5 z-50">
-          <TextActionMenu row={viewModel.selectedRow} viewModel={viewModel} />
+          <TextActionMenu row={openMenuRow} viewModel={viewModel} onView={openDetails} />
         </div>
       ) : null}
 
-      {showDetachedActionMenu && viewModel.selectedRow?.kind === "video" ? (
+      {showDetachedActionMenu && openMenuRow?.kind === "video" ? (
         <div className="absolute bottom-[92px] right-5 z-50">
-          <VideoActionMenu row={viewModel.selectedRow} viewModel={viewModel} />
+          <VideoActionMenu row={openMenuRow} viewModel={viewModel} onView={openDetails} />
         </div>
       ) : null}
 
-      {viewModel.showActionMenu && viewModel.selectedRow ? (
-        <Link
-          href={buildTestimoniesHref({
-            tab: viewModel.activeTab,
-            videoStatus: isVideo ? viewModel.activeVideoStatus : null,
-            engagement: isVideo ? viewModel.activeVideoEngagement : null,
-            q: viewModel.searchQuery,
-            statusFilter: viewModel.filterDraft.status,
-          })}
+      {openMenuRow ? (
+        <button
+          type="button"
+          onClick={() => setOpenMenuId(null)}
           className="fixed inset-0 z-40"
           aria-label="Close testimonies action menu"
         />

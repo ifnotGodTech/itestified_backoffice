@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type {
   TestimoniesViewModel,
@@ -71,6 +71,34 @@ function closeHref(viewModel: TestimoniesViewModel) {
     statusFilter: viewModel.filterDraft.status,
     origin: viewModel.origin === "notification" ? "notification" : null,
   });
+}
+
+function DetailCloseControl({
+  viewModel,
+  onClose,
+  className,
+  ariaLabel,
+  children,
+}: {
+  viewModel: TestimoniesViewModel;
+  onClose?: () => void;
+  className: string;
+  ariaLabel?: string;
+  children: ReactNode;
+}) {
+  if (onClose) {
+    return (
+      <button type="button" onClick={onClose} className={className} aria-label={ariaLabel}>
+        {children}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={closeHref(viewModel)} className={className} aria-label={ariaLabel}>
+      {children}
+    </Link>
+  );
 }
 
 function DetailOriginBanner({ viewModel }: { viewModel: TestimoniesViewModel }) {
@@ -148,7 +176,15 @@ function ModerationHistoryPanel({ row }: { row: TestimonyRow }) {
   );
 }
 
-function PendingDetailModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel }) {
+function PendingDetailModal({
+  row,
+  viewModel,
+  onClose,
+}: {
+  row: TextTestimonyRow;
+  viewModel: TestimoniesViewModel;
+  onClose?: () => void;
+}) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
 
@@ -172,12 +208,19 @@ function PendingDetailModal({ row, viewModel }: { row: TextTestimonyRow; viewMod
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close testimony detail modal" />
+      <DetailCloseControl viewModel={viewModel} onClose={onClose} className="absolute inset-0" ariaLabel="Close testimony detail modal">
+        <span className="sr-only">Close testimony detail modal</span>
+      </DetailCloseControl>
       <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[580px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="relative min-h-[110px] bg-[#262626]">
-          <Link href={closeHref(viewModel)} className="absolute right-6 top-4 text-[34px] leading-none text-white/90">
+          <DetailCloseControl
+            viewModel={viewModel}
+            onClose={onClose}
+            className="absolute right-6 top-4 text-[34px] leading-none text-white/90"
+            ariaLabel="Dismiss testimony detail"
+          >
             ×
-          </Link>
+          </DetailCloseControl>
         </div>
         <div className="relative overflow-y-auto px-6 pb-8 pt-2">
           <div className="-mt-2">
@@ -226,15 +269,30 @@ function PendingDetailModal({ row, viewModel }: { row: TextTestimonyRow; viewMod
   );
 }
 
-function ApprovedDetailModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel }) {
+function ApprovedDetailModal({
+  row,
+  viewModel,
+  onClose,
+}: {
+  row: TextTestimonyRow;
+  viewModel: TestimoniesViewModel;
+  onClose?: () => void;
+}) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close approved testimony detail modal" />
+      <DetailCloseControl viewModel={viewModel} onClose={onClose} className="absolute inset-0" ariaLabel="Close approved testimony detail modal">
+        <span className="sr-only">Close approved testimony detail modal</span>
+      </DetailCloseControl>
       <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[580px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="relative min-h-[110px] bg-[#262626]">
-          <Link href={closeHref(viewModel)} className="absolute right-6 top-4 text-[34px] leading-none text-white/90">
+          <DetailCloseControl
+            viewModel={viewModel}
+            onClose={onClose}
+            className="absolute right-6 top-4 text-[34px] leading-none text-white/90"
+            ariaLabel="Dismiss approved testimony detail"
+          >
             ×
-          </Link>
+          </DetailCloseControl>
         </div>
         <div className="relative overflow-y-auto px-6 pb-8 pt-2">
           <div className="-mt-2">
@@ -528,7 +586,13 @@ function DeleteTextTestimonyModal({ row, viewModel }: { row: TextTestimonyRow; v
   );
 }
 
-function FilterModal({ viewModel }: { viewModel: TestimoniesViewModel }) {
+function FilterModal({
+  viewModel,
+  onClose,
+}: {
+  viewModel: TestimoniesViewModel;
+  onClose: () => void;
+}) {
   const categoryOptions = viewModel.categories.filter((category) => category.isActive);
   const selectedCategoryLabel =
     viewModel.categories.find((category) => category.slug === viewModel.filterDraft.category)?.name ??
@@ -537,14 +601,19 @@ function FilterModal({ viewModel }: { viewModel: TestimoniesViewModel }) {
   const isVideo = viewModel.activeTab === "video";
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close testimony filter modal" />
+      <button type="button" onClick={onClose} className="absolute inset-0" aria-label="Close testimony filter modal" />
       <form action="/testimonies" className="relative z-10 w-full max-w-[380px] overflow-hidden rounded-[24px] border border-white/10 bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <input type="hidden" name="tab" value={viewModel.activeTab} />
         <input type="hidden" name="q" value={viewModel.searchQuery} />
         {isVideo ? <input type="hidden" name="videoStatus" value={viewModel.activeVideoStatus} /> : null}
         {viewModel.filterDraft.categoryMenuOpen ? <input type="hidden" name="categoryMenuOpen" value="1" /> : null}
         {viewModel.filterDraft.sourceMenuOpen ? <input type="hidden" name="sourceMenuOpen" value="1" /> : null}
-        <div className="border-b border-white/10 px-5 py-4 text-[14px] font-medium text-white">Filter</div>
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 text-[14px] font-medium text-white">
+          <span>Filter</span>
+          <button type="button" onClick={onClose} className="text-white/80 hover:text-white" aria-label="Dismiss testimony filter">
+            <CloseIcon />
+          </button>
+        </div>
         <div className="border-b border-white/10 px-5 py-5">
           <div className="mb-5 flex items-center justify-between">
             <p className="text-[14px] text-white">Date Range</p>
@@ -1007,18 +1076,28 @@ function TestimonySettingsModal({ viewModel }: { viewModel: TestimoniesViewModel
   );
 }
 
-function VideoDetailsModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel: TestimoniesViewModel }) {
+function VideoDetailsModal({
+  row,
+  viewModel,
+  onClose,
+}: {
+  row: VideoTestimonyRow;
+  viewModel: TestimoniesViewModel;
+  onClose?: () => void;
+}) {
   const stat = (value: number | null) => (value == null ? 0 : value);
   const hasPlayableVideo = Boolean(row.videoUrl?.trim());
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close video details modal" />
+      <DetailCloseControl viewModel={viewModel} onClose={onClose} className="absolute inset-0" ariaLabel="Close video details modal">
+        <span className="sr-only">Close video details modal</span>
+      </DetailCloseControl>
       <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[580px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <h2 className="text-[28px] font-semibold text-white">Video Details</h2>
-          <Link href={closeHref(viewModel)} className="text-white/90" aria-label="Close video details">
+          <DetailCloseControl viewModel={viewModel} onClose={onClose} className="text-white/90" ariaLabel="Close video details">
             <CloseIcon />
-          </Link>
+          </DetailCloseControl>
         </div>
         <div className="overflow-y-auto px-6 py-6">
           <DetailOriginBanner viewModel={viewModel} />
@@ -1337,23 +1416,48 @@ function DeleteVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewMode
   );
 }
 
-export function TestimoniesOverlays({ viewModel }: { viewModel: TestimoniesViewModel }) {
+export function TestimoniesOverlays({
+  viewModel,
+  showFilterModal = false,
+  onCloseFilterModal,
+  detailRow,
+  onCloseDetailModal,
+}: {
+  viewModel: TestimoniesViewModel;
+  showFilterModal?: boolean;
+  onCloseFilterModal?: () => void;
+  detailRow?: TestimonyRow | null;
+  onCloseDetailModal?: () => void;
+}) {
+  const router = useRouter();
+  const selectedDetailRow = detailRow ?? viewModel.selectedRow;
+  const showDetails = Boolean(detailRow) || viewModel.showDetails;
+  const closeDetails = detailRow ? onCloseDetailModal : undefined;
+
+  function closeFilterModal() {
+    if (viewModel.showFilterModal) {
+      router.push(closeHref(viewModel));
+      return;
+    }
+    onCloseFilterModal?.();
+  }
+
   if (viewModel.showSuccess && viewModel.successMessage) {
     return <SuccessModal viewModel={viewModel} />;
   }
 
   return (
     <>
-      {viewModel.showDetails && viewModel.selectedRow?.kind === "text" && viewModel.selectedRow.status === "Pending" ? <PendingDetailModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showDetails && viewModel.selectedRow?.kind === "text" && viewModel.selectedRow.status !== "Pending" ? <ApprovedDetailModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showDetails && viewModel.selectedRow?.kind === "video" ? <VideoDetailsModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
+      {showDetails && selectedDetailRow?.kind === "text" && selectedDetailRow.status === "Pending" ? <PendingDetailModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} /> : null}
+      {showDetails && selectedDetailRow?.kind === "text" && selectedDetailRow.status !== "Pending" ? <ApprovedDetailModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} /> : null}
+      {showDetails && selectedDetailRow?.kind === "video" ? <VideoDetailsModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} /> : null}
       {viewModel.showRejectModal && viewModel.selectedRow?.kind === "text" ? <RejectModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
       {viewModel.showScheduleModal && viewModel.selectedRow?.kind === "text" ? <ScheduleModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
       {viewModel.showArchiveModal && viewModel.selectedRow?.kind === "text" ? <ArchiveModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
       {viewModel.showEditModal && viewModel.selectedRow?.kind === "video" ? <EditVideoModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
       {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "video" ? <DeleteVideoModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
       {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "text" ? <DeleteTextTestimonyModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showFilterModal ? <FilterModal viewModel={viewModel} /> : null}
+      {viewModel.showFilterModal || showFilterModal ? <FilterModal viewModel={viewModel} onClose={closeFilterModal} /> : null}
       {viewModel.showSettingsModal ? <TestimonySettingsModal viewModel={viewModel} /> : null}
     </>
   );
