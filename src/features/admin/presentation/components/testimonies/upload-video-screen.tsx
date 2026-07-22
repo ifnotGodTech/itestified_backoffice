@@ -11,6 +11,21 @@ type Props = {
 
 type UploadMode = "single" | "multiple";
 type UploadStatus = "upload_now" | "schedule_for_later" | "draft";
+type CloudinaryResourceType = "video" | "image";
+
+type DirectUploadSignature = {
+  cloud_name: string;
+  api_key: string;
+  timestamp: number;
+  folder: string;
+  signature: string;
+  resource_type: CloudinaryResourceType;
+};
+
+type DirectUploadResult = {
+  secure_url?: string;
+  public_id?: string;
+};
 
 type VideoDraft = {
   id: string;
@@ -84,6 +99,63 @@ function validateVideoFile(file: File | null): string | null {
     return "Video file exceeds the 200MB limit.";
   }
   return null;
+}
+
+async function requestDirectUploadSignature(resourceType: CloudinaryResourceType): Promise<DirectUploadSignature> {
+  const response = await fetch("/api/admin/testimonies/upload-signature", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ resource_type: resourceType }),
+  });
+  const data = (await response.json().catch(() => null)) as unknown;
+  if (!response.ok) {
+    throw new Error(extractApiErrorMessage(data));
+  }
+  if (!data || typeof data !== "object") {
+    throw new Error("Upload could not be prepared. Please try again.");
+  }
+  return data as DirectUploadSignature;
+}
+
+function buildGeneratedThumbnailUrl(signature: DirectUploadSignature, publicId: string | undefined): string {
+  if (!publicId) return "";
+  return `https://res.cloudinary.com/${signature.cloud_name}/video/upload/so_2,w_1280,h_720,c_fill,g_auto/${encodeURI(publicId)}.jpg`;
+}
+
+async function uploadFileDirectlyToCloudinary(file: File, resourceType: CloudinaryResourceType): Promise<{
+  secureUrl: string;
+  thumbnailUrl: string;
+}> {
+  const signature = await requestDirectUploadSignature(resourceType);
+  const uploadFormData = new FormData();
+  uploadFormData.set("file", file);
+  uploadFormData.set("api_key", signature.api_key);
+  uploadFormData.set("timestamp", String(signature.timestamp));
+  uploadFormData.set("folder", signature.folder);
+  uploadFormData.set("signature", signature.signature);
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${signature.cloud_name}/${resourceType}/upload`,
+    {
+      method: "POST",
+      body: uploadFormData,
+    },
+  );
+  const data = (await response.json().catch(() => null)) as DirectUploadResult | { error?: { message?: string } } | null;
+  if (!response.ok) {
+    const message =
+      data && "error" in data && typeof data.error?.message === "string"
+        ? data.error.message
+        : `Cloudinary upload failed (${response.status}).`;
+    throw new Error(message);
+  }
+  const secureUrl = data && "secure_url" in data ? String(data.secure_url || "") : "";
+  if (!secureUrl) {
+    throw new Error("Cloudinary did not return an uploaded file URL.");
+  }
+  const publicId = data && "public_id" in data ? String(data.public_id || "") : "";
+  const thumbnailUrl = resourceType === "video" ? buildGeneratedThumbnailUrl(signature, publicId) : "";
+  return { secureUrl, thumbnailUrl };
 }
 
 const pageCardClass =
@@ -202,23 +274,26 @@ export function UploadVideoScreen({ categories }: Props) {
           .filter(Boolean)
           .join("\n");
 
-        const formData = new FormData();
-        formData.set("title", draft.title.trim());
-        formData.set("category_id", draft.categoryId);
-        formData.set("body", composedBody);
-        formData.set("upload_status", uploadStatus);
-        formData.set("total_videos_in_batch", String(workingDrafts.length));
-        formData.set("video_file", draft.videoFile as File);
-        if (draft.thumbnailFile) {
-          formData.set("thumbnail_file", draft.thumbnailFile);
-        }
-        if (uploadStatus === "schedule_for_later") {
-          formData.set("scheduled_publish_at", new Date(`${scheduledDate}T${scheduledTime}`).toISOString());
-        }
-
-        const response = await fetch("/api/admin/testimonies/upload-video", {
+        const uploadedVideo = await uploadFileDirectlyToCloudinary(draft.videoFile as File, "video");
+        const uploadedThumbnail = draft.thumbnailFile
+          ? await uploadFileDirectlyToCloudinary(draft.thumbnailFile, "image")
+          : null;
+        const payload = {
+          title: draft.title.trim(),
+          category_id: draft.categoryId,
+          body: composedBody,
+          upload_status: uploadStatus,
+          video_url: uploadedVideo.secureUrl,
+          thumbnail_url: uploadedThumbnail?.secureUrl || uploadedVideo.thumbnailUrl,
+          scheduled_publish_at:
+            uploadStatus === "schedule_for_later"
+              ? new Date(`${scheduledDate}T${scheduledTime}`).toISOString()
+              : "",
+        };
+        const response = await fetch("/api/admin/testimonies/create-video-from-url", {
           method: "POST",
-          body: formData,
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
         });
 
         if (!response.ok) {

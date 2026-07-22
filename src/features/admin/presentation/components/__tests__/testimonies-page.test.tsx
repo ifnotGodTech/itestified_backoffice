@@ -232,9 +232,36 @@ describe("TestimoniesPage", () => {
 
   test("submits new video uploads as drafts when Drafts is selected", async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({}),
+    const fetchMock = vi.fn((url: string, _init?: RequestInit) => {
+      if (url === "/api/admin/testimonies/upload-signature") {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            cloud_name: "demo",
+            api_key: "12345",
+            timestamp: 1784720000,
+            folder: "itestified/testimonies/videos",
+            signature: "signed-payload",
+            resource_type: "video",
+          }),
+        });
+      }
+      if (url === "https://api.cloudinary.com/v1_1/demo/video/upload") {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            secure_url: "https://res.cloudinary.com/demo/video/upload/v1/draft.mp4",
+            public_id: "itestified/testimonies/videos/draft",
+          }),
+        });
+      }
+      if (url === "/api/admin/testimonies/create-video-from-url") {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({}),
+        });
+      }
+      return Promise.reject(new Error(`Unexpected fetch: ${url}`));
     });
     vi.stubGlobal("fetch", fetchMock);
     const { container } = render(<TestimoniesPage viewModel={getTestimoniesViewModel({ tab: "video", screen: "upload" })} />);
@@ -248,12 +275,25 @@ describe("TestimoniesPage", () => {
     await user.click(screen.getByRole("button", { name: "Upload" }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalledWith("/api/admin/testimonies/create-video-from-url", expect.any(Object));
     });
-    const uploadCall = fetchMock.mock.calls.find(([, init]) => init?.body instanceof FormData);
-    expect(uploadCall).toBeTruthy();
-    const requestBody = uploadCall?.[1]?.body as FormData;
-    expect(requestBody.get("upload_status")).toBe("draft");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/admin/testimonies/upload-signature",
+      expect.objectContaining({
+        body: JSON.stringify({ resource_type: "video" }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.cloudinary.com/v1_1/demo/video/upload",
+      expect.objectContaining({
+        body: expect.any(FormData),
+      }),
+    );
+    const createCall = fetchMock.mock.calls.find(([url]) => url === "/api/admin/testimonies/create-video-from-url");
+    const requestBody = JSON.parse(String(createCall?.[1]?.body)) as Record<string, string>;
+    expect(requestBody.upload_status).toBe("draft");
+    expect(requestBody.video_url).toBe("https://res.cloudinary.com/demo/video/upload/v1/draft.mp4");
+    expect(requestBody.thumbnail_url).toContain("https://res.cloudinary.com/demo/video/upload/");
     expect(routerPush).toHaveBeenCalledWith(expect.stringContaining("videoStatus=Drafts"));
   });
 
