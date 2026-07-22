@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type {
   TestimoniesViewModel,
@@ -142,6 +143,34 @@ function VideoActionMenu({
 }) {
   const openUp = viewModel.rows.length - viewModel.rows.indexOf(row) <= 2;
   const showUpload = row.status === "Drafts" || row.status === "Scheduled";
+  const router = useRouter();
+  const [isUploading, setIsUploading] = useState(false);
+
+  async function uploadNow() {
+    if (isUploading) return;
+    setIsUploading(true);
+    const response = await fetch(`/api/admin/testimonies/${row.id}/upload-now`, {
+      method: "POST",
+    });
+    if (!response.ok) {
+      setIsUploading(false);
+      return;
+    }
+    router.push(
+      buildTestimoniesHref({
+        tab: "video",
+        videoStatus: viewModel.activeVideoStatus,
+        engagement: viewModel.activeVideoEngagement,
+        q: viewModel.searchQuery,
+        from: viewModel.filterDraft.from,
+        to: viewModel.filterDraft.to,
+        category: viewModel.filterDraft.category,
+        source: viewModel.filterDraft.source,
+        success: "upload",
+      }),
+    );
+    router.refresh();
+  }
 
   return (
     <div className={`absolute right-0 z-50 min-w-[126px] overflow-hidden rounded-[12px] border border-[#5b5b5b] bg-[#242424] text-left shadow-[0_14px_24px_rgba(0,0,0,0.35)] ${openUp ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"}`}>
@@ -152,9 +181,14 @@ function VideoActionMenu({
         Edit
       </Link>
       {showUpload ? (
-        <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, q: viewModel.searchQuery, success: "upload" })} className="block border-b border-white/10 px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]">
-          Upload
-        </Link>
+        <button
+          type="button"
+          disabled={isUploading}
+          onClick={uploadNow}
+          className="block w-full border-b border-white/10 px-4 py-2 text-left text-[14px] text-white/90 hover:bg-white/[0.04] disabled:opacity-60"
+        >
+          {isUploading ? "Uploading..." : "Upload"}
+        </button>
       ) : null}
       <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, q: viewModel.searchQuery, remove: row.id })} className="block px-4 py-2 text-[14px] text-[#ef4335] hover:bg-white/[0.04]">
         Delete

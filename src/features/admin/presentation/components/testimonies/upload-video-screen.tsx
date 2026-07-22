@@ -26,6 +26,27 @@ const MAX_VIDEOS_PER_BATCH = 10;
 const MAX_VIDEO_FILE_SIZE_BYTES = 200 * 1024 * 1024;
 const ALLOWED_VIDEO_CONTENT_TYPES = new Set(["video/mp4"]);
 
+const uploadSuccessCopy: Record<UploadStatus, { single: string; multiple: (count: number) => string }> = {
+  upload_now: {
+    single: "Video uploaded successfully.",
+    multiple: (count) => `${count} videos uploaded successfully.`,
+  },
+  schedule_for_later: {
+    single: "Video scheduled successfully.",
+    multiple: (count) => `${count} videos scheduled successfully.`,
+  },
+  draft: {
+    single: "Video saved as draft.",
+    multiple: (count) => `${count} videos saved as drafts.`,
+  },
+};
+
+const uploadStatusRedirect: Record<UploadStatus, "Uploaded" | "Scheduled" | "Drafts"> = {
+  upload_now: "Uploaded",
+  schedule_for_later: "Scheduled",
+  draft: "Drafts",
+};
+
 function extractApiErrorMessage(data: unknown): string {
   if (!data || typeof data !== "object") {
     return "Upload failed. Please review your details and try again.";
@@ -212,16 +233,13 @@ export function UploadVideoScreen({ categories }: Props) {
 
       setSubmitting(false);
       setMessageTone("success");
-      setMessage(
-        mode === "multiple"
-          ? `${workingDrafts.length} videos uploaded successfully. They are now pending moderation review.`
-          : "Video uploaded successfully. It is now pending moderation review.",
-      );
+      const successCopy = uploadSuccessCopy[uploadStatus];
+      setMessage(mode === "multiple" ? successCopy.multiple(workingDrafts.length) : successCopy.single);
       setDrafts([newDraft(1)]);
       setUploadStatus("upload_now");
       setScheduledDate("");
       setScheduledTime("");
-      router.push(buildTestimoniesHref({ tab: "video", success: "upload" }));
+      router.push(buildTestimoniesHref({ tab: "video", videoStatus: uploadStatusRedirect[uploadStatus], success: "upload" }));
       router.refresh();
     } catch (error) {
       setSubmitting(false);

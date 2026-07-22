@@ -4,10 +4,13 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { getTestimoniesViewModel } from "@/features/admin/data/services/get-testimonies-view-model";
 import { TestimoniesPage } from "@/features/admin/presentation/components/testimonies-page";
 
+const routerPush = vi.fn();
+const routerRefresh = vi.fn();
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
-    push: vi.fn(),
-    refresh: vi.fn(),
+    push: routerPush,
+    refresh: routerRefresh,
   }),
   usePathname: () => "/testimonies",
 }));
@@ -15,6 +18,8 @@ vi.mock("next/navigation", () => ({
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  routerPush.mockClear();
+  routerRefresh.mockClear();
 });
 
 describe("TestimoniesPage", () => {
@@ -64,6 +69,27 @@ describe("TestimoniesPage", () => {
     expect(screen.getByText("View")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Close testimonies action menu" }));
     expect(screen.queryByText("View")).not.toBeInTheDocument();
+  });
+
+  test("uploads draft videos from the row action menu through the backend", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({}),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<TestimoniesPage viewModel={getTestimoniesViewModel({ tab: "video" })} />);
+
+    await user.click(screen.getByRole("button", { name: "Open actions for video testimony 3" }));
+    await user.click(screen.getByRole("button", { name: "Upload" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/admin/testimonies/3/upload-now", {
+        method: "POST",
+      });
+    });
+    expect(routerPush).toHaveBeenCalledWith(expect.stringContaining("success=upload"));
+    expect(routerRefresh).toHaveBeenCalled();
   });
 
   test("opens and closes the testimony filter modal on the client", async () => {
