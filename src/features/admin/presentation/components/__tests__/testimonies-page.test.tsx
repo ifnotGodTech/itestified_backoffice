@@ -157,6 +157,15 @@ describe("TestimoniesPage", () => {
     expect(screen.getByText("Reject Testimony")).toBeInTheDocument();
   });
 
+  test("keeps pending testimony action buttons inside the detail modal", () => {
+    render(<TestimoniesPage viewModel={getTestimoniesViewModel({ view: "1" })} />);
+
+    const approveButton = screen.getByRole("button", { name: "Approve Testimony" });
+    expect(approveButton.parentElement).toHaveClass("grid");
+    expect(approveButton.parentElement).toHaveClass("sm:grid-cols-3");
+    expect(approveButton).toHaveClass("w-full");
+  });
+
   test("renders the approved testimony detail state", () => {
     render(<TestimoniesPage viewModel={getTestimoniesViewModel({ view: "2" })} />);
 
@@ -219,6 +228,33 @@ describe("TestimoniesPage", () => {
     render(<TestimoniesPage viewModel={getTestimoniesViewModel({ tab: "video", success: "upload" })} />);
 
     expect(screen.getAllByText("Video Uploaded Successfully!").length).toBeGreaterThan(0);
+  });
+
+  test("submits new video uploads as drafts when Drafts is selected", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({}),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const { container } = render(<TestimoniesPage viewModel={getTestimoniesViewModel({ tab: "video", screen: "upload" })} />);
+
+    await user.type(screen.getByPlaceholderText("Enter video title"), "Draft testimony video");
+    await user.selectOptions(screen.getAllByRole("combobox")[1], "1");
+    const videoInput = container.querySelector('input[type="file"][accept="video/*"]');
+    expect(videoInput).toBeInstanceOf(HTMLInputElement);
+    await user.upload(videoInput as HTMLInputElement, new File(["video"], "draft.mp4", { type: "video/mp4" }));
+    await user.click(screen.getByLabelText("Drafts"));
+    await user.click(screen.getByRole("button", { name: "Upload" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalled();
+    });
+    const uploadCall = fetchMock.mock.calls.find(([, init]) => init?.body instanceof FormData);
+    expect(uploadCall).toBeTruthy();
+    const requestBody = uploadCall?.[1]?.body as FormData;
+    expect(requestBody.get("upload_status")).toBe("draft");
+    expect(routerPush).toHaveBeenCalledWith(expect.stringContaining("videoStatus=Drafts"));
   });
 
   test("renders the edit success state", () => {

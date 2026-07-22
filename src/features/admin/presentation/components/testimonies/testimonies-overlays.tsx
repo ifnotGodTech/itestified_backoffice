@@ -242,16 +242,16 @@ function PendingDetailModal({
           </div>
           <ModerationHistoryPanel row={row} />
         </div>
-        <div className="flex justify-end gap-4 px-6 pb-8 pt-2">
+        <div className="grid gap-3 px-6 pb-8 pt-2 sm:grid-cols-3">
           <Link
             href={buildTestimoniesHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status, schedule: row.id })}
-            className="inline-flex min-w-[178px] items-center justify-center rounded-[10px] border border-[#f0c400] px-6 py-4 text-[16px] text-[#f0c400]"
+            className="inline-flex min-h-[48px] w-full items-center justify-center rounded-[10px] border border-[#f0c400] px-3 py-3 text-center text-[14px] font-medium text-[#f0c400]"
           >
             Schedule
           </Link>
           <Link
             href={buildTestimoniesHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status, reject: row.id })}
-            className="inline-flex min-w-[178px] items-center justify-center rounded-[10px] border border-[#ef4335] px-6 py-4 text-[16px] text-[#ef4335]"
+            className="inline-flex min-h-[48px] w-full items-center justify-center rounded-[10px] border border-[#ef4335] px-3 py-3 text-center text-[14px] font-medium text-[#ef4335]"
           >
             Reject Testimony
           </Link>
@@ -259,7 +259,7 @@ function PendingDetailModal({
             type="button"
             disabled={submitting}
             onClick={approveTestimony}
-            className="inline-flex min-w-[178px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 py-4 text-[16px] text-white disabled:opacity-60"
+            className="inline-flex min-h-[48px] w-full items-center justify-center rounded-[10px] bg-[#9B68D5] px-3 py-3 text-center text-[14px] font-medium text-white disabled:opacity-60"
           >
             {submitting ? "Approving..." : "Approve Testimony"}
           </button>

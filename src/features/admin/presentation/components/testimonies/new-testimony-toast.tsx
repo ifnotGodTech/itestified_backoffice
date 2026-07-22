@@ -34,6 +34,7 @@ export function NewTestimonyToast() {
       const seenId = seenRaw ? Number(seenRaw) : 0;
       if (seenId >= next.id) return;
 
+      window.localStorage.setItem(STORAGE_KEY, String(next.id));
       setItem(next);
       if (hideTimer.current) clearTimeout(hideTimer.current);
       hideTimer.current = setTimeout(() => {
