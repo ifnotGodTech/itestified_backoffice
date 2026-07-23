@@ -62,6 +62,22 @@ const uploadStatusRedirect: Record<UploadStatus, "Uploaded" | "Scheduled" | "Dra
   draft: "Drafts",
 };
 
+function normalizeVideoSource(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  const key = trimmed.replaceAll("_", " ").replace(/\s+/g, " ").toLowerCase();
+  const canonical: Record<string, string> = {
+    youtube: "YouTube",
+    "you tube": "YouTube",
+    "you-tube": "YouTube",
+    instagram: "Instagram",
+    tiktok: "TikTok",
+    "tik tok": "TikTok",
+    facebook: "Facebook",
+  };
+  return canonical[key] ?? `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`;
+}
+
 function extractApiErrorMessage(data: unknown): string {
   if (!data || typeof data !== "object") {
     return "Upload failed. Please review your details and try again.";
@@ -267,9 +283,10 @@ export function UploadVideoScreen({ categories }: Props) {
         throw new Error(`A maximum of ${MAX_VIDEOS_PER_BATCH} videos is allowed per upload batch.`);
       }
       for (const draft of workingDrafts) {
+        const normalizedSource = normalizeVideoSource(draft.source);
         const composedBody = [
           draft.body.trim(),
-          draft.source.trim() ? `Source: ${draft.source.trim()}` : "",
+          normalizedSource ? `Source: ${normalizedSource}` : "",
         ]
           .filter(Boolean)
           .join("\n");

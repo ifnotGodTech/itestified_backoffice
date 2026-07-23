@@ -34,6 +34,22 @@ const fallbackCategories: TestimonyCategoryOption[] = [
   { id: 4, name: "Salvation", slug: "salvation", description: "", isActive: true },
 ];
 
+function normalizeVideoSource(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  const key = trimmed.replaceAll("_", " ").replace(/\s+/g, " ").toLowerCase();
+  const canonical: Record<string, string> = {
+    youtube: "YouTube",
+    "you tube": "YouTube",
+    "you-tube": "YouTube",
+    instagram: "Instagram",
+    tiktok: "TikTok",
+    "tik tok": "TikTok",
+    facebook: "Facebook",
+  };
+  return canonical[key] ?? `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`;
+}
+
 const sampleBody =
   "I want to give all the glory to God for the miraculous healing I received. For the past few months, I had been suffering from severe back pain that made it difficult to even get out of bed in the morning. I tried everything from medication to physical therapy, but nothing seemed to work. One Sunday, after service, I approached the prayer team and asked for prayers for healing. As they laid hands on me and prayed, I felt a warmth spread through my back, and the pain immediately started to decrease. By the time I got home that day, the pain was completely gone. It has now been three weeks, and I haven't felt even a hint of discomfort. I am so thankful to God for this miracle and want to encourage anyone who is struggling to believe in His power to heal. Our God is a healer, and He hears our prayers!";
 
@@ -284,7 +300,7 @@ export function getTestimoniesViewModel(input: {
           if (row.kind !== "video") return false;
           const matchesStatus = activeVideoStatus === "All" ? true : row.status === activeVideoStatus;
           const matchesCategory = categoryMatches(row.category, category);
-          const matchesSource = source ? row.source === source : true;
+          const matchesSource = source ? normalizeVideoSource(row.source) === normalizeVideoSource(source) : true;
           const matchesFrom = dateFrom ? row.dateUploaded === dateFrom : true;
           const matchesTo = dateTo ? row.dateUploaded === dateTo : true;
           return matchesStatus && matchesCategory && matchesSource && matchesFrom && matchesTo;
@@ -448,7 +464,7 @@ function extractVideoSource(body: string | undefined): string {
     .map((line) => line.trim())
     .find((line) => line.toLowerCase().startsWith("source:"));
   const source = sourceLine?.slice("source:".length).trim();
-  return source || "Uploaded";
+  return source ? normalizeVideoSource(source) : "Uploaded";
 }
 
 export async function getTestimoniesViewModelFromBackend(
@@ -545,7 +561,7 @@ export async function getTestimoniesViewModelFromBackend(
             id: item.id,
             title: item.title,
             category: item.category,
-            source: item.source?.trim() || extractVideoSource(item.body),
+            source: normalizeVideoSource(item.source ?? "") || extractVideoSource(item.body),
             videoUrl: item.video_url || "",
             dateUploaded: new Date(item.created_at).toLocaleDateString("en-GB"),
             uploadedBy: item.author_name,
