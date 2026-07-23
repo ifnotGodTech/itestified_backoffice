@@ -144,7 +144,7 @@ function DeactivatedAccountDetailModal({
   );
 }
 
-function DeactivateAccountModal({ row, viewModel }: { row: UserManagementRow; viewModel: UserManagementViewModel }) {
+function DeactivateAccountModal({ row, viewModel, onClose }: { row: UserManagementRow; viewModel: UserManagementViewModel; onClose: () => void }) {
   const reasons = [
     "Suspicious account activity",
     "Multiple policy violations",
@@ -159,13 +159,15 @@ function DeactivateAccountModal({ row, viewModel }: { row: UserManagementRow; vi
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} className="absolute inset-0" aria-label="Close deactivate account modal" />
+      <CloseControl href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} onClose={onClose} className="absolute inset-0" label="Close deactivate account modal">
+        <span className="sr-only">Close deactivate account modal</span>
+      </CloseControl>
       <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <h2 className="text-[28px] font-semibold text-white">Deactivate Account</h2>
-          <Link href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} className="text-[34px] leading-none text-white/90">
+          <CloseControl href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} onClose={onClose} className="text-[34px] leading-none text-white/90" label="Close deactivate account modal">
             ×
-          </Link>
+          </CloseControl>
         </div>
         <div className="overflow-y-auto px-6 py-6">
           <p className="mb-4 text-[16px] text-white/90">Deactivation Reason</p>
@@ -205,12 +207,14 @@ function DeactivateAccountModal({ row, viewModel }: { row: UserManagementRow; vi
           </p>
         </div>
         <div className="flex justify-end gap-4 px-6 pb-6 pt-2">
-          <Link
+          <CloseControl
             href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })}
+            onClose={onClose}
             className="inline-flex min-w-[116px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-5 py-4 text-[16px] text-[#9B68D5]"
+            label="Cancel deactivate account"
           >
             Cancel
-          </Link>
+          </CloseControl>
           <form action={`/api/admin/users/${row.id}/deactivate/?next=${encodeURIComponent(buildUsersHref({ tab: "deactivated", success: "deactivate" }))}`} method="POST">
             <button
               type="submit"
@@ -225,7 +229,7 @@ function DeactivateAccountModal({ row, viewModel }: { row: UserManagementRow; vi
   );
 }
 
-function ReactivateAccountModal({ row, viewModel }: { row: UserManagementRow; viewModel: UserManagementViewModel }) {
+function ReactivateAccountModal({ row, viewModel, onClose }: { row: UserManagementRow; viewModel: UserManagementViewModel; onClose: () => void }) {
   const reasons = ["Account Deactivated by Mistake", "System Error Correction", "Issue Resolved"];
   const [isReasonOpen, setIsReasonOpen] = useState(false);
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
@@ -233,12 +237,14 @@ function ReactivateAccountModal({ row, viewModel }: { row: UserManagementRow; vi
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} className="absolute inset-0" aria-label="Close reactivate account modal" />
+      <CloseControl href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} onClose={onClose} className="absolute inset-0" label="Close reactivate account modal">
+        <span className="sr-only">Close reactivate account modal</span>
+      </CloseControl>
       <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[580px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="flex items-center justify-end px-6 pt-5">
-          <Link href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} className="text-[34px] leading-none text-white/90">
+          <CloseControl href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} onClose={onClose} className="text-[34px] leading-none text-white/90" label="Close reactivate account modal">
             ×
-          </Link>
+          </CloseControl>
         </div>
         <div className="overflow-y-auto px-6 pb-6 pt-1">
           <h2 className="text-center text-[28px] font-semibold text-white">Reactivate Account?</h2>
@@ -299,12 +305,14 @@ function ReactivateAccountModal({ row, viewModel }: { row: UserManagementRow; vi
           </div>
         </div>
         <div className="flex justify-end gap-4 px-6 pb-6 pt-2">
-          <Link
+          <CloseControl
             href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })}
+            onClose={onClose}
             className="inline-flex min-w-[176px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] text-[#9B68D5]"
+            label="Cancel reactivate account"
           >
             Cancel
-          </Link>
+          </CloseControl>
           <form action={`/api/admin/users/${row.id}/reactivate/?next=${encodeURIComponent(buildUsersHref({ tab: "registered", success: "reactivate" }))}`} method="POST">
             <button
               type="submit"
@@ -319,10 +327,12 @@ function ReactivateAccountModal({ row, viewModel }: { row: UserManagementRow; vi
   );
 }
 
-function SuccessModal({ viewModel }: { viewModel: UserManagementViewModel }) {
+function SuccessModal({ viewModel, onClose }: { viewModel: UserManagementViewModel; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
-      <Link href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} className="absolute inset-0" aria-label="Close success modal" />
+      <CloseControl href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} onClose={onClose} className="absolute inset-0" label="Close success modal">
+        <span className="sr-only">Close success modal</span>
+      </CloseControl>
       <div className="relative z-10 max-h-[calc(100vh-32px)] w-full max-w-[400px] overflow-y-auto rounded-[24px] bg-[#1f1f1f] px-8 py-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="mx-auto flex h-[102px] w-[102px] items-center justify-center rounded-full bg-[#9B68D5] text-[62px] text-white">✓</div>
         <p className="mt-10 text-[28px] font-semibold leading-[1.3] text-white">{viewModel.successMessage}</p>
@@ -340,15 +350,35 @@ export function UsersOverlays({
   detailRow?: UserManagementRow | null;
   onCloseDetails?: () => void;
 }) {
+  const [dismissedOverlayKey, setDismissedOverlayKey] = useState<string | null>(null);
   const selectedRow = detailRow ?? viewModel.selectedRow;
-  const showDetails = Boolean(detailRow) || viewModel.showDetails;
+  const currentSearch = typeof window === "undefined" ? "" : window.location.search;
+  const detailKey = selectedRow ? `view:${selectedRow.id}` : "view";
+  const showDetails = (Boolean(detailRow) || viewModel.showDetails) && !isDismissed(detailKey, "view");
+  const closeDetails = detailRow ? onCloseDetails : () => dismissRouteOverlay(detailKey);
+
+  function isDismissed(key: string, paramName: string) {
+    return dismissedOverlayKey === key && !currentSearch.includes(`${paramName}=`);
+  }
+
+  function dismissRouteOverlay(key: string) {
+    setDismissedOverlayKey(key);
+    if (typeof window !== "undefined") {
+      window.history.pushState(null, "", buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery }));
+    }
+  }
+
+  const deactivateKey = viewModel.selectedRow ? `deactivate:${viewModel.selectedRow.id}` : "deactivate";
+  const reactivateKey = viewModel.selectedRow ? `reactivate:${viewModel.selectedRow.id}` : "reactivate";
+  const successKey = viewModel.successMessage ? `success:${viewModel.successMessage}` : "success";
+
   return (
     <>
-      {showDetails && selectedRow && viewModel.activeTab !== "deactivated" ? <UserProfileModal row={selectedRow} viewModel={viewModel} onClose={detailRow ? onCloseDetails : undefined} /> : null}
-      {showDetails && selectedRow && viewModel.activeTab === "deactivated" ? <DeactivatedAccountDetailModal row={selectedRow} viewModel={viewModel} onClose={detailRow ? onCloseDetails : undefined} /> : null}
-      {viewModel.showDeactivateConfirm && viewModel.selectedRow ? <DeactivateAccountModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showReactivateConfirm && viewModel.selectedRow ? <ReactivateAccountModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showSuccess && viewModel.successMessage ? <SuccessModal viewModel={viewModel} /> : null}
+      {showDetails && selectedRow && viewModel.activeTab !== "deactivated" ? <UserProfileModal row={selectedRow} viewModel={viewModel} onClose={closeDetails} /> : null}
+      {showDetails && selectedRow && viewModel.activeTab === "deactivated" ? <DeactivatedAccountDetailModal row={selectedRow} viewModel={viewModel} onClose={closeDetails} /> : null}
+      {viewModel.showDeactivateConfirm && viewModel.selectedRow && !isDismissed(deactivateKey, "deactivate") ? <DeactivateAccountModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(deactivateKey)} /> : null}
+      {viewModel.showReactivateConfirm && viewModel.selectedRow && !isDismissed(reactivateKey, "reactivate") ? <ReactivateAccountModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(reactivateKey)} /> : null}
+      {viewModel.showSuccess && viewModel.successMessage && !isDismissed(successKey, "success") ? <SuccessModal viewModel={viewModel} onClose={() => dismissRouteOverlay(successKey)} /> : null}
     </>
   );
 }

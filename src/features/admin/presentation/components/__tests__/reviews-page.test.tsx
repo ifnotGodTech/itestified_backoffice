@@ -4,16 +4,22 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { getReviewsViewModel } from "@/features/admin/data/services/get-reviews-view-model";
 import { ReviewsPage } from "@/features/admin/presentation/components/reviews-page";
 
+const routerPush = vi.fn();
+const routerRefresh = vi.fn();
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
-    push: vi.fn(),
-    refresh: vi.fn(),
+    push: routerPush,
+    refresh: routerRefresh,
   }),
   usePathname: () => "/reviews",
 }));
 
 afterEach(() => {
   cleanup();
+  routerPush.mockClear();
+  routerRefresh.mockClear();
+  window.history.pushState(null, "", "/");
 });
 
 describe("ReviewsPage", () => {
@@ -79,5 +85,17 @@ describe("ReviewsPage", () => {
     cleanup();
     render(<ReviewsPage viewModel={getReviewsViewModel({ state: "error" })} />);
     expect(screen.getByText("We could not load reviews right now. Please try again.")).toBeInTheDocument();
+  });
+
+  test("closes route-opened delete review modal without router navigation", async () => {
+    const user = userEvent.setup();
+    window.history.pushState(null, "", "/reviews?remove=1");
+    render(<ReviewsPage viewModel={getReviewsViewModel({ remove: "1" })} />);
+
+    await user.click(screen.getByRole("button", { name: "Cancel delete review" }));
+
+    expect(screen.queryByRole("heading", { name: "Delete review?" })).not.toBeInTheDocument();
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(window.location.pathname + window.location.search).toBe("/reviews");
   });
 });

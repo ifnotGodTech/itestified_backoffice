@@ -20,6 +20,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   routerPush.mockClear();
   routerRefresh.mockClear();
+  window.history.pushState(null, "", "/");
 });
 
 describe("TestimoniesPage", () => {
@@ -89,7 +90,7 @@ describe("TestimoniesPage", () => {
       });
     });
     expect(routerPush).toHaveBeenCalledWith(expect.stringContaining("success=upload"));
-    expect(routerRefresh).toHaveBeenCalled();
+    expect(routerRefresh).not.toHaveBeenCalled();
   });
 
   test("opens and closes the testimony filter modal on the client", async () => {
@@ -146,7 +147,8 @@ describe("TestimoniesPage", () => {
 
   test("closes locally opened pending detail after approval succeeds", async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn((url: string) => {
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      void init;
       if (url.includes("/approve")) {
         return Promise.resolve({ ok: true, json: async () => ({}) });
       }
@@ -179,6 +181,7 @@ describe("TestimoniesPage", () => {
       expect(fetchMock).toHaveBeenCalledWith("/api/admin/testimonies/1/approve", { method: "POST" });
     });
     expect(routerPush).toHaveBeenCalledWith(expect.stringContaining("success=approve"));
+    expect(routerRefresh).not.toHaveBeenCalled();
     expect(screen.queryByText("Approve Testimony")).not.toBeInTheDocument();
     expect(screen.queryByText("Full pending testimony detail.")).not.toBeInTheDocument();
   });
@@ -250,6 +253,18 @@ describe("TestimoniesPage", () => {
     expect(screen.getByText("Confirm")).toBeInTheDocument();
   });
 
+  test("closes route-opened reject modal without router navigation", async () => {
+    const user = userEvent.setup();
+    window.history.pushState(null, "", "/testimonies?reject=1");
+    render(<TestimoniesPage viewModel={getTestimoniesViewModel({ reject: "1" })} />);
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(screen.queryByRole("heading", { name: "Reject Testimony" })).not.toBeInTheDocument();
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(window.location.pathname + window.location.search).toBe("/testimonies");
+  });
+
   test("renders the delete text testimony modal", () => {
     render(<TestimoniesPage viewModel={getTestimoniesViewModel({ remove: "2" })} />);
 
@@ -263,6 +278,18 @@ describe("TestimoniesPage", () => {
     expect(screen.getAllByText("Testimony Approved Successfully!").length).toBeGreaterThan(0);
   });
 
+  test("closes route-opened success modal without router navigation", async () => {
+    const user = userEvent.setup();
+    window.history.pushState(null, "", "/testimonies?success=approve");
+    render(<TestimoniesPage viewModel={getTestimoniesViewModel({ success: "approve" })} />);
+
+    await user.click(screen.getByRole("button", { name: "Close testimony approved success modal" }));
+
+    expect(screen.queryByText("Testimony Approved Successfully!")).not.toBeInTheDocument();
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(window.location.pathname + window.location.search).toBe("/testimonies");
+  });
+
   test("renders the upload success state", () => {
     render(<TestimoniesPage viewModel={getTestimoniesViewModel({ tab: "video", success: "upload" })} />);
 
@@ -271,7 +298,8 @@ describe("TestimoniesPage", () => {
 
   test("submits new video uploads as drafts when Drafts is selected", async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn((url: string, _init?: RequestInit) => {
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      void init;
       if (url === "/api/admin/testimonies/upload-signature") {
         return Promise.resolve({
           ok: true,
@@ -334,6 +362,7 @@ describe("TestimoniesPage", () => {
     expect(requestBody.video_url).toBe("https://res.cloudinary.com/demo/video/upload/v1/draft.mp4");
     expect(requestBody.thumbnail_url).toContain("https://res.cloudinary.com/demo/video/upload/");
     expect(routerPush).toHaveBeenCalledWith(expect.stringContaining("videoStatus=Drafts"));
+    expect(routerRefresh).not.toHaveBeenCalled();
   });
 
   test("renders the edit success state", () => {

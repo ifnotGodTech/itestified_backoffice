@@ -332,7 +332,6 @@ export function UploadVideoScreen({ categories }: Props) {
       setScheduledDate("");
       setScheduledTime("");
       router.push(buildTestimoniesHref({ tab: "video", videoStatus: uploadStatusRedirect[uploadStatus], success: "upload" }));
-      router.refresh();
     } catch (error) {
       setSubmitting(false);
       setMessageTone("error");

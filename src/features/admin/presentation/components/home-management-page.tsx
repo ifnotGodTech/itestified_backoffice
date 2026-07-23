@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { HomeManagementRow, HomeManagementTab, HomeManagementViewModel } from "@/features/admin/domain/entities/home-management";
 import { AdminDashboardShell } from "@/features/admin/presentation/components/admin-dashboard-shell";
@@ -54,32 +53,6 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
     setCurrentViewModel(viewModel);
     setTabCache({ [viewModel.activeTab]: viewModel });
   }, [viewModel]);
-
-  useEffect(() => {
-    const inactiveTabs = currentViewModel.tabs
-      .map((tab) => tab.key)
-      .filter((tab) => tab !== currentViewModel.activeTab && !tabCache[tab]);
-    if (inactiveTabs.length === 0 || typeof fetch !== "function") return;
-    const controller = new AbortController();
-    Promise.all(
-      inactiveTabs.map((tab) =>
-        fetch(homeApiHref(currentViewModel, tab), { signal: controller.signal })
-          .then((response) => (response.ok ? response.json() : null))
-          .then((nextViewModel: HomeManagementViewModel | null) => ({ tab, nextViewModel })),
-      ),
-    )
-      .then((results) => {
-        setTabCache((current) => {
-          const next = { ...current };
-          for (const result of results) {
-            if (result.nextViewModel) next[result.tab] = result.nextViewModel;
-          }
-          return next;
-        });
-      })
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [currentViewModel, tabCache]);
 
   async function switchTab(tab: HomeManagementTab) {
     if (tab === currentViewModel.activeTab) return;

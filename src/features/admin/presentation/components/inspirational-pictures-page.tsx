@@ -42,6 +42,7 @@ function SafePictureImage({
     return <Image src={src} alt={alt} fill sizes={sizes} className={className} />;
   }
 
+  // eslint-disable-next-line @next/next/no-img-element -- External admin-provided URLs can be unconfigured for next/image.
   return <img src={src} alt={alt} className={`absolute inset-0 h-full w-full ${className}`} />;
 }
 
@@ -460,33 +461,6 @@ export function InspirationalPicturesPage({ viewModel }: { viewModel: Inspiratio
     setDetailRow(null);
     setStatusCache({ [viewModel.activeStatus]: viewModel });
   }, [viewModel]);
-
-  useEffect(() => {
-    if (currentViewModel.activeScreen !== "list") return;
-    const inactiveStatuses = currentViewModel.statusTabs
-      .map((tab) => tab.key)
-      .filter((status) => status !== currentViewModel.activeStatus && !statusCache[status]);
-    if (inactiveStatuses.length === 0 || typeof fetch !== "function") return;
-    const controller = new AbortController();
-    Promise.all(
-      inactiveStatuses.map((status) =>
-        fetch(picturesApiHref(currentViewModel, status), { signal: controller.signal })
-          .then((response) => (response.ok ? response.json() : null))
-          .then((nextViewModel: InspirationalPicturesViewModel | null) => ({ status, nextViewModel })),
-      ),
-    )
-      .then((results) => {
-        setStatusCache((current) => {
-          const next = { ...current };
-          for (const result of results) {
-            if (result.nextViewModel) next[result.status] = result.nextViewModel;
-          }
-          return next;
-        });
-      })
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [currentViewModel, statusCache]);
 
   async function switchStatus(status: InspirationalPictureStatus) {
     if (status === currentViewModel.activeStatus) return;

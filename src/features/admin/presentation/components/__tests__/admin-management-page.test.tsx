@@ -4,10 +4,13 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { getAdminManagementViewModel } from "@/features/admin/data/services/get-admin-management-view-model";
 import { AdminManagementPage } from "@/features/admin/presentation/components/admin-management-page";
 
+const routerPush = vi.fn();
+const routerRefresh = vi.fn();
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
-    push: vi.fn(),
-    refresh: vi.fn(),
+    push: routerPush,
+    refresh: routerRefresh,
   }),
   usePathname: () => "/admin",
 }));
@@ -15,6 +18,9 @@ vi.mock("next/navigation", () => ({
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  routerPush.mockClear();
+  routerRefresh.mockClear();
+  window.history.pushState(null, "", "/");
 });
 
 describe("admin management page", () => {
@@ -67,8 +73,7 @@ describe("admin management page", () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => getAdminManagementViewModel({}) });
     vi.stubGlobal("fetch", fetchSpy);
     render(<AdminManagementPage viewModel={getAdminManagementViewModel({})} />);
-    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
-    fetchSpy.mockClear();
+    expect(fetchSpy).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Open admin actions 1" }));
 
@@ -86,8 +91,7 @@ describe("admin management page", () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => getAdminManagementViewModel({}) });
     vi.stubGlobal("fetch", fetchSpy);
     render(<AdminManagementPage viewModel={getAdminManagementViewModel({})} />);
-    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
-    fetchSpy.mockClear();
+    expect(fetchSpy).not.toHaveBeenCalled();
 
     await user.click(screen.getAllByRole("button", { name: "View Permission Details" })[0]);
 
@@ -149,6 +153,18 @@ describe("admin management page", () => {
 
     render(<AdminManagementPage viewModel={getAdminManagementViewModel({ success: "1", successType: "admin-assigned" })} />);
     expect(screen.getByText("Admin User Assigned Successfully!")).toBeInTheDocument();
+  });
+
+  test("closes route-opened invite modal without router navigation", async () => {
+    const user = userEvent.setup();
+    window.history.pushState(null, "", "/admin?invite=1");
+    render(<AdminManagementPage viewModel={getAdminManagementViewModel({ invite: "1" })} />);
+
+    await user.click(screen.getByRole("button", { name: "Cancel invite user" }));
+
+    expect(screen.queryByRole("heading", { name: "Invite New User" })).not.toBeInTheDocument();
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(window.location.pathname + window.location.search).toBe("/admin");
   });
 
   test("renders loading, empty, and error states", () => {

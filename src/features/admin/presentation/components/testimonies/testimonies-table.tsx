@@ -41,15 +41,6 @@ function RowMenuIcon() {
   );
 }
 
-function SortIcon() {
-  return (
-    <svg viewBox="0 0 12 12" className="h-[10px] w-[10px]" fill="none" aria-hidden="true">
-      <path d="M3.25 4.5 6 1.75 8.75 4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M8.75 7.5 6 10.25 3.25 7.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 function StatusPill({ status }: { status: TestimonyStatus }) {
   const cls =
     status === "Approved" || status === "Uploaded"
@@ -169,7 +160,6 @@ function VideoActionMenu({
         success: "upload",
       }),
     );
-    router.refresh();
   }
 
   return (
@@ -194,15 +184,6 @@ function VideoActionMenu({
         Delete
       </Link>
     </div>
-  );
-}
-
-function HeaderLabel({ label }: { label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1 whitespace-nowrap">
-      <span>{label}</span>
-      <SortIcon />
-    </span>
   );
 }
 
@@ -361,92 +342,6 @@ function EngagementSelector({ viewModel }: { viewModel: TestimoniesViewModel }) 
         ))}
       </div>
     </details>
-  );
-}
-
-function VideoTable({ viewModel }: { viewModel: TestimoniesViewModel }) {
-  const isAll = viewModel.activeVideoStatus === "All";
-  const isUploaded = viewModel.activeVideoStatus === "Uploaded";
-  const isScheduled = viewModel.activeVideoStatus === "Scheduled";
-  const isDrafts = viewModel.activeVideoStatus === "Drafts";
-
-  const gridClass = isAll || isUploaded
-    ? "grid grid-cols-[54px_70px_minmax(140px,1.6fr)_minmax(110px,1fr)_minmax(110px,0.95fr)_minmax(110px,1fr)_minmax(110px,1fr)_108px] items-center"
-    : isScheduled
-      ? "grid grid-cols-[54px_70px_minmax(150px,1.7fr)_minmax(110px,1fr)_minmax(110px,0.95fr)_minmax(110px,1fr)_minmax(100px,0.9fr)_108px] items-center"
-      : "grid grid-cols-[54px_70px_minmax(150px,1.9fr)_minmax(110px,1fr)_minmax(110px,1fr)_108px] items-center";
-
-  function EngagementCell({ row }: { row: VideoTestimonyRow }) {
-    const views = row.views ?? 0;
-    const likes = row.likes ?? 0;
-    const comments = row.comments ?? 0;
-    const shares = row.shares ?? 0;
-    const value =
-      viewModel.activeVideoEngagement === "views"
-        ? views
-        : viewModel.activeVideoEngagement === "likes"
-          ? likes
-          : viewModel.activeVideoEngagement === "comments"
-            ? comments
-            : viewModel.activeVideoEngagement === "shares"
-              ? shares
-              : views + likes + comments + shares;
-    return <span className="whitespace-nowrap">{value}</span>;
-  }
-
-  return (
-    <div>
-      <div className="relative pr-[52px]">
-        <div className={`${gridClass} bg-[var(--color-surface-muted)] px-4 py-[11px] text-[10px] font-medium text-[var(--color-text-secondary)]`}>
-          <HeaderLabel label="S/N" />
-          <HeaderLabel label="Thumbnail" />
-          <HeaderLabel label="Title" />
-          <HeaderLabel label="Category" />
-          <HeaderLabel label="Source" />
-          {isScheduled ? <HeaderLabel label="Scheduled Date" /> : null}
-          {!isScheduled && !isDrafts ? <HeaderLabel label="Date Uploaded" /> : null}
-          {isScheduled ? <HeaderLabel label="Time" /> : null}
-          {!isScheduled && !isDrafts ? <HeaderLabel label="Uploaded By" /> : null}
-          {isAll || isUploaded ? <HeaderLabel label="Engagement" /> : null}
-          {isAll || isUploaded || isScheduled || isDrafts ? <HeaderLabel label="Status" /> : null}
-        </div>
-        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-medium text-[var(--color-text-secondary)]">Action</span>
-      </div>
-      {viewModel.rows.map((row) => {
-        const videoRow = row as VideoTestimonyRow;
-        return (
-          <div key={videoRow.id} className="relative pr-[52px]">
-            <div className={`${gridClass} border-t border-white/10 px-4 py-[10px] text-[12px] text-[var(--color-text-secondary)]`}>
-              <span>{videoRow.id}</span>
-              <span className="pr-2">
-                <span className="relative block h-[24px] w-[40px] overflow-hidden rounded-[4px] bg-[var(--color-surface-muted)]">
-                  <Image src={videoRow.thumbnailSrc} alt={videoRow.title} fill sizes="56px" className="object-cover" />
-                </span>
-              </span>
-              <span className="truncate pr-3" title={videoRow.title}>{videoRow.title}</span>
-              <span className="truncate pr-3" title={videoRow.category}>{videoRow.category}</span>
-              <span className="truncate pr-3" title={videoRow.source}>{videoRow.source}</span>
-              {isScheduled ? <span className="whitespace-nowrap">{videoRow.dateUploaded}</span> : null}
-              {!isScheduled && !isDrafts ? <span className="whitespace-nowrap">{videoRow.dateUploaded}</span> : null}
-              {isScheduled ? <span className="whitespace-nowrap">08:00 PM</span> : null}
-              {!isScheduled && !isDrafts ? <span className="truncate pr-2" title={videoRow.uploadedBy}>{videoRow.uploadedBy}</span> : null}
-              {isAll || isUploaded ? <EngagementCell row={videoRow} /> : null}
-              {(isAll || isUploaded || isScheduled || isDrafts) ? <span><StatusPill status={videoRow.status} /></span> : null}
-            </div>
-            <div className="absolute right-4 top-1/2 z-10 -translate-y-1/2 text-[var(--color-text-secondary)]">
-              <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, q: viewModel.searchQuery, menu: videoRow.id })} aria-label={`Open actions for video testimony ${videoRow.id}`}>
-                <RowMenuIcon />
-              </Link>
-            </div>
-            {viewModel.showActionMenu && viewModel.selectedRow?.id === videoRow.id && !isBottomActionRow(viewModel, videoRow) ? (
-              <div className="absolute right-4 top-[calc(100%+2px)] z-20">
-                <VideoActionMenu row={videoRow} viewModel={viewModel} onView={() => undefined} />
-              </div>
-            ) : null}
-          </div>
-        );
-      })}
-    </div>
   );
 }
 

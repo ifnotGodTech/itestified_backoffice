@@ -4,10 +4,13 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { getHomeManagementViewModel } from "@/features/admin";
 import { HomeManagementPage } from "@/features/admin/presentation/components/home-management-page";
 
+const routerPush = vi.fn();
+const routerRefresh = vi.fn();
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
-    push: vi.fn(),
-    refresh: vi.fn(),
+    push: routerPush,
+    refresh: routerRefresh,
   }),
   usePathname: () => "/home-management",
 }));
@@ -15,6 +18,9 @@ vi.mock("next/navigation", () => ({
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  routerPush.mockClear();
+  routerRefresh.mockClear();
+  window.history.pushState(null, "", "/");
 });
 
 describe("HomeManagementPage", () => {
@@ -68,6 +74,19 @@ describe("HomeManagementPage", () => {
 
     expect(screen.getByText("Remove from Home Page?")).toBeInTheDocument();
     expect(screen.getByText("Yes, remove")).toBeInTheDocument();
+  });
+
+  test("closes route-opened remove confirmation without router navigation", async () => {
+    const user = userEvent.setup();
+    window.history.pushState(null, "", "/home-management?tab=video&remove=1");
+    render(<HomeManagementPage viewModel={getHomeManagementViewModel({ removeId: "1" })} />);
+
+    await user.click(screen.getByRole("button", { name: "Cancel remove from home page" }));
+
+    expect(screen.queryByText("Remove from Home Page?")).not.toBeInTheDocument();
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(window.location.pathname).toBe("/home-management");
+    expect(window.location.search).not.toContain("remove=");
   });
 
   test("renders the row action menu state", () => {

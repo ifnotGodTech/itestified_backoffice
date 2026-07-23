@@ -4,10 +4,13 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { getDonationsViewModel } from "@/features/admin/data/services/get-donations-view-model";
 import { DonationsPage } from "@/features/admin/presentation/components/donations-page";
 
+const routerPush = vi.fn();
+const routerRefresh = vi.fn();
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
-    push: vi.fn(),
-    refresh: vi.fn(),
+    push: routerPush,
+    refresh: routerRefresh,
   }),
   usePathname: () => "/donations",
 }));
@@ -15,6 +18,9 @@ vi.mock("next/navigation", () => ({
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  routerPush.mockClear();
+  routerRefresh.mockClear();
+  window.history.pushState(null, "", "/");
 });
 
 describe("DonationsPage", () => {
@@ -92,5 +98,17 @@ describe("DonationsPage", () => {
     cleanup();
     render(<DonationsPage viewModel={getDonationsViewModel({ success: "refund" })} />);
     expect(screen.getByText("Refund Successful")).toBeInTheDocument();
+  });
+
+  test("closes route-opened reverse modal without router navigation", async () => {
+    const user = userEvent.setup();
+    window.history.pushState(null, "", "/donations?reverse=2");
+    render(<DonationsPage viewModel={getDonationsViewModel({ reverse: "2" })} />);
+
+    await user.click(screen.getByRole("button", { name: "Cancel reverse donation" }));
+
+    expect(screen.queryByRole("heading", { name: "Reverse Donation" })).not.toBeInTheDocument();
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(window.location.pathname + window.location.search).toBe("/donations");
   });
 });

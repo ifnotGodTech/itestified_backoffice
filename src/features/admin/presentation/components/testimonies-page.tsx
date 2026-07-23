@@ -156,9 +156,6 @@ export function TestimoniesPage({ viewModel }: { viewModel: TestimoniesViewModel
   const showsDedicatedVideoHeading = currentViewModel.activeTab === "video" && currentViewModel.activeVideoScreen !== "list";
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [detailRow, setDetailRow] = useState<TestimonyRow | null>(null);
-  const inactiveTab = currentViewModel.activeTab === "video" ? "text" : "video";
-  const canClientSwitchTabs = currentViewModel.activeVideoScreen === "list";
-
   useEffect(() => {
     setCurrentViewModel(viewModel);
     setTabCache({ [viewModel.activeTab]: viewModel });
@@ -169,19 +166,6 @@ export function TestimoniesPage({ viewModel }: { viewModel: TestimoniesViewModel
     setShowFilterModal(false);
     setDetailRow(null);
   }, [viewModel.showSuccess]);
-
-  useEffect(() => {
-    if (!canClientSwitchTabs || tabCache[inactiveTab] || typeof fetch !== "function") return;
-    const controller = new AbortController();
-    fetch(tabListApiHref(currentViewModel, inactiveTab), { signal: controller.signal })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((nextViewModel: TestimoniesViewModel | null) => {
-        if (!nextViewModel) return;
-        setTabCache((current) => ({ ...current, [inactiveTab]: nextViewModel }));
-      })
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [canClientSwitchTabs, currentViewModel, inactiveTab, tabCache]);
 
   async function switchTab(tab: TestimonyTab) {
     if (tab === currentViewModel.activeTab) return;

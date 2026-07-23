@@ -51,32 +51,6 @@ export function UsersPage({ viewModel }: { viewModel: UserManagementViewModel })
     setTabCache({ [viewModel.activeTab]: viewModel });
   }, [viewModel]);
 
-  useEffect(() => {
-    const inactiveTabs = currentViewModel.tabs
-      .map((tab) => tab.key)
-      .filter((tab) => tab !== currentViewModel.activeTab && !tabCache[tab]);
-    if (inactiveTabs.length === 0 || typeof fetch !== "function") return;
-    const controller = new AbortController();
-    Promise.all(
-      inactiveTabs.map((tab) =>
-        fetch(usersApiHref(currentViewModel, tab), { signal: controller.signal })
-          .then((response) => (response.ok ? response.json() : null))
-          .then((nextViewModel: UserManagementViewModel | null) => ({ tab, nextViewModel })),
-      ),
-    )
-      .then((results) => {
-        setTabCache((current) => {
-          const next = { ...current };
-          for (const result of results) {
-            if (result.nextViewModel) next[result.tab] = result.nextViewModel;
-          }
-          return next;
-        });
-      })
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [currentViewModel, tabCache]);
-
   async function switchTab(tab: UserManagementTab) {
     if (tab === currentViewModel.activeTab) return;
     setMenuRow(null);

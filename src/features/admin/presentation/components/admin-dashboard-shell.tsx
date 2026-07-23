@@ -72,11 +72,26 @@ export function AdminDashboardShell({
   viewModel,
   pageTitle,
   children,
+  chrome = false,
 }: {
-  viewModel: AdminShellViewModel;
+  viewModel?: AdminShellViewModel;
   pageTitle?: string;
   children: ReactNode;
+  chrome?: boolean;
 }) {
+  if (!chrome) {
+    return (
+      <>
+        {pageTitle ? <h1 className="mb-5 text-[28px] font-semibold leading-[1.2] text-[#f2f2f2]">{pageTitle}</h1> : null}
+        {children}
+      </>
+    );
+  }
+
+  if (!viewModel) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen bg-[#090909] text-white">
       <div className="grid min-h-screen grid-cols-[235px_1fr]">
@@ -110,7 +125,6 @@ export function AdminDashboardShell({
           </header>
 
           <section className="px-4 py-5">
-            {pageTitle ? <h1 className="mb-5 text-[28px] font-semibold leading-[1.2] text-[#f2f2f2]">{pageTitle}</h1> : null}
             {children}
           </section>
         </main>

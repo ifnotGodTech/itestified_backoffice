@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import type { HomeManagementRow, HomeManagementViewModel } from "@/features/admin/domain/entities/home-management";
 import { buildHomeManagementHref } from "@/features/admin/presentation/state/home-management-route-state";
@@ -210,18 +211,22 @@ function HomeManagementPictureModal({
   );
 }
 
-function HomeManagementRemoveModal({ viewModel }: { viewModel: HomeManagementViewModel }) {
+function HomeManagementRemoveModal({ viewModel, onClose }: { viewModel: HomeManagementViewModel; onClose: () => void }) {
   const selected = viewModel.selectedRow;
+  const href = buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount });
   const removeHref =
     selected && selected.kind !== "picture"
       ? `/api/admin/content/home-curation/featured-testimonies/${selected.id}/remove`
       : buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount, success: "remove" });
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
+      <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close remove from home page modal">
+        <span className="sr-only">Close remove from home page modal</span>
+      </CloseControl>
       <div className="relative w-full max-w-[600px] rounded-[22px] bg-[#1f1f1f] px-8 pb-8 pt-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-        <Link href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount })} className="absolute right-6 top-4 text-[34px] leading-none text-white/90">
+        <CloseControl href={href} onClose={onClose} className="absolute right-6 top-4 text-[34px] leading-none text-white/90" label="Close remove from home page modal">
           ×
-        </Link>
+        </CloseControl>
         <h2 className="text-[24px] font-semibold text-white">Remove from Home Page?</h2>
         <p className="mx-auto mt-6 max-w-[470px] text-[18px] leading-9 text-white/75">
           This will remove the testimony from the homepage lineup. It will still be available in the testimonies section and users can view it.
@@ -229,12 +234,14 @@ function HomeManagementRemoveModal({ viewModel }: { viewModel: HomeManagementVie
           Are you sure you want to proceed?
         </p>
         <div className="mt-10 flex justify-center gap-6">
-          <Link
-            href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount })}
+          <CloseControl
+            href={href}
+            onClose={onClose}
             className="inline-flex min-w-[180px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[18px] text-[#9B68D5]"
+            label="Cancel remove from home page"
           >
             Cancel
-          </Link>
+          </CloseControl>
           {selected && selected.kind !== "picture" ? (
             <form action={removeHref} method="POST">
               <button
@@ -258,10 +265,13 @@ function HomeManagementRemoveModal({ viewModel }: { viewModel: HomeManagementVie
   );
 }
 
-function HomeManagementSuccessModal({ viewModel }: { viewModel: HomeManagementViewModel }) {
+function HomeManagementSuccessModal({ viewModel, onClose }: { viewModel: HomeManagementViewModel; onClose: () => void }) {
+  const href = buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount });
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
-      <Link href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount })} className="absolute inset-0" aria-label="Close success modal" />
+      <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close success modal">
+        <span className="sr-only">Close success modal</span>
+      </CloseControl>
       <div className="relative z-10 w-full max-w-[420px] rounded-[24px] bg-[#1f1f1f] px-8 py-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="mx-auto flex h-[132px] w-[132px] items-center justify-center rounded-full bg-[#9B68D5] text-[78px] text-white">✓</div>
         <p className="mt-12 text-[30px] font-semibold leading-[1.3] text-white">Testimony Removed Successfully!</p>
@@ -320,16 +330,33 @@ export function HomeManagementOverlays({
   onView?: (row: HomeManagementRow) => void;
   onCloseDetails?: () => void;
 }) {
+  const [dismissedOverlayKey, setDismissedOverlayKey] = useState<string | null>(null);
   const selectedRow = detailRow ?? viewModel.selectedRow;
-  const showDetails = Boolean(detailRow) || viewModel.showDetails;
+  const currentSearch = typeof window === "undefined" ? "" : window.location.search;
+  const detailKey = selectedRow ? `view:${selectedRow.id}` : "view";
+  const removeKey = viewModel.selectedRow ? `remove:${viewModel.selectedRow.id}` : "remove";
+  const showDetails = (Boolean(detailRow) || viewModel.showDetails) && !isDismissed(detailKey, "view");
+
+  function isDismissed(key: string, paramName: string) {
+    return dismissedOverlayKey === key && !currentSearch.includes(`${paramName}=`);
+  }
+
+  function dismissRouteOverlay(key: string) {
+    setDismissedOverlayKey(key);
+    if (typeof window !== "undefined") {
+      window.history.pushState(null, "", detailCloseHref(viewModel));
+    }
+  }
+
+  const closeDetails = detailRow ? onCloseDetails : () => dismissRouteOverlay(detailKey);
   return (
     <>
       {viewModel.showActionMenu && viewModel.selectedRow ? <HomeManagementActionMenu row={viewModel.selectedRow} viewModel={viewModel} onClose={onCloseMenu} onView={onView} /> : null}
-      {showDetails && selectedRow?.kind === "picture" ? <HomeManagementPictureModal row={selectedRow} viewModel={viewModel} onClose={detailRow ? onCloseDetails : undefined} /> : null}
-      {showDetails && selectedRow?.kind === "text" ? <HomeManagementTextModal row={selectedRow} viewModel={viewModel} onClose={detailRow ? onCloseDetails : undefined} /> : null}
-      {showDetails && selectedRow?.kind === "video" ? <HomeManagementVideoModal row={selectedRow} viewModel={viewModel} onClose={detailRow ? onCloseDetails : undefined} /> : null}
-      {viewModel.showRemoveConfirm && viewModel.selectedRow ? <HomeManagementRemoveModal viewModel={viewModel} /> : null}
-      {viewModel.showSuccess ? <HomeManagementSuccessModal viewModel={viewModel} /> : null}
+      {showDetails && selectedRow?.kind === "picture" ? <HomeManagementPictureModal row={selectedRow} viewModel={viewModel} onClose={closeDetails} /> : null}
+      {showDetails && selectedRow?.kind === "text" ? <HomeManagementTextModal row={selectedRow} viewModel={viewModel} onClose={closeDetails} /> : null}
+      {showDetails && selectedRow?.kind === "video" ? <HomeManagementVideoModal row={selectedRow} viewModel={viewModel} onClose={closeDetails} /> : null}
+      {viewModel.showRemoveConfirm && viewModel.selectedRow && !isDismissed(removeKey, "remove") ? <HomeManagementRemoveModal viewModel={viewModel} onClose={() => dismissRouteOverlay(removeKey)} /> : null}
+      {viewModel.showSuccess && !isDismissed("success", "success") ? <HomeManagementSuccessModal viewModel={viewModel} onClose={() => dismissRouteOverlay("success")} /> : null}
     </>
   );
 }

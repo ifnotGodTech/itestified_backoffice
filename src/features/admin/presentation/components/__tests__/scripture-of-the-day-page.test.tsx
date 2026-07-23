@@ -41,8 +41,7 @@ describe("ScriptureOfTheDayPage", () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => getScriptureOfTheDayViewModel({}) });
     vi.stubGlobal("fetch", fetchSpy);
     render(<ScriptureOfTheDayPage viewModel={getScriptureOfTheDayViewModel({})} />);
-    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
-    fetchSpy.mockClear();
+    expect(fetchSpy).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Open actions for scripture 1" }));
 
@@ -60,8 +59,7 @@ describe("ScriptureOfTheDayPage", () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => getScriptureOfTheDayViewModel({}) });
     vi.stubGlobal("fetch", fetchSpy);
     render(<ScriptureOfTheDayPage viewModel={getScriptureOfTheDayViewModel({})} />);
-    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
-    fetchSpy.mockClear();
+    expect(fetchSpy).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Open actions for scripture 1" }));
     await user.click(screen.getByRole("button", { name: "View" }));
@@ -75,8 +73,7 @@ describe("ScriptureOfTheDayPage", () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => getScriptureOfTheDayViewModel({}) });
     vi.stubGlobal("fetch", fetchSpy);
     render(<ScriptureOfTheDayPage viewModel={getScriptureOfTheDayViewModel({})} />);
-    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
-    fetchSpy.mockClear();
+    expect(fetchSpy).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Filter" }));
 
@@ -131,7 +128,6 @@ describe("ScriptureOfTheDayPage", () => {
     expect(screen.getAllByRole("heading", { name: "Schedule Scriptures" }).length).toBeGreaterThan(0);
     expect(screen.getByText("Schedule Settings")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "+ Add New" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Schedule Scriptures" })).toHaveAttribute("href", "/scripture-of-the-day?edit=new");
     expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute("type", "submit");
   });
 

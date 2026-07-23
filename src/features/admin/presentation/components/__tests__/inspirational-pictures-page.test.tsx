@@ -75,8 +75,7 @@ describe("InspirationalPicturesPage", () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => getInspirationalPicturesViewModel({}) });
     vi.stubGlobal("fetch", fetchSpy);
     render(<InspirationalPicturesPage viewModel={getInspirationalPicturesViewModel({})} />);
-    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
-    fetchSpy.mockClear();
+    expect(fetchSpy).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Open actions for picture 1" }));
 
@@ -94,8 +93,7 @@ describe("InspirationalPicturesPage", () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => getInspirationalPicturesViewModel({}) });
     vi.stubGlobal("fetch", fetchSpy);
     render(<InspirationalPicturesPage viewModel={getInspirationalPicturesViewModel({})} />);
-    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
-    fetchSpy.mockClear();
+    expect(fetchSpy).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Open actions for picture 1" }));
     await user.click(screen.getByRole("button", { name: "View" }));

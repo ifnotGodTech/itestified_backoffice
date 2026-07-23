@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import type { ReviewsViewModel } from "@/features/admin/domain/entities/reviews";
 import { buildReviewsHref } from "@/features/admin/presentation/state/reviews-route-state";
@@ -68,18 +69,42 @@ export function ReviewsOverlays({
   onCloseFilter?: () => void;
   onCloseDetails?: () => void;
 }) {
-  const showFilter = showFilterModal || viewModel.showFilterModal;
+  const [dismissedOverlayKey, setDismissedOverlayKey] = useState<string | null>(null);
+  const currentSearch = typeof window === "undefined" ? "" : window.location.search;
   const rootCloseHref = closeHref(viewModel);
+
+  function isDismissed(key: string, paramName: string) {
+    return dismissedOverlayKey === key && !currentSearch.includes(`${paramName}=`);
+  }
+
+  function dismissRouteOverlay(key: string) {
+    setDismissedOverlayKey(key);
+    if (typeof window !== "undefined") {
+      window.history.pushState(null, "", rootCloseHref);
+    }
+  }
+
+  function closeFilterOverlay() {
+    if (showFilterModal) {
+      onCloseFilter?.();
+      return;
+    }
+    dismissRouteOverlay("filter");
+  }
+
+  const detailKey = viewModel.showDetailForId ? `view:${viewModel.showDetailForId}` : "view";
+  const deleteKey = viewModel.deleteMode === "bulk" ? "deleteAll" : "remove";
+  const showFilter = showFilterModal || (viewModel.showFilterModal && !isDismissed("filter", "filter"));
   return (
     <>
       {showFilter ? (
         <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 px-6 py-24">
-          <CloseControl href={rootCloseHref} onClose={showFilterModal ? onCloseFilter : undefined} className="absolute inset-0" label="Close reviews filter modal" />
+          <CloseControl href={rootCloseHref} onClose={closeFilterOverlay} className="absolute inset-0" label="Close reviews filter modal" />
           <form action="/reviews" className="relative z-10 w-full max-w-[353px] overflow-hidden rounded-[20px] border border-white/15 bg-[#1d1d1d] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <input type="hidden" name="selected" value={viewModel.selectedIds.join(",")} />
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
               <h2 className="text-[14px] font-normal text-white">Filter</h2>
-              <CloseControl href={rootCloseHref} onClose={showFilterModal ? onCloseFilter : undefined} className="text-[24px] leading-none text-white/80 hover:text-white" label="Dismiss reviews filter">×</CloseControl>
+              <CloseControl href={rootCloseHref} onClose={closeFilterOverlay} className="text-[24px] leading-none text-white/80 hover:text-white" label="Dismiss reviews filter">×</CloseControl>
             </div>
             <div className="px-4 py-4">
               <div className="border-b border-white/10 pb-4">
@@ -122,11 +147,11 @@ export function ReviewsOverlays({
         </div>
       ) : null}
 
-      {viewModel.showDetailForId && viewModel.selectedRow ? (
+      {viewModel.showDetailForId && viewModel.selectedRow && !isDismissed(detailKey, "view") ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
-          <CloseControl href={rootCloseHref} onClose={onCloseDetails} className="absolute inset-0" label="Close review detail modal" />
+          <CloseControl href={rootCloseHref} onClose={onCloseDetails ?? (() => dismissRouteOverlay(detailKey))} className="absolute inset-0" label="Close review detail modal" />
           <div className="relative z-10 w-full max-w-[561px] max-h-[calc(100vh-48px)] overflow-y-auto rounded-[24px] bg-[#1c1c1c] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-            <CloseControl href={rootCloseHref} onClose={onCloseDetails} className="absolute right-[14px] top-[8px] text-[34px] leading-none text-white/90" label="Dismiss review detail">×</CloseControl>
+            <CloseControl href={rootCloseHref} onClose={onCloseDetails ?? (() => dismissRouteOverlay(detailKey))} className="absolute right-[14px] top-[8px] text-[34px] leading-none text-white/90" label="Dismiss review detail">×</CloseControl>
             <div className="flex h-[110px] items-end justify-center bg-[#272727]">
               <div className="translate-y-[50px] overflow-hidden rounded-full border-[6px] border-white bg-white">
                 <Image src="/admin-avatar.png" alt={viewModel.selectedRow.name} width={100} height={100} className="h-[100px] w-[100px] object-cover" />
@@ -168,9 +193,9 @@ export function ReviewsOverlays({
         </div>
       ) : null}
 
-      {viewModel.showDeleteModal ? (
+      {viewModel.showDeleteModal && !isDismissed(deleteKey, viewModel.deleteMode === "bulk" ? "deleteAll" : "remove") ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
-          <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close delete review modal" />
+          <CloseControl href={rootCloseHref} onClose={() => dismissRouteOverlay(deleteKey)} className="absolute inset-0" label="Close delete review modal" />
           <div className="relative z-10 w-full max-w-[578px] rounded-[20px] bg-[#1f1f1f] px-10 pb-10 pt-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <h2 className="text-[24px] font-semibold text-white">{viewModel.deleteMode === "bulk" ? "Delete all reviews?" : "Delete review?"}</h2>
             <p className="mx-auto mt-8 max-w-[530px] text-[20px] leading-[1.36] text-white/78">
@@ -179,7 +204,7 @@ export function ReviewsOverlays({
                 : "Are you sure you want to delete this review? This action cannot be undone."}
             </p>
             <div className="mt-14 flex justify-center gap-6">
-              <Link href={closeHref(viewModel)} className="inline-flex h-[54px] min-w-[176px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 text-[16px] text-[#9B68D5]">Cancel</Link>
+              <CloseControl href={rootCloseHref} onClose={() => dismissRouteOverlay(deleteKey)} className="inline-flex h-[54px] min-w-[176px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 text-[16px] text-[#9B68D5]" label="Cancel delete review">Cancel</CloseControl>
               <Link href={closeHref(viewModel)} className="inline-flex h-[54px] min-w-[176px] items-center justify-center rounded-[10px] bg-[#ef3931] px-6 text-[16px] text-white">{viewModel.deleteMode === "bulk" ? "Delete All" : "Yes, delete"}</Link>
             </div>
           </div>

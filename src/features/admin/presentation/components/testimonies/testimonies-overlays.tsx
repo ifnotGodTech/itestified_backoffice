@@ -101,6 +101,24 @@ function DetailCloseControl({
   );
 }
 
+function ModalCloseControl({
+  onClose,
+  className,
+  ariaLabel,
+  children,
+}: {
+  onClose: () => void;
+  className: string;
+  ariaLabel?: string;
+  children: ReactNode;
+}) {
+  return (
+    <button type="button" onClick={onClose} className={className} aria-label={ariaLabel}>
+      {children}
+    </button>
+  );
+}
+
 function DetailOriginBanner({ viewModel }: { viewModel: TestimoniesViewModel }) {
   if (viewModel.origin !== "notification" || !viewModel.detailReturnHref) return null;
 
@@ -203,7 +221,6 @@ function PendingDetailModal({
           success: "approve",
         }),
       );
-      router.refresh();
       return;
     }
     setSubmitting(false);
@@ -350,7 +367,7 @@ function ApprovedDetailModal({
   );
 }
 
-function ScheduleModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel }) {
+function ScheduleModal({ row, viewModel, onClose }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
   const router = useRouter();
   const [publishAt, setPublishAt] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -371,12 +388,13 @@ function ScheduleModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: T
       return;
     }
     router.push(closeHref(viewModel));
-    router.refresh();
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close schedule testimony modal" />
+      <ModalCloseControl onClose={onClose} className="absolute inset-0" ariaLabel="Close schedule testimony modal">
+        <span className="sr-only">Close schedule testimony modal</span>
+      </ModalCloseControl>
       <div className="relative z-10 w-full max-w-[520px] rounded-[24px] bg-[#1e1e1e] px-6 py-6 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <h2 className="text-[24px] font-semibold text-white">Schedule Testimony</h2>
         <p className="mt-2 text-[14px] text-white/70">Set a future publish date/time for this pending testimony.</p>
@@ -388,7 +406,7 @@ function ScheduleModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: T
         />
         {error ? <p className="mt-3 text-[14px] text-[#ef4335]">{error}</p> : null}
         <div className="mt-6 flex justify-end gap-3">
-          <Link href={closeHref(viewModel)} className="inline-flex min-w-[120px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-4 py-3 text-[14px] text-[#9B68D5]">Cancel</Link>
+          <ModalCloseControl onClose={onClose} className="inline-flex min-w-[120px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-4 py-3 text-[14px] text-[#9B68D5]">Cancel</ModalCloseControl>
           <button
             type="button"
             disabled={submitting || !publishAt}
@@ -403,7 +421,7 @@ function ScheduleModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: T
   );
 }
 
-function ArchiveModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel }) {
+function ArchiveModal({ row, viewModel, onClose }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
   const router = useRouter();
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -424,12 +442,13 @@ function ArchiveModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: Te
       return;
     }
     router.push(closeHref(viewModel));
-    router.refresh();
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close archive testimony modal" />
+      <ModalCloseControl onClose={onClose} className="absolute inset-0" ariaLabel="Close archive testimony modal">
+        <span className="sr-only">Close archive testimony modal</span>
+      </ModalCloseControl>
       <div className="relative z-10 w-full max-w-[520px] rounded-[24px] bg-[#1e1e1e] px-6 py-6 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <h2 className="text-[24px] font-semibold text-white">Archive Testimony</h2>
         <p className="mt-2 text-[14px] text-white/70">This removes the testimony from public browse without deleting it.</p>
@@ -441,7 +460,7 @@ function ArchiveModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: Te
         />
         {error ? <p className="mt-3 text-[14px] text-[#ef4335]">{error}</p> : null}
         <div className="mt-6 flex justify-end gap-3">
-          <Link href={closeHref(viewModel)} className="inline-flex min-w-[120px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-4 py-3 text-[14px] text-[#9B68D5]">Cancel</Link>
+          <ModalCloseControl onClose={onClose} className="inline-flex min-w-[120px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-4 py-3 text-[14px] text-[#9B68D5]">Cancel</ModalCloseControl>
           <button
             type="button"
             disabled={submitting}
@@ -456,7 +475,7 @@ function ArchiveModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: Te
   );
 }
 
-function RejectModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel }) {
+function RejectModal({ row, viewModel, onClose }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
   const router = useRouter();
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -483,18 +502,19 @@ function RejectModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: Tes
         statusFilter: viewModel.filterDraft.status,
       }),
     );
-    router.refresh();
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close reject testimony modal" />
+      <ModalCloseControl onClose={onClose} className="absolute inset-0" ariaLabel="Close reject testimony modal">
+        <span className="sr-only">Close reject testimony modal</span>
+      </ModalCloseControl>
       <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[580px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <h2 className="text-[28px] font-semibold text-white">Reject Testimony</h2>
-          <Link href={closeHref(viewModel)} className="text-[34px] leading-none text-white/90">
+          <ModalCloseControl onClose={onClose} className="text-[34px] leading-none text-white/90" ariaLabel="Close reject testimony modal">
             ×
-          </Link>
+          </ModalCloseControl>
         </div>
         <div className="overflow-y-auto px-6 py-6">
           <p className="mb-4 text-[16px] text-white/90">Reason for rejection</p>
@@ -507,12 +527,12 @@ function RejectModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: Tes
           {error ? <p className="mt-3 text-[14px] text-[#ef4335]">{error}</p> : null}
         </div>
         <div className="flex justify-end gap-4 px-6 pb-6 pt-2">
-          <Link
-            href={closeHref(viewModel)}
+          <ModalCloseControl
+            onClose={onClose}
             className="inline-flex min-w-[118px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-5 py-4 text-[16px] text-[#9B68D5]"
           >
             Cancel
-          </Link>
+          </ModalCloseControl>
           <button
             type="button"
             disabled={submitting}
@@ -527,7 +547,7 @@ function RejectModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: Tes
   );
 }
 
-function DeleteTextTestimonyModal({ row, viewModel }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel }) {
+function DeleteTextTestimonyModal({ row, viewModel, onClose }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -556,25 +576,26 @@ function DeleteTextTestimonyModal({ row, viewModel }: { row: TextTestimonyRow; v
         success: "delete",
       }),
     );
-    router.refresh();
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
-      <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close delete testimony modal" />
+      <ModalCloseControl onClose={onClose} className="absolute inset-0" ariaLabel="Close delete testimony modal">
+        <span className="sr-only">Close delete testimony modal</span>
+      </ModalCloseControl>
       <div className="relative z-10 w-full max-w-[608px] rounded-[24px] bg-[#1f1f1f] px-8 py-10 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-        <Link href={closeHref(viewModel)} className="absolute right-6 top-4 text-[34px] leading-none text-white/90">
+        <ModalCloseControl onClose={onClose} className="absolute right-6 top-4 text-[34px] leading-none text-white/90" ariaLabel="Close delete testimony modal">
           ×
-        </Link>
+        </ModalCloseControl>
         <h2 className="text-[28px] font-semibold text-white">Delete Testimony?</h2>
         <p className="mx-auto mt-8 max-w-[520px] text-[17px] leading-[1.5] text-white/78">
           Are you sure you want to delete this testimony? Once deleted, the testimony will be removed from the system. This action cannot be undone.
         </p>
         {error ? <p className="mt-3 text-[13px] text-[#ef4335]">{error}</p> : null}
         <div className="mt-10 flex justify-center gap-6">
-          <Link href={closeHref(viewModel)} className="inline-flex min-w-[176px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] text-[#9B68D5]">
+          <ModalCloseControl onClose={onClose} className="inline-flex min-w-[176px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] text-[#9B68D5]">
             Cancel
-          </Link>
+          </ModalCloseControl>
           <button
             type="button"
             onClick={deleteTestimony}
@@ -759,10 +780,12 @@ function FilterModal({
   );
 }
 
-function SuccessModal({ viewModel }: { viewModel: TestimoniesViewModel }) {
+function SuccessModal({ viewModel, onClose }: { viewModel: TestimoniesViewModel; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
-      <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close testimony approved success modal" />
+      <ModalCloseControl onClose={onClose} className="absolute inset-0" ariaLabel="Close testimony approved success modal">
+        <span className="sr-only">Close testimony approved success modal</span>
+      </ModalCloseControl>
       <div className="relative z-10 w-full max-w-[420px] rounded-[24px] bg-[#1f1f1f] px-8 py-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="mx-auto flex h-[102px] w-[102px] items-center justify-center rounded-full bg-[#9B68D5] text-[62px] text-white">✓</div>
         <p className="mt-10 text-[28px] font-semibold leading-[1.3] text-white">{viewModel.successMessage}</p>
@@ -777,7 +800,7 @@ async function readApiMessage(response: Response, fallback: string): Promise<str
   return fallback;
 }
 
-function TestimonySettingsModal({ viewModel }: { viewModel: TestimoniesViewModel }) {
+function TestimonySettingsModal({ viewModel, onClose }: { viewModel: TestimoniesViewModel; onClose: () => void }) {
   const [categories, setCategories] = useState<TestimonyCategoryOption[]>(viewModel.categories);
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
@@ -921,13 +944,15 @@ function TestimonySettingsModal({ viewModel }: { viewModel: TestimoniesViewModel
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
-      <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close testimony settings modal" />
+      <ModalCloseControl onClose={onClose} className="absolute inset-0" ariaLabel="Close testimony settings modal">
+        <span className="sr-only">Close testimony settings modal</span>
+      </ModalCloseControl>
       <div className="relative z-10 w-full max-w-[720px] overflow-hidden rounded-[24px] bg-[#1f1f1f] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <h2 className="text-[28px] font-semibold text-white">Testimony Settings</h2>
-          <Link href={closeHref(viewModel)} className="text-white/90" aria-label="Close testimony settings">
+          <ModalCloseControl onClose={onClose} className="text-white/90" ariaLabel="Close testimony settings">
             <CloseIcon />
-          </Link>
+          </ModalCloseControl>
         </div>
         <div className="max-h-[70vh] overflow-y-auto px-6 py-7">
           <div className="flex items-start justify-between gap-6">
@@ -1047,8 +1072,8 @@ function TestimonySettingsModal({ viewModel }: { viewModel: TestimoniesViewModel
           </div>
         </div>
         <div className="flex justify-end gap-4 px-6 pb-6">
-          <Link href={closeHref(viewModel)} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] text-[#9B68D5]">Cancel</Link>
-          <Link href={closeHref(viewModel)} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 py-4 text-[16px] text-white">Save Settings</Link>
+          <ModalCloseControl onClose={onClose} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] text-[#9B68D5]">Cancel</ModalCloseControl>
+          <ModalCloseControl onClose={onClose} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 py-4 text-[16px] text-white">Save Settings</ModalCloseControl>
         </div>
       </div>
     </div>
@@ -1126,7 +1151,7 @@ function VideoDetailsModal({
   );
 }
 
-function EditVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel: TestimoniesViewModel }) {
+function EditVideoModal({ row, viewModel, onClose }: { row: VideoTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
   const router = useRouter();
   const [title, setTitle] = useState(row.title);
   const [categoryId, setCategoryId] = useState<string>(() => {
@@ -1189,7 +1214,6 @@ function EditVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel:
         success: "edit",
       }),
     );
-    router.refresh();
   }
 
   async function uploadNow() {
@@ -1247,18 +1271,19 @@ function EditVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel:
         success: "upload",
       }),
     );
-    router.refresh();
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
-      <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close edit video modal" />
+      <ModalCloseControl onClose={onClose} className="absolute inset-0" ariaLabel="Close edit video modal">
+        <span className="sr-only">Close edit video modal</span>
+      </ModalCloseControl>
       <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <h2 className="text-[28px] font-semibold text-white">Edit Video testimony</h2>
-          <Link href={closeHref(viewModel)} className="text-white/90" aria-label="Close edit video">
+          <ModalCloseControl onClose={onClose} className="text-white/90" ariaLabel="Close edit video">
             <CloseIcon />
-          </Link>
+          </ModalCloseControl>
         </div>
         <div className="overflow-y-auto px-6 py-6">
           <div>
@@ -1312,9 +1337,9 @@ function EditVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel:
           {error ? <p className="mt-4 text-[13px] text-[#ef4335]">{error}</p> : null}
         </div>
         <div className="flex justify-end gap-4 px-6 pb-6 pt-2">
-          <Link href={closeHref(viewModel)} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] text-[#9B68D5]">
+          <ModalCloseControl onClose={onClose} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] text-[#9B68D5]">
             Cancel
-          </Link>
+          </ModalCloseControl>
           {isDraft ? (
             <button
               type="button"
@@ -1340,7 +1365,7 @@ function EditVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel:
   );
 }
 
-function DeleteVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewModel: TestimoniesViewModel }) {
+function DeleteVideoModal({ row, viewModel, onClose }: { row: VideoTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1369,18 +1394,19 @@ function DeleteVideoModal({ row, viewModel }: { row: VideoTestimonyRow; viewMode
         success: "delete",
       }),
     );
-    router.refresh();
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
-      <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close delete video modal" />
+      <ModalCloseControl onClose={onClose} className="absolute inset-0" ariaLabel="Close delete video modal">
+        <span className="sr-only">Close delete video modal</span>
+      </ModalCloseControl>
       <div className="relative z-10 w-full max-w-[420px] rounded-[24px] bg-[#1f1f1f] px-8 py-10 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <h2 className="text-[28px] font-semibold text-white">Delete Video?</h2>
         <p className="mt-5 text-[16px] leading-8 text-white/72">This video testimony will be removed from the list.</p>
         {error ? <p className="mt-3 text-[13px] text-[#ef4335]">{error}</p> : null}
         <div className="mt-8 flex justify-center gap-4">
-          <Link href={closeHref(viewModel)} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] text-[#9B68D5]">Cancel</Link>
+          <ModalCloseControl onClose={onClose} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] text-[#9B68D5]">Cancel</ModalCloseControl>
           <button
             type="button"
             onClick={deleteVideo}
@@ -1410,36 +1436,55 @@ export function TestimoniesOverlays({
   onCloseDetailModal?: () => void;
   onActionComplete?: () => void;
 }) {
-  const router = useRouter();
+  const [dismissedOverlayKey, setDismissedOverlayKey] = useState<string | null>(null);
   const selectedDetailRow = detailRow ?? viewModel.selectedRow;
-  const showDetails = Boolean(detailRow) || viewModel.showDetails;
-  const closeDetails = detailRow ? onCloseDetailModal : undefined;
+  const currentSearch = typeof window === "undefined" ? "" : window.location.search;
+  const detailOverlayKey = selectedDetailRow ? `view:${selectedDetailRow.id}` : "view";
+  const showDetails = (Boolean(detailRow) || viewModel.showDetails) && !isDismissed(detailOverlayKey, "view");
+  const closeDetails = detailRow ? onCloseDetailModal : () => dismissRouteOverlay(detailOverlayKey);
+
+  function isDismissed(key: string, paramName: string) {
+    return dismissedOverlayKey === key && !currentSearch.includes(`${paramName}=`);
+  }
+
+  function dismissRouteOverlay(key: string) {
+    setDismissedOverlayKey(key);
+    if (typeof window !== "undefined") {
+      window.history.pushState(null, "", closeHref(viewModel));
+    }
+  }
 
   function closeFilterModal() {
     if (viewModel.showFilterModal) {
-      router.push(closeHref(viewModel));
+      dismissRouteOverlay("filter");
       return;
     }
     onCloseFilterModal?.();
   }
 
-  if (viewModel.showSuccess && viewModel.successMessage) {
-    return <SuccessModal viewModel={viewModel} />;
+  if (viewModel.showSuccess && viewModel.successMessage && !isDismissed(`success:${viewModel.successMessage}`, "success")) {
+    return <SuccessModal viewModel={viewModel} onClose={() => dismissRouteOverlay(`success:${viewModel.successMessage}`)} />;
   }
+
+  const rejectKey = viewModel.selectedRow ? `reject:${viewModel.selectedRow.id}` : "reject";
+  const scheduleKey = viewModel.selectedRow ? `schedule:${viewModel.selectedRow.id}` : "schedule";
+  const archiveKey = viewModel.selectedRow ? `archive:${viewModel.selectedRow.id}` : "archive";
+  const editKey = viewModel.selectedRow ? `edit:${viewModel.selectedRow.id}` : "edit";
+  const deleteKey = viewModel.selectedRow ? `remove:${viewModel.selectedRow.id}` : "remove";
 
   return (
     <>
       {showDetails && selectedDetailRow?.kind === "text" && selectedDetailRow.status === "Pending" ? <PendingDetailModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} onActionComplete={onActionComplete} /> : null}
       {showDetails && selectedDetailRow?.kind === "text" && selectedDetailRow.status !== "Pending" ? <ApprovedDetailModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} /> : null}
       {showDetails && selectedDetailRow?.kind === "video" ? <VideoDetailsModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} /> : null}
-      {viewModel.showRejectModal && viewModel.selectedRow?.kind === "text" ? <RejectModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showScheduleModal && viewModel.selectedRow?.kind === "text" ? <ScheduleModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showArchiveModal && viewModel.selectedRow?.kind === "text" ? <ArchiveModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showEditModal && viewModel.selectedRow?.kind === "video" ? <EditVideoModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "video" ? <DeleteVideoModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "text" ? <DeleteTextTestimonyModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}
-      {viewModel.showFilterModal || showFilterModal ? <FilterModal viewModel={viewModel} onClose={closeFilterModal} /> : null}
-      {viewModel.showSettingsModal ? <TestimonySettingsModal viewModel={viewModel} /> : null}
+      {viewModel.showRejectModal && viewModel.selectedRow?.kind === "text" && !isDismissed(rejectKey, "reject") ? <RejectModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(rejectKey)} /> : null}
+      {viewModel.showScheduleModal && viewModel.selectedRow?.kind === "text" && !isDismissed(scheduleKey, "schedule") ? <ScheduleModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(scheduleKey)} /> : null}
+      {viewModel.showArchiveModal && viewModel.selectedRow?.kind === "text" && !isDismissed(archiveKey, "archive") ? <ArchiveModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(archiveKey)} /> : null}
+      {viewModel.showEditModal && viewModel.selectedRow?.kind === "video" && !isDismissed(editKey, "edit") ? <EditVideoModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(editKey)} /> : null}
+      {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "video" && !isDismissed(deleteKey, "remove") ? <DeleteVideoModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(deleteKey)} /> : null}
+      {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "text" && !isDismissed(deleteKey, "remove") ? <DeleteTextTestimonyModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(deleteKey)} /> : null}
+      {(viewModel.showFilterModal && !isDismissed("filter", "filter")) || showFilterModal ? <FilterModal viewModel={viewModel} onClose={closeFilterModal} /> : null}
+      {viewModel.showSettingsModal && !isDismissed("settings", "settings") ? <TestimonySettingsModal viewModel={viewModel} onClose={() => dismissRouteOverlay("settings")} /> : null}
     </>
   );
 }

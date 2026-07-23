@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import type { DonationRow, DonationsViewModel } from "@/features/admin/domain/entities/donations";
 import { buildDonationsHref } from "@/features/admin/presentation/state/donations-route-state";
@@ -19,13 +20,19 @@ function closeHref(viewModel: DonationsViewModel) {
 function OverlayShell({
   children,
   closeLabel,
+  onClose,
 }: {
   children: ReactNode;
   closeLabel: string;
+  onClose?: () => void;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
-      <div className="absolute inset-0" aria-label={closeLabel} />
+      {onClose ? (
+        <button type="button" onClick={onClose} className="absolute inset-0" aria-label={closeLabel} />
+      ) : (
+        <div className="absolute inset-0" aria-label={closeLabel} />
+      )}
       {children}
     </div>
   );
@@ -75,16 +82,44 @@ export function DonationsOverlays({
   onCloseDetails?: () => void;
   onCloseFilter?: () => void;
 }) {
+  const [dismissedOverlayKey, setDismissedOverlayKey] = useState<string | null>(null);
   const selectedRow = detailRow ?? viewModel.selectedRow;
-  const showDetails = Boolean(detailRow) || viewModel.showDetails;
-  const showFilter = showFilterModal || viewModel.showFilterModal;
+  const currentSearch = typeof window === "undefined" ? "" : window.location.search;
+  const detailKey = selectedRow ? `view:${selectedRow.id}` : "view";
+  const showDetails = (Boolean(detailRow) || viewModel.showDetails) && !isDismissed(detailKey, "view");
+  const showFilter = showFilterModal || (viewModel.showFilterModal && !isDismissed("filter", "filter"));
   const close = closeHref(viewModel);
+  const closeDetails = detailRow ? onCloseDetails : () => dismissRouteOverlay(detailKey);
+
+  function isDismissed(key: string, paramName: string) {
+    return dismissedOverlayKey === key && !currentSearch.includes(`${paramName}=`);
+  }
+
+  function dismissRouteOverlay(key: string) {
+    setDismissedOverlayKey(key);
+    if (typeof window !== "undefined") {
+      window.history.pushState(null, "", closeHref(viewModel));
+    }
+  }
+
+  function closeFilterOverlay() {
+    if (showFilterModal) {
+      onCloseFilter?.();
+      return;
+    }
+    dismissRouteOverlay("filter");
+  }
+
+  const reverseKey = viewModel.selectedRow ? `reverse:${viewModel.selectedRow.id}` : "reverse";
+  const reasonKey = viewModel.selectedRow ? `reason:${viewModel.selectedRow.id}` : "reason";
+  const deleteKey = viewModel.selectedRow ? `remove:${viewModel.selectedRow.id}` : "remove";
+  const successKey = viewModel.successMessage ? `success:${viewModel.successMessage}` : "success";
   return (
     <>
       {showDetails && selectedRow ? (
-        <OverlayShell closeLabel="Close donation detail modal">
+        <OverlayShell closeLabel="Close donation detail modal" onClose={closeDetails}>
           <div className="relative z-10 w-full max-w-[620px] rounded-[20px] bg-[#1f1f1f] px-6 pb-6 pt-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-            <CloseControl href={close} onClose={detailRow ? onCloseDetails : undefined} className="absolute right-8 top-5" label="Close donation detail modal">
+            <CloseControl href={close} onClose={closeDetails} className="absolute right-8 top-5" label="Close donation detail modal">
               <CloseX />
             </CloseControl>
             <h2 className="text-[20px] font-semibold text-white">Donation Detail</h2>
@@ -111,12 +146,12 @@ export function DonationsOverlays({
       ) : null}
 
       {showFilter ? (
-        <OverlayShell closeLabel="Close donations filter modal">
+        <OverlayShell closeLabel="Close donations filter modal" onClose={closeFilterOverlay}>
           <form action="/donations" className="relative z-10 w-full max-w-[380px] overflow-hidden rounded-[20px] border border-white/15 bg-[#1d1d1d] shadow-[0_14px_40px_rgba(0,0,0,0.45)]">
             <input type="hidden" name="tab" value={viewModel.activeTab} />
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <h2 className="text-[14px] font-normal text-white">Filter</h2>
-              <CloseControl href={close} onClose={showFilterModal ? onCloseFilter : undefined} className="text-white/80 hover:text-white" label="Dismiss donations filter">
+              <CloseControl href={close} onClose={closeFilterOverlay} className="text-white/80 hover:text-white" label="Dismiss donations filter">
                 <CloseX />
               </CloseControl>
             </div>
@@ -199,34 +234,31 @@ export function DonationsOverlays({
               </button>
             </div>
           </form>
-          <CloseControl href={close} onClose={showFilterModal ? onCloseFilter : undefined} className="absolute inset-0" label="Close donations filter modal">
-            <span className="sr-only">Close donations filter modal</span>
-          </CloseControl>
         </OverlayShell>
       ) : null}
 
-      {viewModel.showReverseConfirm && viewModel.selectedRow ? (
-        <OverlayShell closeLabel="Close reverse donation modal">
+      {viewModel.showReverseConfirm && viewModel.selectedRow && !isDismissed(reverseKey, "reverse") ? (
+        <OverlayShell closeLabel="Close reverse donation modal" onClose={() => dismissRouteOverlay(reverseKey)}>
           <div className="relative z-10 w-full max-w-[513px] rounded-[20px] bg-[#1f1f1f] px-10 pb-5 pt-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-            <Link href={closeHref(viewModel)} className="absolute right-8 top-5" aria-label="Close reverse donation modal">
+            <CloseControl href={closeHref(viewModel)} onClose={() => dismissRouteOverlay(reverseKey)} className="absolute right-8 top-5" label="Close reverse donation modal">
               <CloseX />
-            </Link>
+            </CloseControl>
             <h2 className="text-[28px] font-semibold text-white">Reverse Donation</h2>
             <p className="mx-auto mt-6 max-w-[420px] text-[18px] leading-[1.4] text-white/78">Are you sure you want to make a reversal? This action cannot be undone.</p>
             <div className="mt-20 flex justify-end gap-4">
-              <Link href={closeHref(viewModel)} className="inline-flex h-[54px] min-w-[136px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 text-[16px] text-[#9B68D5]">Cancel</Link>
+              <CloseControl href={closeHref(viewModel)} onClose={() => dismissRouteOverlay(reverseKey)} className="inline-flex h-[54px] min-w-[136px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 text-[16px] text-[#9B68D5]" label="Cancel reverse donation">Cancel</CloseControl>
               <Link href={buildDonationsHref({ tab: viewModel.activeTab, reason: viewModel.selectedRow.id })} className="inline-flex h-[54px] min-w-[136px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 text-[16px] text-white">Yes</Link>
             </div>
           </div>
         </OverlayShell>
       ) : null}
 
-      {viewModel.showReasonModal && viewModel.selectedRow ? (
-        <OverlayShell closeLabel="Close reversal reason modal">
+      {viewModel.showReasonModal && viewModel.selectedRow && !isDismissed(reasonKey, "reason") ? (
+        <OverlayShell closeLabel="Close reversal reason modal" onClose={() => dismissRouteOverlay(reasonKey)}>
           <div className="relative z-10 w-full max-w-[640px] rounded-[20px] bg-[#1f1f1f] px-6 pb-6 pt-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-            <Link href={closeHref(viewModel)} className="absolute right-8 top-5" aria-label="Close reversal reason modal">
+            <CloseControl href={closeHref(viewModel)} onClose={() => dismissRouteOverlay(reasonKey)} className="absolute right-8 top-5" label="Close reversal reason modal">
               <CloseX />
-            </Link>
+            </CloseControl>
             <h2 className="text-[18px] font-semibold text-white">Reverse Donation</h2>
             <p className="mt-2 text-[14px] text-white/55">Process a refund for this donation and update the transaction record</p>
             <div className="mt-5 rounded-[10px] border border-white/15 px-4 py-4">
@@ -258,7 +290,7 @@ export function DonationsOverlays({
               </div>
             </div>
             <div className="mt-8 flex justify-end gap-3">
-              <Link href={closeHref(viewModel)} className="inline-flex h-[42px] min-w-[170px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 text-[14px] text-[#9B68D5]">Cancel</Link>
+              <CloseControl href={closeHref(viewModel)} onClose={() => dismissRouteOverlay(reasonKey)} className="inline-flex h-[42px] min-w-[170px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 text-[14px] text-[#9B68D5]" label="Cancel reversal reason">Cancel</CloseControl>
               <form action={`/api/admin/donations/${viewModel.selectedRow.id}/reverse/?reason=${encodeURIComponent("Admin verification request")}&next=${encodeURIComponent(buildDonationsHref({ tab: viewModel.activeTab, success: "reverse" }))}`} method="POST">
                 <button
                   type="submit"
@@ -272,39 +304,36 @@ export function DonationsOverlays({
         </OverlayShell>
       ) : null}
 
-      {viewModel.showDeleteConfirm && viewModel.selectedRow ? (
-        <OverlayShell closeLabel="Close delete donation modal">
+      {viewModel.showDeleteConfirm && viewModel.selectedRow && !isDismissed(deleteKey, "remove") ? (
+        <OverlayShell closeLabel="Close delete donation modal" onClose={() => dismissRouteOverlay(deleteKey)}>
           <div className="relative z-10 w-full max-w-[578px] rounded-[20px] bg-[#1f1f1f] px-12 pb-10 pt-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <h2 className="text-[28px] font-semibold text-white">Delete Donation?</h2>
             <p className="mx-auto mt-8 max-w-[460px] text-[18px] leading-[1.4] text-white/78">Are you sure you want to delete this donation? This action cannot be undone.</p>
             <div className="mt-16 flex justify-center gap-6">
-              <Link href={closeHref(viewModel)} className="inline-flex h-[54px] min-w-[176px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 text-[16px] text-[#9B68D5]">Cancel</Link>
+              <CloseControl href={closeHref(viewModel)} onClose={() => dismissRouteOverlay(deleteKey)} className="inline-flex h-[54px] min-w-[176px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 text-[16px] text-[#9B68D5]" label="Cancel delete donation">Cancel</CloseControl>
               <Link href={buildDonationsHref({ tab: viewModel.activeTab, success: "delete" })} className="inline-flex h-[54px] min-w-[176px] items-center justify-center rounded-[10px] bg-[#ef3931] px-6 text-[16px] text-white">Yes, delete</Link>
             </div>
           </div>
-          <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close delete donation modal" />
         </OverlayShell>
       ) : null}
 
-      {viewModel.showSuccess && viewModel.successMessage ? (
-        <OverlayShell closeLabel="Close donation success modal">
+      {viewModel.showSuccess && viewModel.successMessage && !isDismissed(successKey, "success") ? (
+        <OverlayShell closeLabel="Close donation success modal" onClose={() => dismissRouteOverlay(successKey)}>
           <div className="relative z-10 w-full max-w-[390px] rounded-[20px] bg-[#1f1f1f] px-8 py-8 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <div className="mx-auto flex h-[102px] w-[102px] items-center justify-center rounded-full bg-[#9B68D5] text-[62px] text-white">✓</div>
             <p className="mt-10 text-[28px] font-semibold leading-[1.2] text-white">{viewModel.successMessage}</p>
             <p className="mt-4 text-[18px] text-white/72">{viewModel.successMessage === "Refund Successful" ? "Refund of ₦1,000 initiated" : "Your update has been saved."}</p>
           </div>
-          <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close donation success modal" />
         </OverlayShell>
       ) : null}
 
-      {viewModel.showRefundConfirm && viewModel.selectedRow ? (
-        <OverlayShell closeLabel="Close refund modal">
+      {viewModel.showRefundConfirm && viewModel.selectedRow && !isDismissed("refund", "refund") ? (
+        <OverlayShell closeLabel="Close refund modal" onClose={() => dismissRouteOverlay("refund")}>
           <div className="relative z-10 w-full max-w-[390px] rounded-[20px] bg-[#1f1f1f] px-8 py-8 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <div className="mx-auto flex h-[102px] w-[102px] items-center justify-center rounded-full bg-[#9B68D5] text-[62px] text-white">✓</div>
             <p className="mt-10 text-[28px] font-semibold leading-[1.2] text-white">Refund Successful</p>
             <p className="mt-4 text-[18px] text-white/72">Refund of ₦1,000 initiated</p>
           </div>
-          <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close refund modal" />
         </OverlayShell>
       ) : null}
     </>

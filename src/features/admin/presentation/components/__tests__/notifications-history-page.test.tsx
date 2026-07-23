@@ -4,16 +4,22 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { getNotificationsHistoryViewModel } from "@/features/admin/data/services/get-notifications-history-view-model";
 import { NotificationsHistoryPage } from "@/features/admin/presentation/components/notifications-history-page";
 
+const routerPush = vi.fn();
+const routerRefresh = vi.fn();
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
-    push: vi.fn(),
-    refresh: vi.fn(),
+    push: routerPush,
+    refresh: routerRefresh,
   }),
   usePathname: () => "/notifications-history",
 }));
 
 afterEach(() => {
   cleanup();
+  routerPush.mockClear();
+  routerRefresh.mockClear();
+  window.history.pushState(null, "", "/");
 });
 
 describe("NotificationsHistoryPage", () => {
@@ -71,6 +77,19 @@ describe("NotificationsHistoryPage", () => {
   test("renders success state", () => {
     render(<NotificationsHistoryPage viewModel={getNotificationsHistoryViewModel({ success: "delete" })} />);
     expect(screen.getByText("Notifications deleted successfully!")).toBeInTheDocument();
+  });
+
+  test("closes route-opened delete notification modal without router navigation", async () => {
+    const user = userEvent.setup();
+    window.history.pushState(null, "", "/notifications-history?delete=1");
+    render(<NotificationsHistoryPage viewModel={getNotificationsHistoryViewModel({ delete: "1" })} />);
+
+    await user.click(screen.getByRole("button", { name: "Cancel delete notification" }));
+
+    expect(screen.queryByRole("heading", { name: "Delete Notification" })).not.toBeInTheDocument();
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(window.location.pathname).toBe("/notifications-history");
+    expect(window.location.search).not.toContain("delete=");
   });
 
   test("marks selected notifications as read in mocked route state", () => {

@@ -1,21 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { ReviewRow, ReviewsViewModel } from "@/features/admin/domain/entities/reviews";
 import { AdminDashboardShell } from "@/features/admin/presentation/components/admin-dashboard-shell";
 import { ReviewsOverlays } from "@/features/admin/presentation/components/reviews/reviews-overlays";
 import { ReviewsTable } from "@/features/admin/presentation/components/reviews/reviews-table";
 
+function reviewsResetKey(viewModel: ReviewsViewModel) {
+  return [
+    viewModel.phaseState,
+    viewModel.rows.map((row) => row.id).join(","),
+    viewModel.selectedIds.join(","),
+    viewModel.selectedRow?.id ?? "",
+    viewModel.filterDraft.rating ?? "",
+    viewModel.filterDraft.from ?? "",
+    viewModel.filterDraft.to ?? "",
+    viewModel.showFilterModal ? "filter" : "",
+    viewModel.showMenuForId ?? "",
+    viewModel.showDetailForId ?? "",
+    viewModel.showDeleteModal ? "delete" : "",
+    viewModel.deleteMode ?? "",
+  ].join("|");
+}
+
 export function ReviewsPage({ viewModel }: { viewModel: ReviewsViewModel }) {
+  return <ReviewsPageContent key={reviewsResetKey(viewModel)} viewModel={viewModel} />;
+}
+
+function ReviewsPageContent({ viewModel }: { viewModel: ReviewsViewModel }) {
   const [menuRow, setMenuRow] = useState<ReviewRow | null>(null);
   const [detailRow, setDetailRow] = useState<ReviewRow | null>(null);
   const [showFilterModal, setShowFilterModal] = useState(false);
-
-  useEffect(() => {
-    setMenuRow(null);
-    setDetailRow(null);
-    setShowFilterModal(false);
-  }, [viewModel]);
 
   const interactiveViewModel: ReviewsViewModel = {
     ...viewModel,

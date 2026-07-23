@@ -19,6 +19,28 @@ test("existing admin can log in and reach overview", async ({ page }) => {
   await expect(page.getByText("Elvis Igiebor")).toBeVisible();
 });
 
+test("sidebar navigation preserves the dashboard shell", async ({ page }) => {
+  await loginAsAdmin(page);
+  const header = page.locator("header").first();
+  await expect(header).toBeVisible();
+  await header.evaluate((element) => {
+    (element as HTMLElement & { __shellMarker?: string }).__shellMarker = "persistent-shell";
+  });
+
+  await page.getByRole("link", { name: "Users", exact: true }).click();
+
+  await expect(page).toHaveURL("/users");
+  await expect(page.getByRole("heading", { name: "Users", exact: true })).toBeVisible();
+  await expect
+    .poll(() =>
+      page
+        .locator("header")
+        .first()
+        .evaluate((element) => (element as HTMLElement & { __shellMarker?: string }).__shellMarker),
+    )
+    .toBe("persistent-shell");
+});
+
 test("bell icon opens notifications panel and can route to notifications history", async ({ page }) => {
   await loginAsAdmin(page);
   await page.getByRole("link", { name: "Open notifications" }).click();
@@ -226,7 +248,7 @@ test("testimonies route supports list, detail, moderation, and filter flows", as
   await loginAsAdmin(page);
 
   await page.goto("/testimonies");
-  await expect(page.getByRole("heading", { name: "Testimonies" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Testimonies", exact: true })).toBeVisible();
   await expect(page.getByText("Testimony").first()).toBeVisible();
   await expect(page.getByText("Emmanuel Oreoluwa").first()).toBeVisible();
 

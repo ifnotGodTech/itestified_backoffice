@@ -24,7 +24,6 @@ describe("AdminOverview", () => {
     expect(screen.getByText("Pending Donations")).toBeInTheDocument();
     expect(screen.getByText("Top Engagement for video Testimonies")).toBeInTheDocument();
     expect(screen.getByText("Financial Miracles")).toBeInTheDocument();
-    expect(screen.getByText("Elvis Igiebor")).toBeInTheDocument();
   });
 
   test("renders the empty overview state", () => {

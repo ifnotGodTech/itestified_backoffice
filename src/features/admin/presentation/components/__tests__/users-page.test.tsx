@@ -4,10 +4,13 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import { getUsersViewModel } from "@/features/admin/data/services/get-users-view-model";
 import { UsersPage } from "@/features/admin/presentation/components/users-page";
 
+const routerPush = vi.fn();
+const routerRefresh = vi.fn();
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
-    push: vi.fn(),
-    refresh: vi.fn(),
+    push: routerPush,
+    refresh: routerRefresh,
   }),
   usePathname: () => "/users",
 }));
@@ -15,6 +18,9 @@ vi.mock("next/navigation", () => ({
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  routerPush.mockClear();
+  routerRefresh.mockClear();
+  window.history.pushState(null, "", "/");
 });
 
 describe("UsersPage", () => {
@@ -77,6 +83,18 @@ describe("UsersPage", () => {
     expect(screen.getByRole("heading", { name: "Deactivate Account" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Select/ })).toBeInTheDocument();
     expect(screen.getByText("Confirm Deactivation")).toBeInTheDocument();
+  });
+
+  test("closes route-opened deactivate modal without router navigation", async () => {
+    const user = userEvent.setup();
+    window.history.pushState(null, "", "/users?deactivate=1");
+    render(<UsersPage viewModel={getUsersViewModel({ deactivate: "1" })} />);
+
+    await user.click(screen.getByRole("button", { name: "Cancel deactivate account" }));
+
+    expect(screen.queryByRole("heading", { name: "Deactivate Account" })).not.toBeInTheDocument();
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(window.location.pathname + window.location.search).toBe("/users");
   });
 
   test("renders the deactivation success state", () => {

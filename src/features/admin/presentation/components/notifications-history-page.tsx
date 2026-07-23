@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { NotificationsHistoryViewModel } from "@/features/admin/domain/entities/notifications-history";
 import { AdminDashboardShell } from "@/features/admin/presentation/components/admin-dashboard-shell";
 import { NotificationsHistoryOverlays } from "@/features/admin/presentation/components/notifications-history/notifications-history-overlays";
@@ -72,14 +72,31 @@ function NotificationPanel({ viewModel }: { viewModel: NotificationsHistoryViewM
   );
 }
 
+function notificationsHistoryResetKey(viewModel: NotificationsHistoryViewModel) {
+  return [
+    viewModel.phaseState,
+    viewModel.searchQuery,
+    viewModel.selectedIds.join(","),
+    viewModel.rows.map((row) => `${row.id}:${row.status}`).join(","),
+    viewModel.selectedRow?.id ?? "",
+    viewModel.filterDraft.status ?? "",
+    viewModel.filterDraft.from ?? "",
+    viewModel.filterDraft.to ?? "",
+    viewModel.showPanel ? "panel" : "",
+    viewModel.showFilterModal ? "filter" : "",
+    viewModel.showDeleteModal ? "delete" : "",
+    viewModel.deleteMode ?? "",
+    viewModel.showSuccess ? "success" : "",
+  ].join("|");
+}
+
 export function NotificationsHistoryPage({ viewModel }: { viewModel: NotificationsHistoryViewModel }) {
+  return <NotificationsHistoryPageContent key={notificationsHistoryResetKey(viewModel)} viewModel={viewModel} />;
+}
+
+function NotificationsHistoryPageContent({ viewModel }: { viewModel: NotificationsHistoryViewModel }) {
   const [selectedIds, setSelectedIds] = useState(viewModel.selectedIds);
   const [showFilterModal, setShowFilterModal] = useState(false);
-
-  useEffect(() => {
-    setSelectedIds(viewModel.selectedIds);
-    setShowFilterModal(false);
-  }, [viewModel]);
 
   const interactiveViewModel: NotificationsHistoryViewModel = {
     ...viewModel,

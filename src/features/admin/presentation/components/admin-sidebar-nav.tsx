@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import type { AdminNavItem } from "@/features/admin/domain/entities/shell";
 import { AdminSidebarLogoutButton } from "@/features/admin/presentation/components/admin-sidebar-logout-button";
 
@@ -127,6 +127,7 @@ export function AdminSidebarNav({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
     () =>
       Object.fromEntries(
@@ -136,29 +137,29 @@ export function AdminSidebarNav({
       ),
   );
 
-  useEffect(() => {
-    setExpandedItems((current) => {
-      const updates: Record<string, boolean> = {};
-      for (const item of sidebarItems) {
-        if (item.active && item.children?.length && current[item.href] === undefined) {
-          updates[item.href] = true;
-        }
-      }
+  function hrefMatchesCurrentRoute(href: string) {
+    const [hrefPath, hrefQuery] = href.split("?");
+    if (pathname !== hrefPath) return false;
+    if (!hrefQuery) return true;
 
-      if (Object.keys(updates).length === 0) {
-        return current;
-      }
+    const expectedParams = new URLSearchParams(hrefQuery);
+    for (const [key, value] of expectedParams.entries()) {
+      if (searchParams.get(key) !== value) return false;
+    }
+    return true;
+  }
 
-      return { ...current, ...updates };
-    });
-  }, [pathname, sidebarItems]);
+  function itemMatchesCurrentRoute(item: AdminNavItem) {
+    return hrefMatchesCurrentRoute(item.href) || Boolean(item.children?.some((child) => hrefMatchesCurrentRoute(child.href)));
+  }
 
   return (
     <>
       <div className="px-3 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#d7d7d7]">Main Menu</div>
       <nav className="mt-3 space-y-1 px-0">
         {sidebarItems.map((item) => {
-          const isExpanded = item.children?.length ? expandedItems[item.href] ?? false : false;
+          const isActive = itemMatchesCurrentRoute(item);
+          const isExpanded = item.children?.length ? expandedItems[item.href] ?? isActive : false;
 
           return (
             <div key={item.label}>
@@ -175,12 +176,12 @@ export function AdminSidebarNav({
                     router.push(item.href);
                   }}
                   className={`flex w-full items-center justify-between px-4 py-[13px] text-left text-[14px] transition ${
-                    item.active ? "bg-[#9B68D5] text-white" : "text-[#d4d4d4] hover:bg-[#202020] hover:text-white"
+                    isActive ? "bg-[#9B68D5] text-white" : "text-[#d4d4d4] hover:bg-[#202020] hover:text-white"
                   }`}
                   aria-expanded={isExpanded}
                 >
                   <span className="flex items-center gap-3">
-                    <SidebarIcon kind={item.icon} active={item.active || isExpanded} />
+                    <SidebarIcon kind={item.icon} active={isActive || isExpanded} />
                     <span>{item.label}</span>
                   </span>
                   <span className="flex items-center gap-2">
@@ -191,7 +192,7 @@ export function AdminSidebarNav({
                     ) : null}
                     <span
                       className={`text-[11px] transition-transform ${
-                        item.active || isExpanded ? "text-white" : "text-[#efefef]"
+                        isActive || isExpanded ? "text-white" : "text-[#efefef]"
                       } ${isExpanded ? "rotate-180" : ""}`}
                     >
                       ▾
@@ -202,11 +203,11 @@ export function AdminSidebarNav({
                 <Link
                   href={item.href}
                   className={`flex items-center justify-between px-4 py-[13px] text-[14px] transition ${
-                    item.active ? "bg-[#9B68D5] text-white" : "text-[#d4d4d4] hover:bg-[#202020] hover:text-white"
+                    isActive ? "bg-[#9B68D5] text-white" : "text-[#d4d4d4] hover:bg-[#202020] hover:text-white"
                   }`}
                 >
                   <span className="flex items-center gap-3">
-                    <SidebarIcon kind={item.icon} active={item.active} />
+                    <SidebarIcon kind={item.icon} active={isActive} />
                     <span>{item.label}</span>
                   </span>
                   <span className="flex items-center gap-2">
@@ -221,17 +222,21 @@ export function AdminSidebarNav({
 
               {isExpanded && item.children?.length ? (
                 <div className="space-y-1 bg-[#161616] py-2">
-                  {item.children.map((child) => (
-                    <Link
-                      key={child.href}
-                      href={child.href}
-                      className={`block px-4 py-[9px] text-[14px] transition ${
-                        child.active ? "text-white" : "text-[#d0d0d0] hover:text-white"
-                      }`}
-                    >
-                      {child.label}
-                    </Link>
-                  ))}
+                  {item.children.map((child) => {
+                    const childActive = hrefMatchesCurrentRoute(child.href);
+
+                    return (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        className={`block px-4 py-[9px] text-[14px] transition ${
+                          childActive ? "text-white" : "text-[#d0d0d0] hover:text-white"
+                        }`}
+                      >
+                        {child.label}
+                      </Link>
+                    );
+                  })}
                 </div>
               ) : null}
             </div>
@@ -245,9 +250,11 @@ export function AdminSidebarNav({
           <Link
             key={item.label}
             href={item.href}
-            className="flex items-center gap-3 px-4 py-[13px] text-[14px] text-[#d4d4d4] transition hover:bg-[#202020] hover:text-white"
+            className={`flex items-center gap-3 px-4 py-[13px] text-[14px] transition ${
+              hrefMatchesCurrentRoute(item.href) ? "bg-[#9B68D5] text-white" : "text-[#d4d4d4] hover:bg-[#202020] hover:text-white"
+            }`}
           >
-            <SidebarIcon kind={item.icon} />
+            <SidebarIcon kind={item.icon} active={hrefMatchesCurrentRoute(item.href)} />
             <span>{item.label}</span>
           </Link>
         ))}
