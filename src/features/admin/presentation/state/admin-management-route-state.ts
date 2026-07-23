@@ -15,6 +15,7 @@ export type AdminManagementRouteParams = {
   remove?: number | null;
   success?: boolean | null;
   successType?: "role-created" | "admin-assigned" | null;
+  page?: number | null;
 };
 
 export function buildAdminManagementHref(params: AdminManagementRouteParams) {
@@ -33,6 +34,7 @@ export function buildAdminManagementHref(params: AdminManagementRouteParams) {
   if (params.remove) search.set("remove", String(params.remove));
   if (params.success) search.set("success", "1");
   if (params.successType && params.successType !== "role-created") search.set("successType", params.successType);
+  if (params.page && params.page > 1) search.set("page", String(params.page));
   const query = search.toString();
   return query ? `/admin?${query}` : "/admin";
 }

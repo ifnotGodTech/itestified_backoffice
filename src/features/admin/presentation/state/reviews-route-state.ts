@@ -12,6 +12,7 @@ export type ReviewsRouteParams = {
   view?: number | null;
   remove?: number | null;
   deleteAll?: boolean | null;
+  page?: number | null;
 };
 
 export function buildReviewsHref(params: ReviewsRouteParams) {
@@ -27,6 +28,7 @@ export function buildReviewsHref(params: ReviewsRouteParams) {
   if (params.view) search.set("view", String(params.view));
   if (params.remove) search.set("remove", String(params.remove));
   if (params.deleteAll) search.set("deleteAll", "1");
+  if (params.page && params.page > 1) search.set("page", String(params.page));
   const query = search.toString();
   return query ? `/reviews?${query}` : "/reviews";
 }

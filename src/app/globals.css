@@ -25,6 +25,15 @@
   --color-danger: #e53935;
   --color-warning: #ff8d28;
   --color-warning-strong: #ffc107;
+
+  /*
+   * Most of the app was built against literal `text-white/NN`, `border-white/NN`,
+   * `bg-white/NN` utilities as a stand-in for "ink at reduced opacity" rather than
+   * the design tokens above. Tailwind v4 generates those utilities from this exact
+   * variable via color-mix(), so redefining it per-theme retheme's every one of
+   * those utilities app-wide without touching each call site. See UI_UX_REVIEW_TODO.md A3a.
+   */
+  --color-white: var(--color-text-primary);
 }
 
 [data-theme="light"] {

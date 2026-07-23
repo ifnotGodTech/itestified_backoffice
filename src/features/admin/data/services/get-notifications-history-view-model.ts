@@ -1,5 +1,6 @@
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
 import { backendBaseUrl } from "@/core/auth/backend";
+import { formatShowingLabel, paginateRows, parsePageParam } from "@/features/admin/data/services/pagination";
 import type {
   NotificationHistoryRow,
   NotificationsHistoryFilterDraft,
@@ -100,6 +101,7 @@ export function getNotificationsHistoryViewModel(input: {
   deleteAll?: string;
   success?: string;
   fullName?: string;
+  page?: string;
 }): NotificationsHistoryViewModel {
   const phaseState = normalizeState(input.state);
   const searchQuery = input.q?.trim() ?? "";
@@ -112,7 +114,9 @@ export function getNotificationsHistoryViewModel(input: {
   };
   const normalizedRows = notifications.map((row) => (readIds.has(row.id) ? { ...row, status: "read" as const } : row));
   const filteredRows = applyFilter(normalizedRows, filterDraft, searchQuery);
-  const rows = phaseState === "populated" ? filteredRows : [];
+  const allRows = phaseState === "populated" ? filteredRows : [];
+  const page = parsePageParam(input.page);
+  const { pageRows: rows, hasNextPage, hasPreviousPage } = paginateRows(allRows, page);
   const deleteId = Number(input.delete ?? "");
   const selectedRow = Number.isFinite(deleteId) ? normalizedRows.find((row) => row.id === deleteId) ?? null : null;
   const successMessage = input.success === "delete" ? "Notifications deleted successfully!" : input.success === "read" ? "Notifications marked as read." : undefined;
@@ -127,7 +131,10 @@ export function getNotificationsHistoryViewModel(input: {
     rows,
     selectedIds,
     selectedRow,
-    showingLabel: rows.length === 0 ? "Showing 0 of 0" : `Showing 1-${rows.length} of ${rows.length}`,
+    showingLabel: formatShowingLabel(page, rows.length, allRows.length),
+    page,
+    hasNextPage,
+    hasPreviousPage,
     errorMessage: phaseState === "error" ? "We could not load notifications right now. Please try again." : undefined,
     filterDraft,
     showPanel: input.panel === "1",
@@ -178,15 +185,18 @@ export async function getNotificationsHistoryViewModelFromApi(
     deleteAll?: string;
     success?: string;
     fullName?: string;
+    page?: string;
   },
   cookieHeader: string,
 ): Promise<NotificationsHistoryViewModel> {
+  const page = parsePageParam(input.page);
   try {
     const searchParams = new URLSearchParams();
     if (input.q?.trim()) searchParams.set("q", input.q.trim());
     if (input.statusFilter?.trim()) searchParams.set("status", input.statusFilter.trim());
     if (input.from?.trim()) searchParams.set("from", input.from.trim());
     if (input.to?.trim()) searchParams.set("to", input.to.trim());
+    searchParams.set("page", String(page));
     const query = searchParams.toString();
     const url = `${backendBaseUrl}/notifications/admin/history/${query ? `?${query}` : ""}`;
     const response = await fetch(url, {
@@ -195,28 +205,31 @@ export async function getNotificationsHistoryViewModelFromApi(
       cache: "no-store",
     });
     if (!response.ok) {
-      return getNotificationsHistoryViewModel({ ...input, state: "error" });
+      return { ...getNotificationsHistoryViewModel({ ...input, state: "error" }), page, hasNextPage: false, hasPreviousPage: page > 1 };
     }
     const payload = (await response.json().catch(() => ({}))) as {
       count?: number;
       results?: Array<Record<string, unknown>>;
+      next?: string | null;
+      previous?: string | null;
     };
     const mappedRows = mapRows(payload.results ?? []);
     const vm = getNotificationsHistoryViewModel(input);
+    const total = payload.count ?? mappedRows.length;
     return {
       ...vm,
       phaseState: mappedRows.length == 0 ? "empty" : "populated",
       rows: mappedRows,
-      showingLabel:
-        mappedRows.length == 0
-          ? "Showing 0 of 0"
-          : `Showing 1-${mappedRows.length} of ${payload.count ?? mappedRows.length}`,
+      showingLabel: formatShowingLabel(page, mappedRows.length, total),
+      page,
+      hasNextPage: Boolean(payload.next),
+      hasPreviousPage: Boolean(payload.previous) || page > 1,
       selectedRow: (() => {
         const selectedId = Number(input.delete ?? "");
         return Number.isFinite(selectedId) ? mappedRows.find((row) => row.id === selectedId) ?? null : null;
       })(),
     };
   } catch {
-    return getNotificationsHistoryViewModel({ ...input, state: "error" });
+    return { ...getNotificationsHistoryViewModel({ ...input, state: "error" }), page, hasNextPage: false, hasPreviousPage: page > 1 };
   }
 }

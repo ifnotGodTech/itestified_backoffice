@@ -59,7 +59,7 @@ export function PasswordField({
         <button
           type="button"
           onClick={() => setVisible((prev) => !prev)}
-          className="absolute inset-y-0 right-0 flex items-center pr-3 text-[#b5b5b5] hover:text-white"
+          className="absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--color-text-secondary)] hover:text-white"
           aria-label={visible ? "Hide password" : "Show password"}
         >
           <EyeIcon open={visible} />

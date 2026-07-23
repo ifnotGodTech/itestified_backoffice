@@ -76,8 +76,8 @@ function ActivityLogScreen() {
         <div className="flex items-center justify-between px-4 py-10 text-[12px] text-[var(--color-text-muted)]">
           <span>Showing 1-4 of 4</span>
           <div className="flex gap-3">
-            <button type="button" className="rounded-[8px] border border-white/20 px-4 py-2 text-white/45">Previous</button>
-            <button type="button" className="rounded-[8px] border border-[var(--color-primary)] px-5 py-2 text-[var(--color-primary)]">Next</button>
+            <span className="cursor-not-allowed rounded-[8px] border border-white/10 px-4 py-2 text-white/25" aria-disabled="true">Previous</span>
+            <span className="cursor-not-allowed rounded-[8px] border border-white/10 px-5 py-2 text-white/25" aria-disabled="true">Next</span>
           </div>
         </div>
       </div>
@@ -193,6 +193,9 @@ export function TestimoniesPage({ viewModel }: { viewModel: TestimoniesViewModel
         phaseState: "error",
         errorMessage: "We could not load testimonies right now. Please try again.",
         showingLabel: "Showing 0 of 0",
+        page: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
       }));
     }
   }

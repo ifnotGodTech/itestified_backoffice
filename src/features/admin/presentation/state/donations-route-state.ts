@@ -20,6 +20,7 @@ export type DonationsRouteParams = {
   reason?: number | null;
   remove?: number | null;
   success?: string | null;
+  page?: number | null;
 };
 
 export function buildDonationsHref(params: DonationsRouteParams) {
@@ -43,6 +44,7 @@ export function buildDonationsHref(params: DonationsRouteParams) {
   if (params.reason) search.set("reason", String(params.reason));
   if (params.remove) search.set("remove", String(params.remove));
   if (params.success) search.set("success", params.success);
+  if (params.page && params.page > 1) search.set("page", String(params.page));
   const query = search.toString();
   return query ? `/donations?${query}` : "/donations";
 }

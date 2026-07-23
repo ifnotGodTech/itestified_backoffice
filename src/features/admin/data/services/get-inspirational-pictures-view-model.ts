@@ -1,5 +1,6 @@
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
 import { backendBaseUrl } from "@/core/auth/backend";
+import { formatShowingLabel, paginateRows, parsePageParam } from "@/features/admin/data/services/pagination";
 import type {
   InspirationalPictureRow,
   InspirationalPictureScreen,
@@ -85,6 +86,7 @@ export function getInspirationalPicturesViewModel(input: {
   remove?: string;
   success?: string;
   fullName?: string;
+  page?: string;
 }): InspirationalPicturesViewModel {
   const activeStatus = normalizeStatus(input.status);
   const activeScreen = normalizeScreen(input.screen);
@@ -92,7 +94,9 @@ export function getInspirationalPicturesViewModel(input: {
   const searchQuery = input.q?.trim() ?? "";
   const searchedRows = searchQuery ? pictureRows.filter((row) => matchesSearch(row, searchQuery)) : pictureRows;
   const filteredRows = searchedRows.filter((row) => (activeStatus === "All" ? true : row.status === activeStatus));
-  const rows = phaseState === "populated" ? filteredRows : [];
+  const allRows = phaseState === "populated" ? filteredRows : [];
+  const page = parsePageParam(input.page);
+  const { pageRows: rows, hasNextPage, hasPreviousPage } = paginateRows(allRows, page);
   const selectedId = Number(input.menu ?? input.view ?? input.edit ?? input.remove ?? "");
   const selectedRow = Number.isFinite(selectedId) ? pictureRows.find((row) => row.id === selectedId) ?? null : null;
   const successMessage = input.success === "upload" ? "Uploaded Successfully!" : undefined;
@@ -110,8 +114,11 @@ export function getInspirationalPicturesViewModel(input: {
     statusTabs,
     rows,
     selectedRow,
-    totalRows: rows.length,
-    showingLabel: rows.length === 0 ? "Showing 0 of 0" : `Showing 1-${rows.length} of ${rows.length}`,
+    totalRows: allRows.length,
+    showingLabel: formatShowingLabel(page, rows.length, allRows.length),
+    page,
+    hasNextPage,
+    hasPreviousPage,
     errorMessage: phaseState === "error" ? "We could not load inspirational pictures right now. Please try again." : undefined,
     showActionMenu: Boolean(input.menu),
     showDetails: Boolean(input.view),
@@ -165,9 +172,11 @@ export async function getInspirationalPicturesViewModelFromApi(
     remove?: string;
     success?: string;
     fullName?: string;
+    page?: string;
   },
   cookieHeader: string,
 ): Promise<InspirationalPicturesViewModel> {
+  const page = parsePageParam(input.page);
   try {
     const statusMap: Record<string, string> = {
       Uploaded: "published",
@@ -179,6 +188,7 @@ export async function getInspirationalPicturesViewModelFromApi(
       params.set("status", statusMap[input.status]);
     }
     if (input.q?.trim()) params.set("q", input.q.trim());
+    params.set("page", String(page));
     const query = params.toString();
     const url = `${backendBaseUrl}/content/admin/inspirational-pictures/${query ? `?${query}` : ""}`;
     const response = await fetch(url, {
@@ -187,27 +197,30 @@ export async function getInspirationalPicturesViewModelFromApi(
       cache: "no-store",
     });
     if (!response.ok) {
-      return getInspirationalPicturesViewModel({ ...input, state: "error" });
+      return { ...getInspirationalPicturesViewModel({ ...input, state: "error" }), page, hasNextPage: false, hasPreviousPage: page > 1 };
     }
     const payload = (await response.json().catch(() => ({}))) as {
       count?: number;
       results?: Array<Record<string, unknown>>;
+      next?: string | null;
+      previous?: string | null;
     };
     const rows = mapBackendRows(payload.results ?? []);
     const vm = getInspirationalPicturesViewModel(input);
     const selectedId = Number(input.menu ?? input.view ?? input.edit ?? input.remove ?? "");
+    const total = payload.count ?? rows.length;
     return {
       ...vm,
       phaseState: rows.length === 0 ? "empty" : "populated",
       rows,
       selectedRow: Number.isFinite(selectedId) ? rows.find((row) => row.id === selectedId) ?? null : null,
-      totalRows: payload.count ?? rows.length,
-      showingLabel:
-        rows.length === 0
-          ? "Showing 0 of 0"
-          : `Showing 1-${rows.length} of ${payload.count ?? rows.length}`,
+      totalRows: total,
+      showingLabel: formatShowingLabel(page, rows.length, total),
+      page,
+      hasNextPage: Boolean(payload.next),
+      hasPreviousPage: Boolean(payload.previous) || page > 1,
     };
   } catch {
-    return getInspirationalPicturesViewModel({ ...input, state: "error" });
+    return { ...getInspirationalPicturesViewModel({ ...input, state: "error" }), page, hasNextPage: false, hasPreviousPage: page > 1 };
   }
 }

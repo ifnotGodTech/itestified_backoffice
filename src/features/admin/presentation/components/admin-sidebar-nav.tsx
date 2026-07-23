@@ -7,7 +7,7 @@ import type { AdminNavItem } from "@/features/admin/domain/entities/shell";
 import { AdminSidebarLogoutButton } from "@/features/admin/presentation/components/admin-sidebar-logout-button";
 
 function SidebarIcon({ kind, active = false }: { kind: string; active?: boolean }) {
-  const color = active ? "#FFFFFF" : "#D6D6D6";
+  const color = active ? "var(--color-text-primary)" : "var(--color-text-secondary)";
   const cls = "h-[18px] w-[18px]";
 
   if (kind === "grid") {
@@ -155,7 +155,7 @@ export function AdminSidebarNav({
 
   return (
     <>
-      <div className="px-3 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#d7d7d7]">Main Menu</div>
+      <div className="px-3 text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--color-text-muted)]">Main Menu</div>
       <nav className="mt-3 space-y-1 px-0">
         {sidebarItems.map((item) => {
           const isActive = itemMatchesCurrentRoute(item);
@@ -176,7 +176,9 @@ export function AdminSidebarNav({
                     router.push(item.href);
                   }}
                   className={`flex w-full items-center justify-between px-4 py-[13px] text-left text-[14px] transition ${
-                    isActive ? "bg-[#9B68D5] text-white" : "text-[#d4d4d4] hover:bg-[#202020] hover:text-white"
+                    isActive
+                      ? "bg-[var(--color-primary)] text-[var(--color-text-primary)]"
+                      : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
                   }`}
                   aria-expanded={isExpanded}
                 >
@@ -186,13 +188,13 @@ export function AdminSidebarNav({
                   </span>
                   <span className="flex items-center gap-2">
                     {item.badge ? (
-                      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#f44336] px-1 text-[10px] text-white">
+                      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-danger)] px-1 text-[10px] text-[var(--color-text-primary)]">
                         {item.badge}
                       </span>
                     ) : null}
                     <span
                       className={`text-[11px] transition-transform ${
-                        isActive || isExpanded ? "text-white" : "text-[#efefef]"
+                        isActive || isExpanded ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)]"
                       } ${isExpanded ? "rotate-180" : ""}`}
                     >
                       ▾
@@ -203,7 +205,9 @@ export function AdminSidebarNav({
                 <Link
                   href={item.href}
                   className={`flex items-center justify-between px-4 py-[13px] text-[14px] transition ${
-                    isActive ? "bg-[#9B68D5] text-white" : "text-[#d4d4d4] hover:bg-[#202020] hover:text-white"
+                    isActive
+                      ? "bg-[var(--color-primary)] text-[var(--color-text-primary)]"
+                      : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
                   }`}
                 >
                   <span className="flex items-center gap-3">
@@ -212,7 +216,7 @@ export function AdminSidebarNav({
                   </span>
                   <span className="flex items-center gap-2">
                     {item.badge ? (
-                      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#f44336] px-1 text-[10px] text-white">
+                      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-danger)] px-1 text-[10px] text-[var(--color-text-primary)]">
                         {item.badge}
                       </span>
                     ) : null}
@@ -221,7 +225,7 @@ export function AdminSidebarNav({
               )}
 
               {isExpanded && item.children?.length ? (
-                <div className="space-y-1 bg-[#161616] py-2">
+                <div className="space-y-1 bg-[var(--color-surface-panel)] py-2">
                   {item.children.map((child) => {
                     const childActive = hrefMatchesCurrentRoute(child.href);
 
@@ -230,7 +234,7 @@ export function AdminSidebarNav({
                         key={child.href}
                         href={child.href}
                         className={`block px-4 py-[9px] text-[14px] transition ${
-                          childActive ? "text-white" : "text-[#d0d0d0] hover:text-white"
+                          childActive ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                         }`}
                       >
                         {child.label}
@@ -244,14 +248,16 @@ export function AdminSidebarNav({
         })}
       </nav>
 
-      <div className="mt-10 px-3 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#d7d7d7]">Settings</div>
+      <div className="mt-10 px-3 text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--color-text-muted)]">Settings</div>
       <div className="mt-3 space-y-1">
         {settingsItems.map((item) => (
           <Link
             key={item.label}
             href={item.href}
             className={`flex items-center gap-3 px-4 py-[13px] text-[14px] transition ${
-              hrefMatchesCurrentRoute(item.href) ? "bg-[#9B68D5] text-white" : "text-[#d4d4d4] hover:bg-[#202020] hover:text-white"
+              hrefMatchesCurrentRoute(item.href)
+                ? "bg-[var(--color-primary)] text-[var(--color-text-primary)]"
+                : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
             }`}
           >
             <SidebarIcon kind={item.icon} active={hrefMatchesCurrentRoute(item.href)} />

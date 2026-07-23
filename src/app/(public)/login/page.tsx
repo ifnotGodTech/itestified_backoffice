@@ -61,7 +61,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter Email Address"
-            className="rounded-lg border-white/5 bg-[#171717] px-4 py-3.5 text-[0.95rem] focus:border-[var(--color-primary)]"
+            className="rounded-lg border-white/5 bg-[var(--color-surface-elevated)] px-4 py-3.5 text-[0.95rem] focus:border-[var(--color-primary)]"
             required
           />
         </label>
@@ -71,9 +71,9 @@ export default function LoginPage() {
           onChange={setPassword}
           placeholder="Enter Password"
           ariaLabel="Password"
-          className="rounded-lg border-white/5 bg-[#171717] px-4 py-3.5 text-[0.95rem] focus:border-[var(--color-primary)]"
+          className="rounded-lg border-white/5 bg-[var(--color-surface-elevated)] px-4 py-3.5 text-[0.95rem] focus:border-[var(--color-primary)]"
         />
-        <div className="flex items-center justify-between text-[13px] text-[#b5b5b5]">
+        <div className="flex items-center justify-between text-[13px] text-[var(--color-text-secondary)]">
           <label className="flex items-center gap-2">
             <input type="checkbox" className="h-3.5 w-3.5 accent-[var(--color-primary)]" />
             <span>Remember me</span>

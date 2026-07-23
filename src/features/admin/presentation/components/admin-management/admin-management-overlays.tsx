@@ -52,7 +52,7 @@ function ModalShell({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
-      <div className={`relative z-10 w-full ${maxWidth} rounded-[20px] bg-[#1f1f1f] shadow-[0_20px_60px_rgba(0,0,0,0.35)]`}>
+      <div className={`relative z-10 w-full ${maxWidth} rounded-[20px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]`}>
         <div className="border-b border-white/10 px-5 py-4">
           <h2 className="text-[18px] font-semibold text-white">{title}</h2>
           {subtitle ? <p className="mt-1 text-[12px] leading-[1.45] text-white/55">{subtitle}</p> : null}
@@ -107,17 +107,17 @@ export function AdminManagementOverlays({
                   readOnly
                   value="newadmin@itestified.app"
                   aria-label="Email Address"
-                  className="h-[40px] w-full rounded-[8px] bg-[#2a2a2a] px-4 text-[12px] text-white/80 outline-none"
+                  className="h-[40px] w-full rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[12px] text-white/80 outline-none"
                 />
               </label>
               <label className="block">
                 <span className="mb-2 block text-[12px] text-white">Role</span>
-                <div className="flex h-[40px] items-center justify-between rounded-[8px] bg-[#2a2a2a] px-4 text-[12px] text-white/80">
+                <div className="flex h-[40px] items-center justify-between rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[12px] text-white/80">
                   <span>Select Role</span>
                   <span>▾</span>
                 </div>
               </label>
-              <p className="rounded-[10px] bg-[#262626] px-4 py-3 text-[12px] leading-[1.5] text-white/60">
+              <p className="rounded-[10px] bg-[var(--color-surface-muted)] px-4 py-3 text-[12px] leading-[1.5] text-white/60">
                 You have been invited to join the iTestified Admin team, Please create a password to access your dashboard
               </p>
             </div>
@@ -170,7 +170,7 @@ export function AdminManagementOverlays({
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 {["Overview", "Users", "Donations", "Analytics"].map((item) => (
-                  <div key={item} className="flex items-center justify-between rounded-[10px] bg-[#2a2a2a] px-4 py-3">
+                  <div key={item} className="flex items-center justify-between rounded-[10px] bg-[var(--color-surface-muted)] px-4 py-3">
                     <span className="text-[13px] text-white/85">{item}</span>
                     <span className="text-[12px] text-[#8de7a0]">Allowed</span>
                   </div>
@@ -196,7 +196,7 @@ export function AdminManagementOverlays({
               </div>
               <label className="block">
                 <span className="mb-2 block text-[12px] text-white">Role</span>
-                <div className="flex h-[40px] items-center justify-between rounded-[8px] bg-[#2a2a2a] px-4 text-[12px] text-white/80">
+                <div className="flex h-[40px] items-center justify-between rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[12px] text-white/80">
                   <span>Select Role</span>
                   <span>▾</span>
                 </div>
@@ -217,7 +217,7 @@ export function AdminManagementOverlays({
             <div className="space-y-4 px-5 py-5">
               <label className="block">
                 <span className="mb-2 block text-[12px] text-white">Role</span>
-                <div className="flex h-[40px] items-center justify-between rounded-[8px] bg-[#2a2a2a] px-4 text-[12px] text-white/80">
+                <div className="flex h-[40px] items-center justify-between rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[12px] text-white/80">
                   <span>Select Role</span>
                   <span>▾</span>
                 </div>
@@ -242,7 +242,7 @@ export function AdminManagementOverlays({
               </div>
               <label className="block">
                 <span className="mb-2 block text-[12px] text-white">Role</span>
-                <div className="flex h-[40px] items-center justify-between rounded-[8px] bg-[#2a2a2a] px-4 text-[12px] text-white/80">
+                <div className="flex h-[40px] items-center justify-between rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[12px] text-white/80">
                   <span>{viewModel.selectedRow?.role ?? "Select Role"}</span>
                   <span>▾</span>
                 </div>
@@ -267,7 +267,7 @@ export function AdminManagementOverlays({
                   readOnly
                   value={viewModel.selectedRow?.role ?? ""}
                   aria-label="Admin Role"
-                  className="h-[40px] w-full rounded-[8px] bg-[#2a2a2a] px-4 text-[12px] text-white/80 outline-none"
+                  className="h-[40px] w-full rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[12px] text-white/80 outline-none"
                 />
               </label>
             </div>
@@ -282,7 +282,7 @@ export function AdminManagementOverlays({
       {viewModel.showDeleteModal && !isDismissed(deleteKey, "remove") ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
           <CloseControl href={rootCloseHref} onClose={() => dismissRouteOverlay(deleteKey)} className="absolute inset-0" label="Close delete admin modal" />
-          <div className="relative z-10 w-full max-w-[540px] rounded-[20px] bg-[#1f1f1f] px-10 pb-10 pt-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <div className="relative z-10 w-full max-w-[540px] rounded-[20px] bg-[var(--color-surface-elevated)] px-10 pb-10 pt-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <h2 className="text-[24px] font-semibold text-white">Delete Admin User?</h2>
             <p className="mx-auto mt-8 max-w-[460px] text-[18px] leading-[1.4] text-white/78">
               Are you sure you want to delete this admin user? This action cannot be undone.
@@ -298,7 +298,7 @@ export function AdminManagementOverlays({
       {viewModel.showSuccessModal && !isDismissed(`success:${viewModel.successTitle}`, "success") ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
           <CloseControl href={rootCloseHref} onClose={() => dismissRouteOverlay(`success:${viewModel.successTitle}`)} className="absolute inset-0" label="Close role created modal" />
-          <div className="relative z-10 w-full max-w-[420px] rounded-[20px] bg-[#1f1f1f] px-8 py-10 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <div className="relative z-10 w-full max-w-[420px] rounded-[20px] bg-[var(--color-surface-elevated)] px-8 py-10 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <div className="mx-auto flex h-[64px] w-[64px] items-center justify-center rounded-full bg-[#0f2615] text-[#0CBC32]">
               <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" aria-hidden="true">
                 <path d="M5 12.5 9.5 17 19 7.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />

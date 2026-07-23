@@ -17,6 +17,7 @@ export default async function ReviewsRoute({
     view?: string;
     remove?: string;
     deleteAll?: string;
+    page?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -34,6 +35,7 @@ export default async function ReviewsRoute({
     view: params.view,
     remove: params.remove,
     deleteAll: params.deleteAll,
+    page: params.page,
     fullName: session?.fullName ?? session?.email,
   });
 

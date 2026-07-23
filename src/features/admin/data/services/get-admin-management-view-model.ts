@@ -1,4 +1,5 @@
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
+import { formatShowingLabel, paginateRows, parsePageParam } from "@/features/admin/data/services/pagination";
 import type {
   AdminManagementRow,
   AdminManagementState,
@@ -99,11 +100,14 @@ export function getAdminManagementViewModel(input: {
   success?: string;
   successType?: string;
   fullName?: string;
+  page?: string;
 }): AdminManagementViewModel {
   const phaseState = normalizeState(input.state);
   const activeTab = normalizeTab(input.tab);
   const searchQuery = input.q?.trim() ?? "";
-  const rows = phaseState === "populated" ? filterRows(filterByTab(adminRows, activeTab), searchQuery) : [];
+  const allRows = phaseState === "populated" ? filterRows(filterByTab(adminRows, activeTab), searchQuery) : [];
+  const page = parsePageParam(input.page);
+  const { pageRows: rows, hasNextPage, hasPreviousPage } = paginateRows(allRows, page);
   const selectedId = Number(
     input.permission ?? input.managePermissions ?? input.assignRole ?? input.manageRole ?? input.renameRole ?? input.remove ?? "",
   );
@@ -122,7 +126,10 @@ export function getAdminManagementViewModel(input: {
     sectionTitle: "All Admin Users",
     searchQuery,
     searchPlaceholder: "Search by name, email or role",
-    showingLabel: rows.length === 0 ? "Showing 0 of 0" : `Showing 1-${rows.length} of ${rows.length}`,
+    showingLabel: formatShowingLabel(page, rows.length, allRows.length),
+    page,
+    hasNextPage,
+    hasPreviousPage,
     showMenuForId: input.menu ? Number(input.menu) : undefined,
     showPermissionDetailsModal: Boolean(input.permission),
     showManagePermissionsModal: Boolean(input.managePermissions),

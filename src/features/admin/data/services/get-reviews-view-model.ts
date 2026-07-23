@@ -1,4 +1,5 @@
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
+import { formatShowingLabel, paginateRows, parsePageParam } from "@/features/admin/data/services/pagination";
 import type { ReviewRow, ReviewsFilterDraft, ReviewsState, ReviewsViewModel } from "@/features/admin/domain/entities/reviews";
 
 const reviews: ReviewRow[] = [
@@ -68,6 +69,7 @@ export function getReviewsViewModel(input: {
   remove?: string;
   deleteAll?: string;
   fullName?: string;
+  page?: string;
 }): ReviewsViewModel {
   const phaseState = normalizeState(input.state);
   const searchQuery = input.q?.trim() ?? "";
@@ -76,7 +78,9 @@ export function getReviewsViewModel(input: {
     from: input.from?.trim() || undefined,
     to: input.to?.trim() || undefined,
   };
-  const rows = phaseState === "populated" ? applyFilter(reviews, filterDraft, searchQuery) : [];
+  const allRows = phaseState === "populated" ? applyFilter(reviews, filterDraft, searchQuery) : [];
+  const page = parsePageParam(input.page);
+  const { pageRows: rows, hasNextPage, hasPreviousPage } = paginateRows(allRows, page);
   const selectedIds = parseIds(input.selected);
   const selectedRowId = Number(input.view ?? input.remove ?? "");
   const selectedRow = Number.isFinite(selectedRowId) ? reviews.find((row) => row.id === selectedRowId) ?? null : null;
@@ -86,6 +90,7 @@ export function getReviewsViewModel(input: {
       fullName: input.fullName,
     }),
     phaseState,
+    searchQuery,
     rows,
     selectedIds,
     selectedRow,
@@ -95,7 +100,10 @@ export function getReviewsViewModel(input: {
     showDetailForId: input.view ? Number(input.view) : undefined,
     showDeleteModal: Boolean(input.deleteAll === "1" || input.remove),
     deleteMode: input.deleteAll === "1" ? "bulk" : input.remove ? "single" : undefined,
-    showingLabel: rows.length === 0 ? "Showing 0 of 0" : `Showing 1-${rows.length} of ${rows.length}`,
+    showingLabel: formatShowingLabel(page, rows.length, allRows.length),
+    page,
+    hasNextPage,
+    hasPreviousPage,
     searchPlaceholder: "Search by name,email, user ID",
     bulkSearchPlaceholder: "Search by name,category",
     errorMessage: phaseState === "error" ? "We could not load reviews right now. Please try again." : undefined,

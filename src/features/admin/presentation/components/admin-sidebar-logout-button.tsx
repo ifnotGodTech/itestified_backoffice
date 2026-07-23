@@ -20,7 +20,7 @@ export function AdminSidebarLogoutButton() {
       type="button"
       onClick={() => logout()}
       disabled={loading}
-      className="flex w-full items-center gap-3 px-4 py-[13px] text-left text-[14px] text-[#d4d4d4] transition hover:bg-[#202020] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+      className="flex w-full items-center gap-3 px-4 py-[13px] text-left text-[14px] text-[var(--color-text-secondary)] transition hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
     >
       <LogoutIcon />
       <span>{loading ? "Logging out..." : "Log Out"}</span>

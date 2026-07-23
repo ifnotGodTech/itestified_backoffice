@@ -3,10 +3,16 @@ import type { UserManagementRow, UserManagementViewModel } from "@/features/admi
 import {
   AdminActionMenuBackdrop,
   AdminActionMenuPanel,
+  AdminErrorState,
+  AdminPaginationFooter,
   AdminRowMenuIcon,
   AdminSearchIcon,
 } from "@/features/admin/presentation/components/shared/admin-table-primitives";
 import { buildUsersHref } from "@/features/admin/presentation/state/users-route-state";
+
+function paginationHref(viewModel: UserManagementViewModel, page: number) {
+  return buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, page });
+}
 
 function UsersTableLoading() {
   return (
@@ -31,21 +37,12 @@ function UsersTableEmpty() {
 }
 
 function UsersTableError({ message }: { message?: string }) {
-  return (
-    <div className="px-8 py-14">
-      <div className="rounded-[18px] border border-[#ef4335]/30 bg-[#2a1615] px-6 py-6">
-        <h3 className="text-[20px] font-semibold text-white">Unable to load users</h3>
-        <p className="mt-3 max-w-[520px] text-[15px] leading-7 text-white/70">
-          {message ?? "An unexpected error occurred while loading this section."}
-        </p>
-      </div>
-    </div>
-  );
+  return <AdminErrorState title="Unable to load users" message={message} />;
 }
 
 function RegisteredHeader() {
   return (
-    <div className="grid grid-cols-[64px_180px_180px_1fr_1.2fr_72px] bg-[#2a2a2a] px-3 py-[9px] text-[10px] font-medium text-white/70">
+    <div className="grid grid-cols-[64px_180px_180px_1fr_1.2fr_72px] bg-[var(--color-surface-muted)] px-3 py-[9px] text-[10px] font-medium text-white/70">
       <span>S/N</span>
       <span>User ID</span>
       <span>Registration Date</span>
@@ -58,7 +55,7 @@ function RegisteredHeader() {
 
 function DeletedHeader() {
   return (
-    <div className="grid grid-cols-[40px_64px_134px_134px_1fr_134px_1fr_72px] bg-[#2a2a2a] px-3 py-[9px] text-[10px] font-medium text-white/70">
+    <div className="grid grid-cols-[40px_64px_134px_134px_1fr_134px_1fr_72px] bg-[var(--color-surface-muted)] px-3 py-[9px] text-[10px] font-medium text-white/70">
       <span />
       <span>S/N</span>
       <span>User ID</span>
@@ -73,7 +70,7 @@ function DeletedHeader() {
 
 function DeactivatedHeader() {
   return (
-    <div className="grid grid-cols-[64px_180px_1fr_1.2fr_180px_72px] bg-[#2a2a2a] px-3 py-[9px] text-[10px] font-medium text-white/70">
+    <div className="grid grid-cols-[64px_180px_1fr_1.2fr_180px_72px] bg-[var(--color-surface-muted)] px-3 py-[9px] text-[10px] font-medium text-white/70">
       <span>S/N</span>
       <span>User ID</span>
       <span>Name</span>
@@ -137,7 +134,7 @@ function SearchBar({ viewModel }: { viewModel: UserManagementViewModel }) {
           name="q"
           defaultValue={viewModel.searchQuery}
           placeholder="Search by name,email,user ID"
-          className="h-[36px] w-full rounded-[8px] bg-[#242424] pl-9 pr-4 text-[12px] text-white/75 outline-none placeholder:text-white/30"
+          className="h-[36px] w-full rounded-[8px] bg-[var(--color-surface-muted)] pl-9 pr-4 text-[12px] text-white/75 outline-none placeholder:text-white/30"
         />
       </div>
     </form>
@@ -250,7 +247,7 @@ export function UsersTable({
   onView?: (row: UserManagementRow) => void;
 }) {
   return (
-    <div className="relative max-w-[1080px] rounded-[18px] bg-[#171717]">
+    <div className="relative max-w-[1080px] rounded-[18px] bg-[var(--color-surface-elevated)]">
       <div className="overflow-hidden rounded-[18px]">
         <div className="flex items-center justify-between gap-4 px-4 pb-4 pt-4">
           <div className="text-[16px] font-medium text-white/90">User Management</div>
@@ -273,17 +270,13 @@ export function UsersTable({
           {viewModel.phaseState === "populated" && viewModel.activeTab === "deactivated" ? <><DeactivatedHeader /><DeactivatedRows viewModel={viewModel} onOpenMenu={onOpenMenu} onView={onView} /></> : null}
         </div>
 
-        <div className="flex items-center justify-between px-4 py-4 text-[12px] text-white/65">
-          <span>{viewModel.showingLabel}</span>
-          <div className="flex gap-3">
-            <button type="button" className="rounded-[8px] border border-white/20 px-4 py-2 text-white/45">
-              Previous
-            </button>
-            <button type="button" className="rounded-[8px] border border-[#9B68D5] px-5 py-2 text-[#d8b8ff]">
-              Next
-            </button>
-          </div>
-        </div>
+        <AdminPaginationFooter
+          showingLabel={viewModel.showingLabel}
+          hasPreviousPage={viewModel.hasPreviousPage}
+          hasNextPage={viewModel.hasNextPage}
+          previousHref={paginationHref(viewModel, viewModel.page - 1)}
+          nextHref={paginationHref(viewModel, viewModel.page + 1)}
+        />
       </div>
 
       {viewModel.showActionMenu && viewModel.selectedRow ? (

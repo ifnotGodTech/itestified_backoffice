@@ -11,7 +11,7 @@ export function AdminAuthFrame({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(153,102,204,0.14),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(153,102,204,0.08),transparent_26%),#0a0a0a] px-6 py-10 text-[var(--color-text-primary)]">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(153,102,204,0.14),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(153,102,204,0.08),transparent_26%),var(--color-surface-strong)] px-6 py-10 text-[var(--color-text-primary)]">
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-xl items-center justify-center">
         <div className="w-full max-w-[420px]">
           <div className="flex flex-col items-center text-center">

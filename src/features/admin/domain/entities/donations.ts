@@ -1,4 +1,5 @@
 import type { AdminShellViewModel } from "@/features/admin/domain/entities/shell";
+import type { AdminPaginationFields } from "@/features/admin/domain/entities/pagination";
 
 export type DonationTab = "all" | "successful" | "pending" | "declined" | "reversal";
 export type DonationsState = "populated" | "empty" | "loading" | "error";
@@ -25,7 +26,7 @@ export type DonationsFilterDraft = {
   to?: string;
 };
 
-export type DonationsViewModel = {
+export type DonationsViewModel = AdminPaginationFields & {
   shell: AdminShellViewModel;
   activeTab: DonationTab;
   phaseState: DonationsState;

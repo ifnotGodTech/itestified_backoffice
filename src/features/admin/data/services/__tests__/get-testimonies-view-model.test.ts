@@ -162,4 +162,44 @@ describe("getTestimoniesViewModelFromBackend", () => {
     expect(categoryFetches).toHaveLength(1);
     expect(testimonyFetches).toHaveLength(2);
   });
+
+  test("does not leak a fixture row into selectedRow/modal state when the backend is unreachable", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.reject(new Error("network down"))),
+    );
+
+    const viewModel = await getTestimoniesViewModelFromBackend({
+      tab: "text",
+      view: "1",
+      cookieHeader: "sessionid=network-down",
+    });
+
+    expect(viewModel.phaseState).toBe("error");
+    expect(viewModel.selectedRow).toBeNull();
+    expect(viewModel.showDetails).toBe(false);
+    expect(viewModel.showActionMenu).toBe(false);
+    expect(viewModel.showRejectModal).toBe(false);
+    expect(viewModel.showScheduleModal).toBe(false);
+    expect(viewModel.showArchiveModal).toBe(false);
+    expect(viewModel.showEditModal).toBe(false);
+    expect(viewModel.showDeleteModal).toBe(false);
+  });
+
+  test("does not leak a fixture row into selectedRow/modal state when the backend responds with an error status", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(new Response("", { status: 500 }))),
+    );
+
+    const viewModel = await getTestimoniesViewModelFromBackend({
+      tab: "text",
+      reject: "1",
+      cookieHeader: "sessionid=backend-500",
+    });
+
+    expect(viewModel.phaseState).toBe("error");
+    expect(viewModel.selectedRow).toBeNull();
+    expect(viewModel.showRejectModal).toBe(false);
+  });
 });

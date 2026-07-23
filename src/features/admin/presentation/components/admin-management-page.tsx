@@ -74,6 +74,10 @@ export function AdminManagementPage({ viewModel }: { viewModel: AdminManagementV
         ...loadingAdminViewModel(current, tab),
         phaseState: "error",
         errorMessage: "We could not load admin management right now. Please try again.",
+        showingLabel: "Showing 0 of 0",
+        page: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
       }));
     }
   }

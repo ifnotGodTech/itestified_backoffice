@@ -63,7 +63,7 @@ export default function ResetTemporaryPasswordPage() {
         <PasswordField label="New Password" value={newPassword} onChange={setNewPassword} />
         <PasswordField label="Confirm New Password" value={confirmNewPassword} onChange={setConfirmNewPassword} />
 
-        <ul className="space-y-2 pl-2 text-[13px] leading-6 text-[#d6d6d6]">
+        <ul className="space-y-2 pl-2 text-[13px] leading-6 text-[var(--color-text-secondary)]">
           {rules.map((rule) => (
             <li key={rule.label}>• {rule.label}</li>
           ))}

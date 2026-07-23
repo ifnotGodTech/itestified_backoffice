@@ -1,4 +1,5 @@
 import type { AdminShellViewModel } from "@/features/admin/domain/entities/shell";
+import type { AdminPaginationFields } from "@/features/admin/domain/entities/pagination";
 
 export type TestimonyTab = "text" | "video";
 export type TestimonyState = "populated" | "empty" | "loading" | "error";
@@ -79,7 +80,7 @@ export type TestimonyCategoryOption = {
   isActive: boolean;
 };
 
-export type TestimoniesViewModel = {
+export type TestimoniesViewModel = AdminPaginationFields & {
   shell: AdminShellViewModel;
   activeTab: TestimonyTab;
   activeVideoStatus: VideoTestimonyStatus;

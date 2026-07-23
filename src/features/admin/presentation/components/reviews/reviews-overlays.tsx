@@ -100,7 +100,7 @@ export function ReviewsOverlays({
       {showFilter ? (
         <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 px-6 py-24">
           <CloseControl href={rootCloseHref} onClose={closeFilterOverlay} className="absolute inset-0" label="Close reviews filter modal" />
-          <form action="/reviews" className="relative z-10 w-full max-w-[353px] overflow-hidden rounded-[20px] border border-white/15 bg-[#1d1d1d] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <form action="/reviews" className="relative z-10 w-full max-w-[353px] overflow-hidden rounded-[20px] border border-white/15 bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <input type="hidden" name="selected" value={viewModel.selectedIds.join(",")} />
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
               <h2 className="text-[14px] font-normal text-white">Filter</h2>
@@ -114,7 +114,7 @@ export function ReviewsOverlays({
                     Clear
                   </Link>
                 </div>
-                <div className="mb-2 flex h-[32px] items-center justify-between rounded-[8px] bg-[#2a2a2a] px-4 text-[12px] text-white/80">
+                <div className="mb-2 flex h-[32px] items-center justify-between rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[12px] text-white/80">
                   <span>{viewModel.filterDraft.rating ? `${"★".repeat(viewModel.filterDraft.rating)}${"★".repeat(5 - viewModel.filterDraft.rating)}` : "Select"}</span>
                   <span>▴</span>
                 </div>
@@ -130,11 +130,11 @@ export function ReviewsOverlays({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="mb-2 text-[12px] text-white/55">From</p>
-                    <input name="from" defaultValue={viewModel.filterDraft.from} placeholder="dd/mm/yyyy" className="h-[32px] w-full rounded-[8px] bg-[#2a2a2a] px-4 text-[12px] text-white/80 outline-none placeholder:text-white/28" />
+                    <input name="from" defaultValue={viewModel.filterDraft.from} placeholder="dd/mm/yyyy" className="h-[32px] w-full rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[12px] text-white/80 outline-none placeholder:text-white/28" />
                   </div>
                   <div>
                     <p className="mb-2 text-[12px] text-white/55">To</p>
-                    <input name="to" defaultValue={viewModel.filterDraft.to} placeholder="dd/mm/yyyy" className="h-[32px] w-full rounded-[8px] bg-[#2a2a2a] px-4 text-[12px] text-white/80 outline-none placeholder:text-white/28" />
+                    <input name="to" defaultValue={viewModel.filterDraft.to} placeholder="dd/mm/yyyy" className="h-[32px] w-full rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[12px] text-white/80 outline-none placeholder:text-white/28" />
                   </div>
                 </div>
               </div>
@@ -150,9 +150,9 @@ export function ReviewsOverlays({
       {viewModel.showDetailForId && viewModel.selectedRow && !isDismissed(detailKey, "view") ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
           <CloseControl href={rootCloseHref} onClose={onCloseDetails ?? (() => dismissRouteOverlay(detailKey))} className="absolute inset-0" label="Close review detail modal" />
-          <div className="relative z-10 w-full max-w-[561px] max-h-[calc(100vh-48px)] overflow-y-auto rounded-[24px] bg-[#1c1c1c] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <div className="relative z-10 w-full max-w-[561px] max-h-[calc(100vh-48px)] overflow-y-auto rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <CloseControl href={rootCloseHref} onClose={onCloseDetails ?? (() => dismissRouteOverlay(detailKey))} className="absolute right-[14px] top-[8px] text-[34px] leading-none text-white/90" label="Dismiss review detail">×</CloseControl>
-            <div className="flex h-[110px] items-end justify-center bg-[#272727]">
+            <div className="flex h-[110px] items-end justify-center bg-[var(--color-surface-muted)]">
               <div className="translate-y-[50px] overflow-hidden rounded-full border-[6px] border-white bg-white">
                 <Image src="/admin-avatar.png" alt={viewModel.selectedRow.name} width={100} height={100} className="h-[100px] w-[100px] object-cover" />
               </div>
@@ -196,7 +196,7 @@ export function ReviewsOverlays({
       {viewModel.showDeleteModal && !isDismissed(deleteKey, viewModel.deleteMode === "bulk" ? "deleteAll" : "remove") ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
           <CloseControl href={rootCloseHref} onClose={() => dismissRouteOverlay(deleteKey)} className="absolute inset-0" label="Close delete review modal" />
-          <div className="relative z-10 w-full max-w-[578px] rounded-[20px] bg-[#1f1f1f] px-10 pb-10 pt-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <div className="relative z-10 w-full max-w-[578px] rounded-[20px] bg-[var(--color-surface-elevated)] px-10 pb-10 pt-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <h2 className="text-[24px] font-semibold text-white">{viewModel.deleteMode === "bulk" ? "Delete all reviews?" : "Delete review?"}</h2>
             <p className="mx-auto mt-8 max-w-[530px] text-[20px] leading-[1.36] text-white/78">
               {viewModel.deleteMode === "bulk"

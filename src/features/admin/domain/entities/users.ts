@@ -1,4 +1,5 @@
 import type { AdminShellViewModel } from "@/features/admin/domain/entities/shell";
+import type { AdminPaginationFields } from "@/features/admin/domain/entities/pagination";
 
 export type UserManagementTab = "registered" | "deleted" | "deactivated";
 export type UserManagementState = "populated" | "empty" | "loading" | "error";
@@ -19,7 +20,7 @@ export type UserManagementRow = {
   deactivatedBy?: string;
 };
 
-export type UserManagementViewModel = {
+export type UserManagementViewModel = AdminPaginationFields & {
   shell: AdminShellViewModel;
   activeTab: UserManagementTab;
   phaseState: UserManagementState;

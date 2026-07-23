@@ -56,8 +56,8 @@ function UserProfileModal({
       <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close user profile modal">
         <span className="sr-only">Close user profile modal</span>
       </CloseControl>
-      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-        <div className="relative min-h-[110px] bg-[#262626]">
+      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+        <div className="relative min-h-[110px] bg-[var(--color-surface-muted)]">
           <CloseControl href={href} onClose={onClose} className="absolute right-6 top-4 text-[34px] leading-none text-white/90" label="Dismiss user profile">
             ×
           </CloseControl>
@@ -101,8 +101,8 @@ function DeactivatedAccountDetailModal({
       <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close deactivated account modal">
         <span className="sr-only">Close deactivated account modal</span>
       </CloseControl>
-      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-        <div className="relative min-h-[110px] bg-[#262626]">
+      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+        <div className="relative min-h-[110px] bg-[var(--color-surface-muted)]">
           <CloseControl href={href} onClose={onClose} className="absolute right-6 top-4 text-[34px] leading-none text-white/90" label="Dismiss deactivated account detail">
             ×
           </CloseControl>
@@ -132,7 +132,7 @@ function DeactivatedAccountDetailModal({
               <span className="text-white/85">Deactivated On</span>
               <span className="font-semibold">{row.deactivatedOn}</span>
             </div>
-            <div className="mt-5 rounded-[12px] bg-[#2a2a2a] px-6 py-5">
+            <div className="mt-5 rounded-[12px] bg-[var(--color-surface-muted)] px-6 py-5">
               <p className="text-[15px] font-medium text-white">Deactivation Reason</p>
               <p className="mt-4 text-[14px] leading-8 text-white/72">{row.deactivationReason}</p>
               <p className="mt-4 text-[14px] text-white/90">By {row.deactivatedBy}</p>
@@ -162,7 +162,7 @@ function DeactivateAccountModal({ row, viewModel, onClose }: { row: UserManageme
       <CloseControl href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} onClose={onClose} className="absolute inset-0" label="Close deactivate account modal">
         <span className="sr-only">Close deactivate account modal</span>
       </CloseControl>
-      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <h2 className="text-[28px] font-semibold text-white">Deactivate Account</h2>
           <CloseControl href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} onClose={onClose} className="text-[34px] leading-none text-white/90" label="Close deactivate account modal">
@@ -176,7 +176,7 @@ function DeactivateAccountModal({ row, viewModel, onClose }: { row: UserManageme
               type="button"
               onClick={() => setIsReasonOpen((current) => !current)}
               className={`flex w-full items-center justify-between rounded-[12px] border px-4 py-4 text-left text-[15px] text-white transition ${
-                isReasonOpen ? "border-white/25 bg-[#2f2f2f]" : "border-transparent bg-[#2a2a2a]"
+                isReasonOpen ? "border-white/25 bg-[var(--color-surface-muted)]" : "border-transparent bg-[var(--color-surface-muted)]"
               }`}
               aria-expanded={isReasonOpen}
             >
@@ -185,7 +185,7 @@ function DeactivateAccountModal({ row, viewModel, onClose }: { row: UserManageme
             </button>
 
             {isReasonOpen ? (
-              <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-[12px] border border-white/20 bg-[#2f2f2f] shadow-[0_14px_24px_rgba(0,0,0,0.35)]">
+              <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-[12px] border border-white/20 bg-[var(--color-surface-muted)] shadow-[0_14px_24px_rgba(0,0,0,0.35)]">
                 {reasons.map((reason) => (
                   <button
                     key={reason}
@@ -240,7 +240,7 @@ function ReactivateAccountModal({ row, viewModel, onClose }: { row: UserManageme
       <CloseControl href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} onClose={onClose} className="absolute inset-0" label="Close reactivate account modal">
         <span className="sr-only">Close reactivate account modal</span>
       </CloseControl>
-      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[580px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[580px] flex-col overflow-hidden rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="flex items-center justify-end px-6 pt-5">
           <CloseControl href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} onClose={onClose} className="text-[34px] leading-none text-white/90" label="Close reactivate account modal">
             ×
@@ -259,7 +259,7 @@ function ReactivateAccountModal({ row, viewModel, onClose }: { row: UserManageme
                 type="button"
                 onClick={() => setIsReasonOpen((current) => !current)}
                 className={`flex w-full items-center justify-between rounded-[12px] border px-4 py-4 text-left text-[15px] text-white transition ${
-                  isReasonOpen ? "border-white/25 bg-[#2f2f2f]" : "border-transparent bg-[#2a2a2a]"
+                  isReasonOpen ? "border-white/25 bg-[var(--color-surface-muted)]" : "border-transparent bg-[var(--color-surface-muted)]"
                 }`}
                 aria-expanded={isReasonOpen}
               >
@@ -268,7 +268,7 @@ function ReactivateAccountModal({ row, viewModel, onClose }: { row: UserManageme
               </button>
 
               {isReasonOpen ? (
-                <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-[12px] border border-white/20 bg-[#2f2f2f] shadow-[0_14px_24px_rgba(0,0,0,0.35)]">
+                <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-[12px] border border-white/20 bg-[var(--color-surface-muted)] shadow-[0_14px_24px_rgba(0,0,0,0.35)]">
                   {reasons.map((reason) => (
                     <button
                       key={reason}
@@ -292,12 +292,12 @@ function ReactivateAccountModal({ row, viewModel, onClose }: { row: UserManageme
               value={additionalReason}
               onChange={(event) => setAdditionalReason(event.target.value.slice(0, 200))}
               placeholder="Additional Reason"
-              className="min-h-[152px] w-full resize-none rounded-[14px] border border-white/10 bg-[#2b2b2b] px-5 py-4 text-[16px] leading-7 text-white outline-none placeholder:text-white/35"
+              className="min-h-[152px] w-full resize-none rounded-[14px] border border-white/10 bg-[var(--color-surface-muted)] px-5 py-4 text-[16px] leading-7 text-white outline-none placeholder:text-white/35"
             />
             <div className="mt-3 text-right text-[14px] text-white/72">{additionalReason.length}/200</div>
           </div>
 
-          <div className="mt-4 flex items-start gap-4 rounded-[12px] bg-[#313131] px-4 py-4 text-white/90">
+          <div className="mt-4 flex items-start gap-4 rounded-[12px] bg-[var(--color-surface-muted)] px-4 py-4 text-white/90">
             <span className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-white/70 text-[14px] leading-none">i</span>
             <p className="max-w-[430px] text-[15px] leading-[1.45] text-white/88">
               The selected reason as well as the additional reason will be sent to the user&apos;s email to inform them of their account reactivation.
@@ -333,7 +333,7 @@ function SuccessModal({ viewModel, onClose }: { viewModel: UserManagementViewMod
       <CloseControl href={buildUsersHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} onClose={onClose} className="absolute inset-0" label="Close success modal">
         <span className="sr-only">Close success modal</span>
       </CloseControl>
-      <div className="relative z-10 max-h-[calc(100vh-32px)] w-full max-w-[400px] overflow-y-auto rounded-[24px] bg-[#1f1f1f] px-8 py-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+      <div className="relative z-10 max-h-[calc(100vh-32px)] w-full max-w-[400px] overflow-y-auto rounded-[24px] bg-[var(--color-surface-elevated)] px-8 py-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="mx-auto flex h-[102px] w-[102px] items-center justify-center rounded-full bg-[#9B68D5] text-[62px] text-white">✓</div>
         <p className="mt-10 text-[28px] font-semibold leading-[1.3] text-white">{viewModel.successMessage}</p>
       </div>

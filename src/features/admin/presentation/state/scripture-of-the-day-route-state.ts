@@ -18,6 +18,7 @@ export type ScriptureRouteParams = {
   prayer?: string;
   bibleText?: string;
   bibleVersion?: string;
+  page?: number | null;
 };
 
 export function buildScriptureOfTheDayHref(params: ScriptureRouteParams) {
@@ -39,6 +40,7 @@ export function buildScriptureOfTheDayHref(params: ScriptureRouteParams) {
   if (params.prayer) search.set("prayer", params.prayer);
   if (params.bibleText) search.set("bibleText", params.bibleText);
   if (params.bibleVersion) search.set("bibleVersion", params.bibleVersion);
+  if (params.page && params.page > 1) search.set("page", String(params.page));
   const query = search.toString();
   return query ? `/scripture-of-the-day?${query}` : "/scripture-of-the-day";
 }

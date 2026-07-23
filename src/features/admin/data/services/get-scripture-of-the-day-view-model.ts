@@ -1,5 +1,6 @@
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
 import { backendBaseUrl } from "@/core/auth/backend";
+import { formatShowingLabel, paginateRows, parsePageParam } from "@/features/admin/data/services/pagination";
 import type {
   ScriptureDraft,
   ScriptureFilterDraft,
@@ -130,6 +131,7 @@ export function getScriptureOfTheDayViewModel(input: {
   prayer?: string;
   bibleText?: string;
   bibleVersion?: string;
+  page?: string;
 }): ScriptureOfTheDayViewModel {
   const activeTab = normalizeTab(input.tab);
   const searchQuery = input.q?.trim() ?? "";
@@ -153,6 +155,8 @@ export function getScriptureOfTheDayViewModel(input: {
       )
     : filteredRows;
 
+  const page = parsePageParam(input.page);
+  const { pageRows: rows, hasNextPage, hasPreviousPage } = paginateRows(searchedRows, page);
   const selectedId = Number(input.menu ?? input.view ?? input.edit ?? input.remove ?? "");
   const selectedRow = Number.isFinite(selectedId) ? SCRIPTURE_ROWS.find((row) => row.id === selectedId) ?? null : null;
   const editDraft = getBaseDraft({
@@ -176,9 +180,12 @@ export function getScriptureOfTheDayViewModel(input: {
       { key: "scheduled", label: "Scheduled" },
     ],
     searchQuery,
-    rows: searchedRows,
+    rows,
     totalRows: searchedRows.length,
-    showingLabel: searchedRows.length === 0 ? "Showing 0 of 0" : `Showing 1-${searchedRows.length} of ${searchedRows.length}`,
+    showingLabel: formatShowingLabel(page, rows.length, searchedRows.length),
+    page,
+    hasNextPage,
+    hasPreviousPage,
     selectedRow,
     editDraft,
     showActionMenu: Boolean(input.menu),
@@ -249,15 +256,18 @@ export async function getScriptureOfTheDayViewModelFromApi(
     prayer?: string;
     bibleText?: string;
     bibleVersion?: string;
+    page?: string;
   },
   cookieHeader: string,
 ): Promise<ScriptureOfTheDayViewModel> {
+  const page = parsePageParam(input.page);
   try {
     const tab = input.tab;
     const params = new URLSearchParams();
     if (tab === "uploaded") params.set("status", "published");
     if (tab === "scheduled") params.set("status", "scheduled");
     if (input.q?.trim()) params.set("q", input.q.trim());
+    params.set("page", String(page));
     const query = params.toString();
     const url = `${backendBaseUrl}/content/admin/scriptures/${query ? `?${query}` : ""}`;
     const response = await fetch(url, {
@@ -271,18 +281,21 @@ export async function getScriptureOfTheDayViewModelFromApi(
     const payload = (await response.json().catch(() => ({}))) as {
       count?: number;
       results?: Array<Record<string, unknown>>;
+      next?: string | null;
+      previous?: string | null;
     };
     const rows = mapScriptureRows(payload.results ?? []);
     const vm = getScriptureOfTheDayViewModel(input);
     const selectedId = Number(input.menu ?? input.view ?? input.edit ?? input.remove ?? "");
+    const total = payload.count ?? rows.length;
     return {
       ...vm,
       rows,
-      totalRows: payload.count ?? rows.length,
-      showingLabel:
-        rows.length === 0
-          ? "Showing 0 of 0"
-          : `Showing 1-${rows.length} of ${payload.count ?? rows.length}`,
+      totalRows: total,
+      showingLabel: formatShowingLabel(page, rows.length, total),
+      page,
+      hasNextPage: Boolean(payload.next),
+      hasPreviousPage: Boolean(payload.previous) || page > 1,
       selectedRow: Number.isFinite(selectedId) ? rows.find((row) => row.id === selectedId) ?? null : null,
     };
   } catch {

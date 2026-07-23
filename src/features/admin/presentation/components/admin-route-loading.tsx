@@ -19,30 +19,30 @@ function SkeletonBlock({ className }: { className: string }) {
 
 export function AdminRouteLoading() {
   return (
-    <div className="min-h-screen bg-[#090909] text-white" role="status" aria-label="Dashboard content loading">
+    <div className="min-h-screen bg-[var(--color-surface-strong)] text-white" role="status" aria-label="Dashboard content loading">
       <span className="sr-only">Dashboard content loading</span>
       <div className="grid min-h-screen grid-cols-[235px_1fr]">
-        <aside className="border-r border-white/5 bg-[#181818]">
+        <aside className="border-r border-white/5 bg-[var(--color-surface-elevated)]">
           <div className="px-3 pb-4 pt-3">
             <div className="flex h-[49px] w-[145px] items-center rounded-[10px] bg-white/[0.06] px-3">
               <span className="text-[18px] font-semibold text-white/85">iTestified</span>
             </div>
           </div>
 
-          <div className="px-3 text-[11px] font-semibold uppercase text-[#d7d7d7]">Main Menu</div>
+          <div className="px-3 text-[11px] font-semibold uppercase text-[var(--color-text-secondary)]">Main Menu</div>
           <nav className="mt-3 space-y-1">
             {mainItems.map((item) => (
-              <div key={item} className="flex h-[44px] items-center gap-3 px-4 text-[14px] text-[#d4d4d4]">
+              <div key={item} className="flex h-[44px] items-center gap-3 px-4 text-[14px] text-[var(--color-text-secondary)]">
                 <SkeletonBlock className="h-[18px] w-[18px] rounded-[5px]" />
                 <span className="truncate">{item}</span>
               </div>
             ))}
           </nav>
 
-          <div className="mt-10 px-3 text-[11px] font-semibold uppercase text-[#d7d7d7]">Settings</div>
+          <div className="mt-10 px-3 text-[11px] font-semibold uppercase text-[var(--color-text-secondary)]">Settings</div>
           <div className="mt-3 space-y-1">
             {settingsItems.map((item) => (
-              <div key={item} className="flex h-[44px] items-center gap-3 px-4 text-[14px] text-[#d4d4d4]">
+              <div key={item} className="flex h-[44px] items-center gap-3 px-4 text-[14px] text-[var(--color-text-secondary)]">
                 <SkeletonBlock className="h-[18px] w-[18px] rounded-[5px]" />
                 <span>{item}</span>
               </div>
@@ -51,9 +51,9 @@ export function AdminRouteLoading() {
         </aside>
 
         <main>
-          <header className="flex items-center justify-between border-b border-white/5 bg-[#1c1c1c] px-4 py-[13px]">
+          <header className="flex items-center justify-between border-b border-white/5 bg-[var(--color-surface-elevated)] px-4 py-[13px]">
             <div>
-              <p className="text-[17px] font-semibold leading-none text-[#f2f2f2]">Hello Admin</p>
+              <p className="text-[17px] font-semibold leading-none text-[var(--color-text-primary)]">Hello Admin</p>
               <SkeletonBlock className="mt-2 h-3 w-36" />
             </div>
             <div className="flex items-center gap-4">
@@ -79,7 +79,7 @@ export function AdminRouteLoading() {
                   <SkeletonBlock className="h-9 w-24" />
                 </div>
               </div>
-              <div className="grid grid-cols-[64px_1.1fr_1fr_1fr_0.8fr_0.9fr_0.8fr_110px_54px] bg-[#2a2a2a] px-3 py-[9px]">
+              <div className="grid grid-cols-[64px_1.1fr_1fr_1fr_0.8fr_0.9fr_0.8fr_110px_54px] bg-[var(--color-surface-muted)] px-3 py-[9px]">
                 {Array.from({ length: 9 }).map((_, index) => (
                   <SkeletonBlock key={index} className="h-3 w-14" />
                 ))}

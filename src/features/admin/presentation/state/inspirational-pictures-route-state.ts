@@ -10,6 +10,7 @@ export type InspirationalPicturesRouteParams = {
   edit?: number | null;
   remove?: number | null;
   success?: string | null;
+  page?: number | null;
 };
 
 export function buildInspirationalPicturesHref(params: InspirationalPicturesRouteParams) {
@@ -23,6 +24,7 @@ export function buildInspirationalPicturesHref(params: InspirationalPicturesRout
   if (params.edit) search.set("edit", String(params.edit));
   if (params.remove) search.set("remove", String(params.remove));
   if (params.success) search.set("success", params.success);
+  if (params.page && params.page > 1) search.set("page", String(params.page));
   const query = search.toString();
   return query ? `/inspirational-pictures?${query}` : "/inspirational-pictures";
 }

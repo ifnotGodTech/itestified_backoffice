@@ -109,7 +109,7 @@ export default function AcceptInvitePage() {
         <form onSubmit={onComplete} className="space-y-4">
           <PasswordField label="New Password" value={password} onChange={setPassword} />
           <PasswordField label="Confirm New Password" value={confirmPassword} onChange={setConfirmPassword} />
-          <ul className="space-y-2 pl-2 text-[13px] leading-6 text-[#d6d6d6]">
+          <ul className="space-y-2 pl-2 text-[13px] leading-6 text-[var(--color-text-secondary)]">
             {rules.map((rule) => (
               <li key={rule.label}>• {rule.label}</li>
             ))}

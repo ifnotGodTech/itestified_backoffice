@@ -9,6 +9,7 @@ export type UsersRouteParams = {
   deactivate?: number | null;
   reactivate?: number | null;
   success?: string | null;
+  page?: number | null;
 };
 
 export function buildUsersHref(params: UsersRouteParams) {
@@ -21,6 +22,7 @@ export function buildUsersHref(params: UsersRouteParams) {
   if (params.deactivate) search.set("deactivate", String(params.deactivate));
   if (params.reactivate) search.set("reactivate", String(params.reactivate));
   if (params.success) search.set("success", params.success);
+  if (params.page && params.page > 1) search.set("page", String(params.page));
   const query = search.toString();
   return query ? `/users?${query}` : "/users";
 }

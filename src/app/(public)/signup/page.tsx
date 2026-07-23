@@ -7,10 +7,10 @@ export default function SignupPage() {
   return (
     <AdminAuthFrame title="Admin Access Is Invite Only">
       <div className="space-y-5" data-testid="signup-form">
-        <p className="text-sm text-[#d0d0d0]">
+        <p className="text-sm text-[var(--color-text-secondary)]">
           Self-service admin signup has been retired. Ask an active super admin to send you an invitation code.
         </p>
-        <p className="text-sm text-[#d0d0d0]">
+        <p className="text-sm text-[var(--color-text-secondary)]">
           If you are the first operator, run the secure bootstrap command to provision the initial super admin account.
         </p>
         <Link

@@ -1,4 +1,5 @@
 import type { AdminShellViewModel } from "@/features/admin/domain/entities/shell";
+import type { AdminPaginationFields } from "@/features/admin/domain/entities/pagination";
 
 export type ScriptureStatus = "Uploaded" | "Scheduled";
 export type ScriptureTab = "all" | "uploaded" | "scheduled";
@@ -28,7 +29,7 @@ export type ScriptureFilterDraft = {
   status: "" | "Uploaded" | "Scheduled";
 };
 
-export type ScriptureOfTheDayViewModel = {
+export type ScriptureOfTheDayViewModel = AdminPaginationFields & {
   shell: AdminShellViewModel;
   activeTab: ScriptureTab;
   tabs: Array<{ key: ScriptureTab; label: string }>;

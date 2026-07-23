@@ -1,5 +1,6 @@
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
 import { backendBaseUrl } from "@/core/auth/backend";
+import { formatShowingLabel, paginateRows, parsePageParam } from "@/features/admin/data/services/pagination";
 import type {
   DonationRow,
   DonationTab,
@@ -197,6 +198,7 @@ export function getDonationsViewModel(input: {
   remove?: string;
   success?: string;
   fullName?: string;
+  page?: string;
 }): DonationsViewModel {
   const activeTab = normalizeTab(input.tab);
   const phaseState = normalizeState(input.state);
@@ -220,7 +222,9 @@ export function getDonationsViewModel(input: {
       )
     : tabRows;
   const filteredRows = applyFilter(searchedRows, filterDraft);
-  const rows = phaseState === "populated" ? filteredRows : [];
+  const allRows = phaseState === "populated" ? filteredRows : [];
+  const page = parsePageParam(input.page);
+  const { pageRows: rows, hasNextPage, hasPreviousPage } = paginateRows(allRows, page);
 
   const selectedId = Number(input.menu ?? input.detail ?? input.refund ?? input.reverse ?? input.reason ?? input.remove ?? "");
   const selectedRow = Number.isFinite(selectedId) ? donationRows.find((row) => row.id === selectedId) ?? null : null;
@@ -241,7 +245,10 @@ export function getDonationsViewModel(input: {
     tabs,
     rows,
     selectedRow,
-    showingLabel: "Page 1 of 10",
+    showingLabel: formatShowingLabel(page, rows.length, allRows.length),
+    page,
+    hasNextPage,
+    hasPreviousPage,
     errorMessage: phaseState === "error" ? "We could not load donations right now. Please try again." : undefined,
     filterDraft,
     searchPlaceholder: "Search by Email, Transaction ID or Amount....",
@@ -340,9 +347,11 @@ export async function getDonationsViewModelFromApi(
     remove?: string;
     success?: string;
     fullName?: string;
+    page?: string;
   },
   cookieHeader: string,
 ): Promise<DonationsViewModel> {
+  const page = parsePageParam(input.page);
   try {
     const activeTab = normalizeTab(input.tab);
     const statusFilter =
@@ -352,6 +361,7 @@ export async function getDonationsViewModelFromApi(
     if (input.q?.trim()) searchParams.set("q", input.q.trim());
     if (input.from?.trim()) searchParams.set("from", input.from.trim());
     if (input.to?.trim()) searchParams.set("to", input.to.trim());
+    searchParams.set("page", String(page));
     const query = searchParams.toString();
     const url = `${backendBaseUrl}/donations/admin/donations/${query ? `?${query}` : ""}`;
     const response = await fetch(url, {
@@ -360,12 +370,18 @@ export async function getDonationsViewModelFromApi(
       cache: "no-store",
     });
     if (!response.ok) {
-      return getDonationsViewModel({ ...input, state: "error" });
+      return { ...getDonationsViewModel({ ...input, state: "error" }), page, hasNextPage: false, hasPreviousPage: page > 1 };
     }
-    const payload = (await response.json().catch(() => ({}))) as { count?: number; results?: Array<Record<string, unknown>> };
+    const payload = (await response.json().catch(() => ({}))) as {
+      count?: number;
+      results?: Array<Record<string, unknown>>;
+      next?: string | null;
+      previous?: string | null;
+    };
     const rawResults = payload.results ?? [];
     const rows = mapRows(rawResults);
     const vm = getDonationsViewModel(input);
+    const total = payload.count ?? rows.length;
     return {
       ...vm,
       phaseState: rows.length === 0 ? "empty" : "populated",
@@ -374,7 +390,10 @@ export async function getDonationsViewModelFromApi(
         const selectedId = Number(input.menu ?? input.detail ?? input.refund ?? input.reverse ?? input.reason ?? input.remove ?? "");
         return Number.isFinite(selectedId) ? rows.find((row) => row.id === selectedId) ?? null : null;
       })(),
-      showingLabel: rows.length === 0 ? "Page 1 of 1" : `Showing 1-${rows.length} of ${payload.count ?? rows.length}`,
+      showingLabel: formatShowingLabel(page, rows.length, total),
+      page,
+      hasNextPage: Boolean(payload.next),
+      hasPreviousPage: Boolean(payload.previous) || page > 1,
       topStats: [
         { label: `Donors (${rows.length})`, value: "", tone: "info" as const },
         { label: getTotalDonationsLabel(rawResults), value: "", tone: "accent" as const },
@@ -382,6 +401,6 @@ export async function getDonationsViewModelFromApi(
       tableBadge: getTableBadge(vm.activeTab, rows),
     };
   } catch {
-    return getDonationsViewModel({ ...input, state: "error" });
+    return { ...getDonationsViewModel({ ...input, state: "error" }), page, hasNextPage: false, hasPreviousPage: page > 1 };
   }
 }

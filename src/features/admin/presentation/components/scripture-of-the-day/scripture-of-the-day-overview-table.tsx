@@ -1,6 +1,19 @@
 import Link from "next/link";
 import type { ScriptureOfTheDayViewModel, ScriptureRow, ScriptureStatus, ScriptureTab } from "@/features/admin/domain/entities/scripture-of-the-day";
+import { AdminPaginationFooter } from "@/features/admin/presentation/components/shared/admin-table-primitives";
 import { buildScriptureOfTheDayHref } from "@/features/admin/presentation/state/scripture-of-the-day-route-state";
+
+function paginationHref(viewModel: ScriptureOfTheDayViewModel, page: number) {
+  return buildScriptureOfTheDayHref({
+    tab: viewModel.activeTab,
+    q: viewModel.searchQuery,
+    count: viewModel.scheduleEntryCount,
+    from: viewModel.filterDraft.from,
+    to: viewModel.filterDraft.to,
+    statusFilter: viewModel.filterDraft.status,
+    page,
+  });
+}
 
 function SearchIcon() {
   return (
@@ -76,7 +89,7 @@ function SearchAndFilter({ viewModel, onOpenFilter }: { viewModel: ScriptureOfTh
           name="q"
           defaultValue={viewModel.searchQuery}
           placeholder="Search by bible version, scripture, prayer..."
-          className="h-[38px] w-full rounded-[8px] bg-[#242424] pl-9 pr-4 text-[12px] text-white/75 outline-none placeholder:text-white/30"
+          className="h-[38px] w-full rounded-[8px] bg-[var(--color-surface-muted)] pl-9 pr-4 text-[12px] text-white/75 outline-none placeholder:text-white/30"
         />
       </div>
       <button
@@ -107,7 +120,7 @@ export function ScriptureOfTheDayOverviewTable({
   onOpenFilter?: () => void;
 }) {
   return (
-    <div className="relative rounded-[18px] bg-[#171717]">
+    <div className="relative rounded-[18px] bg-[var(--color-surface-elevated)]">
       <div className="overflow-hidden rounded-[18px]">
         <div className="px-4 pb-2 pt-4 text-[18px] font-medium text-white">Scripture of the day</div>
         <div className="px-4 pb-4">
@@ -115,7 +128,7 @@ export function ScriptureOfTheDayOverviewTable({
           <SearchAndFilter viewModel={viewModel} onOpenFilter={onOpenFilter} />
         </div>
         <div className="border-t border-white/5">
-          <div className="grid grid-cols-[64px_116px_116px_1.2fr_100px_1.05fr_110px_54px] bg-[#2a2a2a] px-3 py-[9px] text-[10px] font-medium text-white/70">
+          <div className="grid grid-cols-[64px_116px_116px_1.2fr_100px_1.05fr_110px_54px] bg-[var(--color-surface-muted)] px-3 py-[9px] text-[10px] font-medium text-white/70">
             <span>S/N</span>
             <span>Date</span>
             <span>Bible Text</span>
@@ -150,7 +163,7 @@ export function ScriptureOfTheDayOverviewTable({
                 </button>
                 {viewModel.showActionMenu && viewModel.selectedRow?.id === row.id ? (
                   <div
-                    className={`absolute right-0 z-50 min-w-[126px] overflow-hidden rounded-[12px] border border-[#5b5b5b] bg-[#242424] text-left shadow-[0_14px_24px_rgba(0,0,0,0.35)] ${
+                    className={`absolute right-0 z-50 min-w-[126px] overflow-hidden rounded-[12px] border border-[var(--color-border-soft)] bg-[var(--color-surface-muted)] text-left shadow-[0_14px_24px_rgba(0,0,0,0.35)] ${
                       viewModel.rows.length - viewModel.rows.indexOf(row) <= 1 ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"
                     }`}
                   >
@@ -187,17 +200,13 @@ export function ScriptureOfTheDayOverviewTable({
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-between px-4 py-4 text-[12px] text-white/65">
-          <span>{viewModel.showingLabel}</span>
-          <div className="flex gap-3">
-            <button type="button" className="rounded-[8px] border border-white/20 px-4 py-2 text-white/45">
-              Previous
-            </button>
-            <button type="button" className="rounded-[8px] border border-[#9B68D5] px-5 py-2 text-[#d8b8ff]">
-              Next
-            </button>
-          </div>
-        </div>
+        <AdminPaginationFooter
+          showingLabel={viewModel.showingLabel}
+          hasPreviousPage={viewModel.hasPreviousPage}
+          hasNextPage={viewModel.hasNextPage}
+          previousHref={paginationHref(viewModel, viewModel.page - 1)}
+          nextHref={paginationHref(viewModel, viewModel.page + 1)}
+        />
       </div>
 
       {viewModel.showActionMenu && viewModel.selectedRow ? (

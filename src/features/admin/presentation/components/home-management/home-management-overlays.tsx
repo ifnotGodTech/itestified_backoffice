@@ -53,8 +53,8 @@ function HomeManagementVideoModal({
       <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close details modal">
         <span className="sr-only">Close details modal</span>
       </CloseControl>
-      <div className="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[460px] flex-col overflow-hidden rounded-[28px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)] sm:max-h-[calc(100vh-4rem)]">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#1e1e1e] px-6 py-5">
+      <div className="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[460px] flex-col overflow-hidden rounded-[28px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)] sm:max-h-[calc(100vh-4rem)]">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[var(--color-surface-elevated)] px-6 py-5">
           <h2 className="text-[24px] font-semibold text-white">Video Details</h2>
           <CloseControl href={href} onClose={onClose} className="text-[34px] leading-none text-white/90" label="Dismiss video details">
             ×
@@ -62,7 +62,7 @@ function HomeManagementVideoModal({
         </div>
 
         <div className="overflow-y-auto px-6 pb-8 pt-5">
-          <div className="overflow-hidden rounded-[18px] bg-[#131313]">
+          <div className="overflow-hidden rounded-[18px] bg-[var(--color-surface-elevated)]">
             <div className="relative bg-[#0e1722]">
               <video className="block aspect-video w-full bg-black object-cover" controls preload="metadata" poster={row.thumbnailSrc}>
                 <source src={TEST_VIDEO_URL} type="video/mp4" />
@@ -115,19 +115,19 @@ function HomeManagementTextModal({
       <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close text details modal">
         <span className="sr-only">Close text details modal</span>
       </CloseControl>
-      <div className="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[560px] flex-col overflow-hidden rounded-[28px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)] sm:max-h-[calc(100vh-4rem)]">
-        <div className="sticky top-0 z-10 flex min-h-[78px] items-start justify-end bg-[#262626] px-6 py-4">
+      <div className="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[560px] flex-col overflow-hidden rounded-[28px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)] sm:max-h-[calc(100vh-4rem)]">
+        <div className="sticky top-0 z-10 flex min-h-[78px] items-start justify-end bg-[var(--color-surface-muted)] px-6 py-4">
           <CloseControl href={href} onClose={onClose} className="text-[34px] leading-none text-white/90" label="Dismiss text details">
             ×
           </CloseControl>
         </div>
         <div className="overflow-y-auto px-6 pb-8">
           <div className="relative -mt-14 flex justify-center">
-            <div className="relative h-[98px] w-[98px] overflow-hidden rounded-full border-[6px] border-[#1e1e1e] bg-white p-3">
+            <div className="relative h-[98px] w-[98px] overflow-hidden rounded-full border-[6px] border-[var(--color-surface-elevated)] bg-white p-3">
               {row.thumbnailSrc ? <Image src={row.thumbnailSrc} alt={row.submitterName ?? row.uploadedBy} fill sizes="72px" className="object-contain p-3" /> : null}
             </div>
           </div>
-          <div className="mx-auto mt-7 w-full max-w-[516px] rounded-[18px] border border-white/10 bg-[#1b1b1b] px-3 py-[18px] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
+          <div className="mx-auto mt-7 w-full max-w-[516px] rounded-[18px] border border-white/10 bg-[var(--color-surface-elevated)] px-3 py-[18px] shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
             <dl className="grid grid-cols-[1fr_1.45fr_0.82fr] divide-x divide-white/15 text-center">
               <div className="flex min-h-[58px] flex-col items-center justify-center gap-[3px] px-4">
                 <dt className="text-[12px] leading-none text-white/45">Name</dt>
@@ -184,8 +184,8 @@ function HomeManagementPictureModal({
       <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close picture details modal">
         <span className="sr-only">Close picture details modal</span>
       </CloseControl>
-      <div className="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[560px] flex-col overflow-hidden rounded-[28px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)] sm:max-h-[calc(100vh-4rem)]">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#1e1e1e] px-6 py-5">
+      <div className="relative z-10 flex max-h-[calc(100vh-2rem)] w-full max-w-[560px] flex-col overflow-hidden rounded-[28px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)] sm:max-h-[calc(100vh-4rem)]">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[var(--color-surface-elevated)] px-6 py-5">
           <h2 className="text-[24px] font-semibold text-white">Picture Details</h2>
           <CloseControl href={href} onClose={onClose} className="text-[34px] leading-none text-white/90" label="Dismiss picture details">
             ×
@@ -223,7 +223,7 @@ function HomeManagementRemoveModal({ viewModel, onClose }: { viewModel: HomeMana
       <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close remove from home page modal">
         <span className="sr-only">Close remove from home page modal</span>
       </CloseControl>
-      <div className="relative w-full max-w-[600px] rounded-[22px] bg-[#1f1f1f] px-8 pb-8 pt-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+      <div className="relative w-full max-w-[600px] rounded-[22px] bg-[var(--color-surface-elevated)] px-8 pb-8 pt-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <CloseControl href={href} onClose={onClose} className="absolute right-6 top-4 text-[34px] leading-none text-white/90" label="Close remove from home page modal">
           ×
         </CloseControl>
@@ -272,7 +272,7 @@ function HomeManagementSuccessModal({ viewModel, onClose }: { viewModel: HomeMan
       <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close success modal">
         <span className="sr-only">Close success modal</span>
       </CloseControl>
-      <div className="relative z-10 w-full max-w-[420px] rounded-[24px] bg-[#1f1f1f] px-8 py-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+      <div className="relative z-10 w-full max-w-[420px] rounded-[24px] bg-[var(--color-surface-elevated)] px-8 py-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="mx-auto flex h-[132px] w-[132px] items-center justify-center rounded-full bg-[#9B68D5] text-[78px] text-white">✓</div>
         <p className="mt-12 text-[30px] font-semibold leading-[1.3] text-white">Testimony Removed Successfully!</p>
       </div>
@@ -298,7 +298,7 @@ function HomeManagementActionMenu({
       ) : (
         <Link href={detailCloseHref(viewModel)} className="absolute inset-0" aria-label="Close action menu" />
       )}
-      <div className="absolute bottom-8 right-8 z-50 min-w-[102px] overflow-hidden rounded-[12px] border border-[#5b5b5b] bg-[#242424] shadow-[0_14px_24px_rgba(0,0,0,0.35)]">
+      <div className="absolute bottom-8 right-8 z-50 min-w-[102px] overflow-hidden rounded-[12px] border border-[var(--color-border-soft)] bg-[var(--color-surface-muted)] shadow-[0_14px_24px_rgba(0,0,0,0.35)]">
         <button
           type="button"
           onClick={() => onView?.(row)}

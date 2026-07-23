@@ -1,4 +1,5 @@
 import type { AdminShellViewModel } from "@/features/admin/domain/entities/shell";
+import type { AdminPaginationFields } from "@/features/admin/domain/entities/pagination";
 
 export type ReviewsState = "populated" | "empty" | "loading" | "error";
 
@@ -19,9 +20,10 @@ export type ReviewsFilterDraft = {
   to?: string;
 };
 
-export type ReviewsViewModel = {
+export type ReviewsViewModel = AdminPaginationFields & {
   shell: AdminShellViewModel;
   phaseState: ReviewsState;
+  searchQuery: string;
   rows: ReviewRow[];
   selectedIds: number[];
   selectedRow: ReviewRow | null;

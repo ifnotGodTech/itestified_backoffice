@@ -86,7 +86,7 @@ export function NotificationsHistoryOverlays({
       {showFilter ? (
         <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 px-6 py-24">
           <CloseControl href={rootCloseHref} onClose={closeFilterOverlay} className="absolute inset-0" label="Close notifications filter modal" />
-          <form action="/notifications-history" className="relative z-10 w-full max-w-[324px] overflow-hidden rounded-[18px] border border-white/15 bg-[#1d1d1d] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <form action="/notifications-history" className="relative z-10 w-full max-w-[324px] overflow-hidden rounded-[18px] border border-white/15 bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <input type="hidden" name="selected" value={viewModel.selectedIds.join(",")} />
             {viewModel.showPanel ? <input type="hidden" name="panel" value="1" /> : null}
             <div className="flex items-center justify-between border-b border-white/10 px-3 py-3">
@@ -116,11 +116,11 @@ export function NotificationsHistoryOverlays({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <p className="mb-2 text-[10px] text-white/55">From</p>
-                    <input name="from" defaultValue={viewModel.filterDraft.from} placeholder="dd/mm/yyyy" className="h-[26px] w-full rounded-[6px] bg-[#2a2a2a] px-3 text-[10px] text-white/80 outline-none placeholder:text-white/28" />
+                    <input name="from" defaultValue={viewModel.filterDraft.from} placeholder="dd/mm/yyyy" className="h-[26px] w-full rounded-[6px] bg-[var(--color-surface-muted)] px-3 text-[10px] text-white/80 outline-none placeholder:text-white/28" />
                   </div>
                   <div>
                     <p className="mb-2 text-[10px] text-white/55">To</p>
-                    <input name="to" defaultValue={viewModel.filterDraft.to} placeholder="dd/mm/yyyy" className="h-[26px] w-full rounded-[6px] bg-[#2a2a2a] px-3 text-[10px] text-white/80 outline-none placeholder:text-white/28" />
+                    <input name="to" defaultValue={viewModel.filterDraft.to} placeholder="dd/mm/yyyy" className="h-[26px] w-full rounded-[6px] bg-[var(--color-surface-muted)] px-3 text-[10px] text-white/80 outline-none placeholder:text-white/28" />
                   </div>
                 </div>
               </div>
@@ -136,7 +136,7 @@ export function NotificationsHistoryOverlays({
       {viewModel.showDeleteModal && !isDismissed(deleteKey, viewModel.deleteMode === "bulk" ? "deleteAll" : "delete") ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
           <CloseControl href={rootCloseHref} onClose={() => dismissRouteOverlay(deleteKey)} className="absolute inset-0" label="Close delete notification modal" />
-          <div className="relative z-10 w-full max-w-[434px] rounded-[20px] bg-[#1f1f1f] px-9 pb-8 pt-10 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <div className="relative z-10 w-full max-w-[434px] rounded-[20px] bg-[var(--color-surface-elevated)] px-9 pb-8 pt-10 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <CloseControl href={rootCloseHref} onClose={() => dismissRouteOverlay(deleteKey)} className="absolute right-5 top-3 text-[28px] leading-none text-white/90" label="Close delete notification modal">×</CloseControl>
             <h2 className="text-[16px] font-semibold text-white">{viewModel.deleteMode === "bulk" ? "Delete Notification" : "Delete Notification"}</h2>
             <p className="mx-auto mt-5 max-w-[330px] text-[14px] leading-[1.45] text-white/78">
@@ -155,7 +155,7 @@ export function NotificationsHistoryOverlays({
       {viewModel.showSuccess && viewModel.successMessage && !isDismissed(successKey, "success") ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
           <CloseControl href={rootCloseHref} onClose={() => dismissRouteOverlay(successKey)} className="absolute inset-0" label="Close notifications success modal" />
-          <div className="relative z-10 w-full max-w-[390px] rounded-[20px] bg-[#1f1f1f] px-8 py-8 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <div className="relative z-10 w-full max-w-[390px] rounded-[20px] bg-[var(--color-surface-elevated)] px-8 py-8 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <div className="mx-auto flex h-[102px] w-[102px] items-center justify-center rounded-full bg-[#9B68D5] text-[62px] text-white">✓</div>
             <p className="mt-10 text-[28px] font-semibold leading-[1.2] text-white">{viewModel.successMessage}</p>
           </div>

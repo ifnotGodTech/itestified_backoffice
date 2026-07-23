@@ -11,11 +11,11 @@ import { buildNotificationsHistoryHref } from "@/features/admin/presentation/sta
 function NotificationPanel({ viewModel }: { viewModel: NotificationsHistoryViewModel }) {
   return (
     <div className="relative max-w-[1248px] pt-6 md:pt-8">
-      <div className="min-h-[648px] rounded-[20px] bg-[#161616] px-6 py-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+      <div className="min-h-[648px] rounded-[20px] bg-[var(--color-surface-panel)] px-6 py-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
         <h1 className="text-[16px] font-normal text-white">Notifications</h1>
         <div className="flex min-h-[520px] items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto mb-6 flex h-[108px] w-[108px] rotate-[-16deg] items-center justify-center rounded-[10px] border border-white/10 bg-[#222222] shadow-[0_18px_32px_rgba(0,0,0,0.35)]">
+            <div className="mx-auto mb-6 flex h-[108px] w-[108px] rotate-[-16deg] items-center justify-center rounded-[10px] border border-white/10 bg-[var(--color-surface-elevated)] shadow-[0_18px_32px_rgba(0,0,0,0.35)]">
               <svg viewBox="0 0 64 64" className="h-[54px] w-[54px] text-white/25" fill="none" aria-hidden="true">
                 <path d="M32 16c7.18 0 13 5.82 13 13v9.11c0 2.62.9 5.16 2.54 7.2L50 48H14l2.46-2.69A10.92 10.92 0 0 0 19 38.11V29c0-7.18 5.82-13 13-13Z" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" />
                 <path d="M26 52a6 6 0 0 0 12 0" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
@@ -26,7 +26,7 @@ function NotificationPanel({ viewModel }: { viewModel: NotificationsHistoryViewM
         </div>
       </div>
 
-      <div className="absolute right-0 top-[10px] w-full max-w-[422px] rounded-[18px] border border-white/12 bg-[#181818] shadow-[0_24px_64px_rgba(0,0,0,0.4)]">
+      <div className="absolute right-0 top-[10px] w-full max-w-[422px] rounded-[18px] border border-white/12 bg-[var(--color-surface-elevated)] shadow-[0_24px_64px_rgba(0,0,0,0.4)]">
         <div className="flex items-center justify-between border-b border-white/10 px-[18px] py-[14px]">
           <h2 className="text-[22px] font-semibold text-white">Notifications</h2>
           <Link href={buildNotificationsHistoryHref({})} aria-label="Close notifications panel" className="text-[30px] leading-none text-white/90">

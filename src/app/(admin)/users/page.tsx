@@ -15,6 +15,7 @@ export default async function UsersRoute({
     deactivate?: string;
     reactivate?: string;
     success?: string;
+    page?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -34,6 +35,7 @@ export default async function UsersRoute({
     deactivate: params.deactivate,
     reactivate: params.reactivate,
     success: params.success,
+    page: params.page,
     fullName: session?.fullName ?? session?.email,
   }, cookieHeader);
 

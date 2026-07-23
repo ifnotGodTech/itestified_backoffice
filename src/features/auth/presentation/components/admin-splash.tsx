@@ -16,7 +16,7 @@ export function AdminSplash() {
   }, [router]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-6">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--color-surface-strong)] px-6">
       <Image src="/admin-logo.svg" alt="iTestified" width={240} height={72} priority className="h-auto w-[240px]" />
     </div>
   );

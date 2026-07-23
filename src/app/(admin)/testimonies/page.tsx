@@ -31,6 +31,7 @@ export default async function TestimoniesRoute({
     statusFilter?: string;
     success?: string;
     origin?: string;
+    page?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -67,6 +68,7 @@ export default async function TestimoniesRoute({
     statusFilter: params.statusFilter,
     success: params.success,
     origin: params.origin,
+    page: params.page,
     fullName: session?.fullName ?? session?.email,
     cookieHeader,
   });

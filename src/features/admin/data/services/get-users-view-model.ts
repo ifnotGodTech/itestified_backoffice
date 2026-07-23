@@ -1,5 +1,6 @@
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
 import { backendBaseUrl } from "@/core/auth/backend";
+import { formatShowingLabel, paginateRows, parsePageParam } from "@/features/admin/data/services/pagination";
 import type {
   UserManagementRow,
   UserManagementState,
@@ -79,6 +80,7 @@ export function getUsersViewModel(input: {
   reactivate?: string;
   success?: string;
   fullName?: string;
+  page?: string;
 }): UserManagementViewModel {
   const activeTab = normalizeTab(input.tab);
   const phaseState = normalizeState(input.state);
@@ -89,7 +91,9 @@ export function getUsersViewModel(input: {
         `${row.userId} ${row.name} ${row.email}`.toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : baseRows;
-  const rows = phaseState === "populated" ? searchedRows : [];
+  const allRows = phaseState === "populated" ? searchedRows : [];
+  const page = parsePageParam(input.page);
+  const { pageRows: rows, hasNextPage, hasPreviousPage } = paginateRows(allRows, page);
   const selectedId = Number(input.menu ?? input.view ?? input.deactivate ?? input.reactivate ?? "");
   const selectedRow = Number.isFinite(selectedId) ? baseRows.find((row) => row.id === selectedId) ?? null : null;
   const successMessage =
@@ -110,8 +114,11 @@ export function getUsersViewModel(input: {
     tabs,
     rows,
     selectedRow,
-    totalRows: rows.length,
-    showingLabel: rows.length === 0 ? "Showing 0 of 0" : `Showing 1-${rows.length} of ${rows.length}`,
+    totalRows: allRows.length,
+    showingLabel: formatShowingLabel(page, rows.length, allRows.length),
+    page,
+    hasNextPage,
+    hasPreviousPage,
     errorMessage: phaseState === "error" ? "We could not load user records right now. Please try again." : undefined,
     showActionMenu: Boolean(input.menu),
     showDetails: Boolean(input.view),
@@ -159,9 +166,11 @@ export async function getUsersViewModelFromApi(
     reactivate?: string;
     success?: string;
     fullName?: string;
+    page?: string;
   },
   cookieHeader: string,
 ): Promise<UserManagementViewModel> {
+  const page = parsePageParam(input.page);
   try {
     const statusMap: Record<UserManagementTab, string | null> = {
       registered: "active",
@@ -173,6 +182,7 @@ export async function getUsersViewModelFromApi(
     const status = statusMap[activeTab];
     if (status) params.set("status", status);
     if (input.q?.trim()) params.set("q", input.q.trim());
+    params.set("page", String(page));
     const query = params.toString();
     const url = `${backendBaseUrl}/users/admin/users/${query ? `?${query}` : ""}`;
     const response = await fetch(url, {
@@ -181,27 +191,30 @@ export async function getUsersViewModelFromApi(
       cache: "no-store",
     });
     if (!response.ok) {
-      return getUsersViewModel({ ...input, state: "error" });
+      return { ...getUsersViewModel({ ...input, state: "error" }), page, hasNextPage: false, hasPreviousPage: page > 1 };
     }
     const payload = (await response.json().catch(() => ({}))) as {
       count?: number;
       results?: BackendUser[];
+      next?: string | null;
+      previous?: string | null;
     };
     const rows = (payload.results ?? []).map(mapRow);
     const vm = getUsersViewModel(input);
     const selectedId = Number(input.menu ?? input.view ?? input.deactivate ?? input.reactivate ?? "");
+    const total = payload.count ?? rows.length;
     return {
       ...vm,
       phaseState: rows.length === 0 ? "empty" : "populated",
       rows,
-      totalRows: payload.count ?? rows.length,
+      totalRows: total,
       selectedRow: Number.isFinite(selectedId) ? rows.find((row) => row.id === selectedId) ?? null : null,
-      showingLabel:
-        rows.length === 0
-          ? "Showing 0 of 0"
-          : `Showing 1-${rows.length} of ${payload.count ?? rows.length}`,
+      showingLabel: formatShowingLabel(page, rows.length, total),
+      page,
+      hasNextPage: Boolean(payload.next),
+      hasPreviousPage: Boolean(payload.previous) || page > 1,
     };
   } catch {
-    return getUsersViewModel({ ...input, state: "error" });
+    return { ...getUsersViewModel({ ...input, state: "error" }), page, hasNextPage: false, hasPreviousPage: page > 1 };
   }
 }

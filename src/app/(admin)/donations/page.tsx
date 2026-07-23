@@ -26,6 +26,7 @@ export default async function DonationsRoute({
     reason?: string;
     remove?: string;
     success?: string;
+    page?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -57,6 +58,7 @@ export default async function DonationsRoute({
     reason: params.reason,
     remove: params.remove,
     success: params.success,
+    page: params.page,
       fullName: session?.email ?? undefined,
     },
     cookieHeader,

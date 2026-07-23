@@ -101,7 +101,7 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
                 onClick={() => switchTab(tab.key)}
                 aria-pressed={active}
                 className={`rounded-[7px] px-4 py-2 text-[13px] ${
-                  active ? "bg-[#9B68D5] text-white" : "bg-[#1f1f1f] text-white/45"
+                  active ? "bg-[#9B68D5] text-white" : "bg-[var(--color-surface-elevated)] text-white/45"
                 }`}
               >
                 {tab.label}
@@ -110,13 +110,13 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
           })}
         </div>
 
-        <form action="/home-management" className="rounded-[18px] bg-[#171717] px-4 py-4">
+        <form action="/home-management" className="rounded-[18px] bg-[var(--color-surface-elevated)] px-4 py-4">
           <input type="hidden" name="tab" value={interactiveViewModel.activeTab} />
           {interactiveViewModel.phaseState !== "populated" ? <input type="hidden" name="state" value={interactiveViewModel.phaseState} /> : null}
           <div className="grid grid-cols-[1.25fr_1.6fr_160px] gap-4">
             <label className="space-y-2">
               <span className="text-[16px] font-medium text-white/90">Display Rule</span>
-              <span className="relative flex h-[44px] items-center rounded-[8px] bg-[#1f1f1f]">
+              <span className="relative flex h-[44px] items-center rounded-[8px] bg-[var(--color-surface-elevated)]">
                 <select
                   name="rule"
                   defaultValue={interactiveViewModel.displayRule}
@@ -124,7 +124,7 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
                   aria-label="Display Rule"
                 >
                   {interactiveViewModel.displayRuleOptions.map((option) => (
-                    <option key={option} value={option} className="bg-[#1f1f1f] text-white">
+                    <option key={option} value={option} className="bg-[var(--color-surface-elevated)] text-white">
                       {option}
                     </option>
                   ))}
@@ -140,7 +140,7 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
                 min={1}
                 max={interactiveViewModel.availableCount}
                 defaultValue={interactiveViewModel.testimonyCount}
-                className="h-[44px] w-full rounded-[8px] bg-[#1f1f1f] px-4 text-[15px] text-white/75 outline-none"
+                className="h-[44px] w-full rounded-[8px] bg-[var(--color-surface-elevated)] px-4 text-[15px] text-white/75 outline-none"
                 aria-label={countLabelForTab(interactiveViewModel.activeTab)}
               />
             </label>

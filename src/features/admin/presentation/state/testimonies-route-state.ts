@@ -32,6 +32,7 @@ export type TestimoniesRouteParams = {
   statusFilter?: WrittenTestimonyStatus | null;
   success?: string | null;
   origin?: "notification" | null;
+  page?: number | null;
 };
 
 export function buildTestimoniesHref(params: TestimoniesRouteParams) {
@@ -60,6 +61,7 @@ export function buildTestimoniesHref(params: TestimoniesRouteParams) {
   if (params.statusFilter) search.set("statusFilter", params.statusFilter);
   if (params.success) search.set("success", params.success);
   if (params.origin) search.set("origin", params.origin);
+  if (params.page && params.page > 1) search.set("page", String(params.page));
   const query = search.toString();
   return query ? `/testimonies?${query}` : "/testimonies";
 }

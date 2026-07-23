@@ -1,4 +1,5 @@
 import type { AdminShellViewModel } from "@/features/admin/domain/entities/shell";
+import type { AdminPaginationFields } from "@/features/admin/domain/entities/pagination";
 
 export type NotificationReadStatus = "read" | "unread";
 export type NotificationsHistoryState = "populated" | "empty" | "loading" | "error";
@@ -19,7 +20,7 @@ export type NotificationsHistoryFilterDraft = {
   to?: string;
 };
 
-export type NotificationsHistoryViewModel = {
+export type NotificationsHistoryViewModel = AdminPaginationFields & {
   shell: AdminShellViewModel;
   phaseState: NotificationsHistoryState;
   searchQuery: string;

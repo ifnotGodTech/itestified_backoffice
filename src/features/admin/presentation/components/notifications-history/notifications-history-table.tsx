@@ -1,6 +1,17 @@
 import Link from "next/link";
 import type { NotificationHistoryRow, NotificationsHistoryViewModel } from "@/features/admin/domain/entities/notifications-history";
+import { AdminErrorState, AdminPaginationFooter } from "@/features/admin/presentation/components/shared/admin-table-primitives";
 import { buildNotificationsHistoryHref } from "@/features/admin/presentation/state/notifications-history-route-state";
+
+function paginationHref(viewModel: NotificationsHistoryViewModel, page: number) {
+  return buildNotificationsHistoryHref({
+    q: viewModel.searchQuery || null,
+    statusFilter: viewModel.filterDraft.status,
+    from: viewModel.filterDraft.from,
+    to: viewModel.filterDraft.to,
+    page,
+  });
+}
 
 function NotificationCheckbox({ checked }: { checked: boolean }) {
   return (
@@ -53,7 +64,7 @@ export function NotificationsHistoryTable({
 
   return (
     <div className="max-w-[1248px] pt-6 md:pt-8">
-      <div className="rounded-[20px] bg-[#1b1b1b] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+      <div className="rounded-[20px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
         <div className="flex items-center justify-between px-[14px] py-[12px]">
           <h1 className="text-[16px] font-normal text-white">Notifications</h1>
           <div className="flex items-center gap-3">
@@ -86,7 +97,7 @@ export function NotificationsHistoryTable({
           </div>
         </div>
 
-        <div className="grid grid-cols-[32px_1fr_20px] items-center bg-[#262626] px-[10px] py-[8px] text-[10px] text-white/90">
+        <div className="grid grid-cols-[32px_1fr_20px] items-center bg-[var(--color-surface-muted)] px-[10px] py-[8px] text-[10px] text-white/90">
           <button type="button" onClick={onToggleAll} aria-label="Select all notifications" className="inline-flex items-center justify-center">
             <NotificationCheckbox checked={selectedIds.length === viewModel.rows.length && viewModel.rows.length > 0} />
           </button>
@@ -95,7 +106,7 @@ export function NotificationsHistoryTable({
         </div>
 
         {viewModel.phaseState === "loading" ? <div className="px-8 py-16 text-center text-white/70">Loading notifications...</div> : null}
-        {viewModel.phaseState === "error" ? <div className="px-8 py-16 text-center text-white/70">{viewModel.errorMessage}</div> : null}
+        {viewModel.phaseState === "error" ? <AdminErrorState title="Unable to load notifications" message={viewModel.errorMessage} /> : null}
         {viewModel.phaseState === "empty" ? <div className="px-8 py-16 text-center text-[18px] font-medium text-white/90">No Notifications Yet</div> : null}
 
         {viewModel.phaseState === "populated"
@@ -130,13 +141,13 @@ export function NotificationsHistoryTable({
             ))
           : null}
 
-        <div className="flex items-center justify-between px-[10px] py-7 text-[10px] text-white/62">
-          <span>{viewModel.showingLabel}</span>
-          <div className="flex gap-3">
-            <button type="button" className="rounded-[8px] border border-white/15 px-4 py-[6px] text-[12px] text-white/45">Previous</button>
-            <button type="button" className="rounded-[8px] border border-[#9B68D5] px-4 py-[6px] text-[12px] text-[#b27bff]">Next</button>
-          </div>
-        </div>
+        <AdminPaginationFooter
+          showingLabel={viewModel.showingLabel}
+          hasPreviousPage={viewModel.hasPreviousPage}
+          hasNextPage={viewModel.hasNextPage}
+          previousHref={paginationHref(viewModel, viewModel.page - 1)}
+          nextHref={paginationHref(viewModel, viewModel.page + 1)}
+        />
       </div>
     </div>
   );

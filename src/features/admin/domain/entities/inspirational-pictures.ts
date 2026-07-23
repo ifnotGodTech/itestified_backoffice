@@ -1,4 +1,5 @@
 import type { AdminShellViewModel } from "@/features/admin/domain/entities/shell";
+import type { AdminPaginationFields } from "@/features/admin/domain/entities/pagination";
 
 export type InspirationalPictureState = "populated" | "empty" | "loading" | "error";
 export type InspirationalPictureStatus = "All" | "Uploaded" | "Scheduled" | "Drafts";
@@ -20,7 +21,7 @@ export type InspirationalPictureRow = {
   imageSrc: string;
 };
 
-export type InspirationalPicturesViewModel = {
+export type InspirationalPicturesViewModel = AdminPaginationFields & {
   shell: AdminShellViewModel;
   activeStatus: InspirationalPictureStatus;
   activeScreen: InspirationalPictureScreen;

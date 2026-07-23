@@ -23,13 +23,13 @@ function CalendarIcon() {
 function PeriodDropdown({ viewModel }: { viewModel: AnalyticsViewModel }) {
   return (
     <details className="group relative inline-block">
-      <summary className="flex h-[28px] cursor-pointer list-none items-center gap-2 rounded-[6px] bg-[#262626] px-3 text-[10px] text-white/75 marker:content-none">
+      <summary className="flex h-[28px] cursor-pointer list-none items-center gap-2 rounded-[6px] bg-[var(--color-surface-muted)] px-3 text-[10px] text-white/75 marker:content-none">
         <CalendarIcon />
         <span>Time Period</span>
         <span>{viewModel.selectedPeriod}</span>
         <span className="text-white/50 transition-transform group-open:rotate-180">▾</span>
       </summary>
-      <div className="absolute left-0 top-[34px] z-20 min-w-[156px] overflow-hidden rounded-[8px] border border-white/8 bg-[#202020] shadow-[0_18px_30px_rgba(0,0,0,0.45)]">
+      <div className="absolute left-0 top-[34px] z-20 min-w-[156px] overflow-hidden rounded-[8px] border border-white/8 bg-[var(--color-surface-muted)] shadow-[0_18px_30px_rgba(0,0,0,0.45)]">
         {viewModel.periods.map((period) => (
           <Link
             key={period}
@@ -104,7 +104,7 @@ function MetricIcon({ user, label }: { user?: boolean; label: string }) {
 function MetricCard({ metric, user }: { metric: AnalyticsViewModel["metrics"][number]; user?: boolean }) {
   const trendColor = metric.trend === "up" ? "text-[#27c45b]" : metric.trend === "down" ? "text-[#ef4335]" : "text-white/45";
   return (
-    <div className="rounded-[8px] bg-[#181818] px-4 py-4 shadow-[0_0_0_1px_rgba(255,255,255,0.04)]">
+    <div className="rounded-[8px] bg-[var(--color-surface-elevated)] px-4 py-4 shadow-[0_0_0_1px_rgba(255,255,255,0.04)]">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] text-white/62">{metric.label}</p>
@@ -137,7 +137,7 @@ function LineChart({ points, dual = false }: { points: AnalyticsSeriesPoint[]; d
   const axisLabels = Array.from({ length: 5 }, (_, idx) => Math.round((max / 4) * (4 - idx)));
 
   return (
-    <div className="rounded-[12px] bg-[#1b1b1b] px-4 py-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
+    <div className="rounded-[12px] bg-[var(--color-surface-elevated)] px-4 py-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
       <svg viewBox={`0 0 ${width} ${height}`} className={`w-full ${dual ? "h-[220px]" : "h-[250px]"}`}>
         <defs>
           <linearGradient id="analyticsPrimaryFill" x1="0" x2="0" y1="0" y2="1">
@@ -179,7 +179,7 @@ function LineChart({ points, dual = false }: { points: AnalyticsSeriesPoint[]; d
 
 function SectionCard({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return (
-    <div className="rounded-[12px] bg-[#1b1b1b] px-4 py-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
+    <div className="rounded-[12px] bg-[var(--color-surface-elevated)] px-4 py-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
       <h3 className="text-[14px] font-semibold text-white">{title}</h3>
       {subtitle ? <p className="mt-1 text-[10px] text-white/45">{subtitle}</p> : null}
       <div className="mt-4">{children}</div>
@@ -222,7 +222,7 @@ function DonutChart({ viewModel }: { viewModel: AnalyticsViewModel }) {
     <SectionCard title={viewModel.donutTitle ?? ""} subtitle={viewModel.donutSubtitle}>
       <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start">
         <div className="relative h-[160px] w-[160px] rounded-full" style={{ background: `conic-gradient(${segments.map((s, i) => `${s.color} ${i * (100 / segments.length)}% ${(i + 1) * (100 / segments.length)}%`).join(", ")})` }}>
-          <div className="absolute inset-[24px] rounded-full bg-[#1b1b1b]" />
+          <div className="absolute inset-[24px] rounded-full bg-[var(--color-surface-elevated)]" />
         </div>
         <div className="flex-1">
           <DonutLegend viewModel={viewModel} />
@@ -238,7 +238,7 @@ function CategoryTable({ viewModel }: { viewModel: AnalyticsViewModel }) {
   return (
     <SectionCard title={viewModel.categoryTableTitle ?? ""} subtitle={viewModel.categoryTableSubtitle}>
       <div className="overflow-hidden rounded-[8px] border border-white/8">
-        <div className={`grid ${gridClass} bg-[#262626] px-3 py-2 text-[10px] text-white/82`}>
+        <div className={`grid ${gridClass} bg-[var(--color-surface-muted)] px-3 py-2 text-[10px] text-white/82`}>
           <span>Category ↕</span>
           <span>Likes ↕</span>
           <span>Comments ↕</span>
@@ -263,7 +263,7 @@ function TopList({ viewModel }: { viewModel: AnalyticsViewModel }) {
   return (
     <SectionCard title={viewModel.topListTitle ?? ""} subtitle={viewModel.topListSubtitle}>
       <div className="overflow-hidden rounded-[8px] border border-white/8">
-        <div className="grid grid-cols-[1.9fr_70px_70px_52px] bg-[#262626] px-3 py-2 text-[10px] text-white/82">
+        <div className="grid grid-cols-[1.9fr_70px_70px_52px] bg-[var(--color-surface-muted)] px-3 py-2 text-[10px] text-white/82">
           <span>Title ↕</span>
           <span>Likes ↕</span>
           <span>Views ↕</span>
@@ -287,7 +287,7 @@ export function AnalyticsPage({ viewModel }: { viewModel: AnalyticsViewModel }) 
   return (
     <AdminDashboardShell viewModel={viewModel.shell}>
       <div className="max-w-[1248px] pt-6 md:pt-8">
-        <div className="flex items-start justify-between gap-4 rounded-[8px] bg-[#0c0c0c] px-4 py-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
+        <div className="flex items-start justify-between gap-4 rounded-[8px] bg-[var(--color-surface-strong)] px-4 py-4 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
           <div>
             <h1 className="text-[22px] font-semibold text-white">{viewModel.pageTitle}</h1>
             <p className="mt-2 text-[10px] text-white/45">{viewModel.pageDescription}</p>
@@ -304,7 +304,7 @@ export function AnalyticsPage({ viewModel }: { viewModel: AnalyticsViewModel }) 
               <Link
                 key={mode}
                 href={buildAnalyticsHref({ area: "testimonies", mode, period: viewModel.selectedPeriod })}
-                className={`inline-flex h-[20px] items-center rounded-[4px] px-4 text-[9px] ${viewModel.testimonyMode === mode ? "bg-[#9966CC] text-white" : "bg-[#2a2a2a] text-white/70"}`}
+                className={`inline-flex h-[20px] items-center rounded-[4px] px-4 text-[9px] ${viewModel.testimonyMode === mode ? "bg-[#9966CC] text-white" : "bg-[var(--color-surface-muted)] text-white/70"}`}
               >
                 {mode === "text" ? "Text" : "Video"}
               </Link>
@@ -312,13 +312,13 @@ export function AnalyticsPage({ viewModel }: { viewModel: AnalyticsViewModel }) 
           </div>
         ) : null}
 
-        <div className="mt-4 rounded-[8px] bg-[#1b1b1b] px-4 py-3 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
+        <div className="mt-4 rounded-[8px] bg-[var(--color-surface-elevated)] px-4 py-3 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
           <PeriodDropdown viewModel={viewModel} />
         </div>
 
-        {viewModel.phaseState === "loading" ? <div className="mt-6 rounded-[12px] bg-[#1b1b1b] px-6 py-16 text-center text-white/60">Loading analytics...</div> : null}
-        {viewModel.phaseState === "error" ? <div className="mt-6 rounded-[12px] bg-[#1b1b1b] px-6 py-16 text-center text-white/60">{viewModel.errorMessage}</div> : null}
-        {viewModel.phaseState === "empty" ? <div className="mt-6 rounded-[12px] bg-[#1b1b1b] px-6 py-16 text-center text-white/60">No analytics data available yet.</div> : null}
+        {viewModel.phaseState === "loading" ? <div className="mt-6 rounded-[12px] bg-[var(--color-surface-elevated)] px-6 py-16 text-center text-white/60">Loading analytics...</div> : null}
+        {viewModel.phaseState === "error" ? <div className="mt-6 rounded-[12px] bg-[var(--color-surface-elevated)] px-6 py-16 text-center text-white/60">{viewModel.errorMessage}</div> : null}
+        {viewModel.phaseState === "empty" ? <div className="mt-6 rounded-[12px] bg-[var(--color-surface-elevated)] px-6 py-16 text-center text-white/60">No analytics data available yet.</div> : null}
 
         {viewModel.phaseState === "populated" ? (
           <>

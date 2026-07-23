@@ -21,7 +21,7 @@ function StatusPill({ status }: { status: string }) {
         ? "border-[#ef4335]/25 bg-[#321313] text-[#ef4335]"
         : status === "Scheduled" || status === "Pending"
           ? "border-[#f0c400]/25 bg-[#2f2906] text-[#f0c400]"
-          : "border-white/20 bg-[#252525] text-white/70";
+          : "border-white/20 bg-[var(--color-surface-muted)] text-white/70";
 
   return <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] leading-none ${cls}`}>{status}</span>;
 }
@@ -123,7 +123,7 @@ function DetailOriginBanner({ viewModel }: { viewModel: TestimoniesViewModel }) 
   if (viewModel.origin !== "notification" || !viewModel.detailReturnHref) return null;
 
   return (
-    <div className="mb-5 flex items-center justify-between rounded-[14px] border border-[#9B68D5]/35 bg-[#2a2035] px-4 py-3 text-[14px] text-white/88">
+    <div className="mb-5 flex items-center justify-between rounded-[14px] border border-[#9B68D5]/35 bg-[#2a2035] px-4 py-3 text-[14px] text-[#ffffff]/88">
       <p>Opened from notifications history.</p>
       <Link href={viewModel.detailReturnHref} className="text-[#c798ff]">
         Back to notifications
@@ -178,7 +178,7 @@ function ModerationHistoryPanel({ row }: { row: TestimonyRow }) {
       <h3 className="text-[16px] font-semibold text-white">Moderation History</h3>
       <div className="mt-4 space-y-3 text-[13px]">
         {history.map((item) => (
-          <div key={item.id} className="rounded-[10px] border border-white/10 bg-[#262626] px-3 py-3">
+          <div key={item.id} className="rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-3 py-3">
             <p className="text-white/92">
               <span className="capitalize">{item.action.replace("_", " ")}</span> by {item.actor_name ?? "System"}
             </p>
@@ -231,8 +231,8 @@ function PendingDetailModal({
       <DetailCloseControl viewModel={viewModel} onClose={onClose} className="absolute inset-0" ariaLabel="Close testimony detail modal">
         <span className="sr-only">Close testimony detail modal</span>
       </DetailCloseControl>
-      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[580px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-        <div className="relative min-h-[110px] bg-[#262626]">
+      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[580px] flex-col overflow-hidden rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+        <div className="relative min-h-[110px] bg-[var(--color-surface-muted)]">
           <DetailCloseControl
             viewModel={viewModel}
             onClose={onClose}
@@ -303,8 +303,8 @@ function ApprovedDetailModal({
       <DetailCloseControl viewModel={viewModel} onClose={onClose} className="absolute inset-0" ariaLabel="Close approved testimony detail modal">
         <span className="sr-only">Close approved testimony detail modal</span>
       </DetailCloseControl>
-      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[580px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-        <div className="relative min-h-[110px] bg-[#262626]">
+      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[580px] flex-col overflow-hidden rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+        <div className="relative min-h-[110px] bg-[var(--color-surface-muted)]">
           <DetailCloseControl
             viewModel={viewModel}
             onClose={onClose}
@@ -395,14 +395,14 @@ function ScheduleModal({ row, viewModel, onClose }: { row: TextTestimonyRow; vie
       <ModalCloseControl onClose={onClose} className="absolute inset-0" ariaLabel="Close schedule testimony modal">
         <span className="sr-only">Close schedule testimony modal</span>
       </ModalCloseControl>
-      <div className="relative z-10 w-full max-w-[520px] rounded-[24px] bg-[#1e1e1e] px-6 py-6 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+      <div className="relative z-10 w-full max-w-[520px] rounded-[24px] bg-[var(--color-surface-elevated)] px-6 py-6 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <h2 className="text-[24px] font-semibold text-white">Schedule Testimony</h2>
         <p className="mt-2 text-[14px] text-white/70">Set a future publish date/time for this pending testimony.</p>
         <input
           type="datetime-local"
           value={publishAt}
           onChange={(event) => setPublishAt(event.target.value)}
-          className="mt-5 h-[44px] w-full rounded-[10px] bg-[#2a2a2a] px-3 text-[14px] text-white outline-none"
+          className="mt-5 h-[44px] w-full rounded-[10px] bg-[var(--color-surface-muted)] px-3 text-[14px] text-white outline-none"
         />
         {error ? <p className="mt-3 text-[14px] text-[#ef4335]">{error}</p> : null}
         <div className="mt-6 flex justify-end gap-3">
@@ -449,14 +449,14 @@ function ArchiveModal({ row, viewModel, onClose }: { row: TextTestimonyRow; view
       <ModalCloseControl onClose={onClose} className="absolute inset-0" ariaLabel="Close archive testimony modal">
         <span className="sr-only">Close archive testimony modal</span>
       </ModalCloseControl>
-      <div className="relative z-10 w-full max-w-[520px] rounded-[24px] bg-[#1e1e1e] px-6 py-6 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+      <div className="relative z-10 w-full max-w-[520px] rounded-[24px] bg-[var(--color-surface-elevated)] px-6 py-6 shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <h2 className="text-[24px] font-semibold text-white">Archive Testimony</h2>
         <p className="mt-2 text-[14px] text-white/70">This removes the testimony from public browse without deleting it.</p>
         <textarea
           value={reason}
           onChange={(event) => setReason(event.target.value)}
           placeholder="Optional reason"
-          className="mt-5 min-h-[130px] w-full rounded-[10px] bg-[#2a2a2a] px-3 py-3 text-[14px] text-white outline-none"
+          className="mt-5 min-h-[130px] w-full rounded-[10px] bg-[var(--color-surface-muted)] px-3 py-3 text-[14px] text-white outline-none"
         />
         {error ? <p className="mt-3 text-[14px] text-[#ef4335]">{error}</p> : null}
         <div className="mt-6 flex justify-end gap-3">
@@ -509,7 +509,7 @@ function RejectModal({ row, viewModel, onClose }: { row: TextTestimonyRow; viewM
       <ModalCloseControl onClose={onClose} className="absolute inset-0" ariaLabel="Close reject testimony modal">
         <span className="sr-only">Close reject testimony modal</span>
       </ModalCloseControl>
-      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[580px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[580px] flex-col overflow-hidden rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <h2 className="text-[28px] font-semibold text-white">Reject Testimony</h2>
           <ModalCloseControl onClose={onClose} className="text-[34px] leading-none text-white/90" ariaLabel="Close reject testimony modal">
@@ -522,7 +522,7 @@ function RejectModal({ row, viewModel, onClose }: { row: TextTestimonyRow; viewM
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             placeholder="Type here..."
-            className="min-h-[300px] w-full resize-none rounded-[14px] border border-transparent bg-[#2b2b2b] px-5 py-4 text-[16px] leading-7 text-white outline-none placeholder:text-white/35"
+            className="min-h-[300px] w-full resize-none rounded-[14px] border border-transparent bg-[var(--color-surface-muted)] px-5 py-4 text-[16px] leading-7 text-white outline-none placeholder:text-white/35"
           />
           {error ? <p className="mt-3 text-[14px] text-[#ef4335]">{error}</p> : null}
         </div>
@@ -583,7 +583,7 @@ function DeleteTextTestimonyModal({ row, viewModel, onClose }: { row: TextTestim
       <ModalCloseControl onClose={onClose} className="absolute inset-0" ariaLabel="Close delete testimony modal">
         <span className="sr-only">Close delete testimony modal</span>
       </ModalCloseControl>
-      <div className="relative z-10 w-full max-w-[608px] rounded-[24px] bg-[#1f1f1f] px-8 py-10 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+      <div className="relative z-10 w-full max-w-[608px] rounded-[24px] bg-[var(--color-surface-elevated)] px-8 py-10 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <ModalCloseControl onClose={onClose} className="absolute right-6 top-4 text-[34px] leading-none text-white/90" ariaLabel="Close delete testimony modal">
           ×
         </ModalCloseControl>
@@ -630,7 +630,7 @@ function FilterModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
       <button type="button" onClick={onClose} className="absolute inset-0" aria-label="Close testimony filter modal" />
-      <form action="/testimonies" className="relative z-10 w-full max-w-[380px] overflow-hidden rounded-[24px] border border-white/10 bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+      <form action="/testimonies" className="relative z-10 w-full max-w-[380px] overflow-hidden rounded-[24px] border border-white/10 bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <input type="hidden" name="tab" value={viewModel.activeTab} />
         <input type="hidden" name="q" value={viewModel.searchQuery} />
         {isVideo ? <input type="hidden" name="videoStatus" value={viewModel.activeVideoStatus} /> : null}
@@ -652,14 +652,14 @@ function FilterModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="mb-2 text-[13px] text-white/78">From</p>
-              <div className="flex h-[32px] items-center gap-3 rounded-[8px] bg-[#2a2a2a] px-3 text-[14px] text-white/78">
+              <div className="flex h-[32px] items-center gap-3 rounded-[8px] bg-[var(--color-surface-muted)] px-3 text-[14px] text-white/78">
                 <span>🗓</span>
                 <input name="from" defaultValue={viewModel.filterDraft.from} placeholder="dd/mm/yyyy" className="w-full bg-transparent outline-none placeholder:text-white/35" />
               </div>
             </div>
             <div>
               <p className="mb-2 text-[13px] text-white/78">To</p>
-              <div className="flex h-[32px] items-center gap-3 rounded-[8px] bg-[#2a2a2a] px-3 text-[14px] text-white/78">
+              <div className="flex h-[32px] items-center gap-3 rounded-[8px] bg-[var(--color-surface-muted)] px-3 text-[14px] text-white/78">
                 <span>🗓</span>
                 <input name="to" defaultValue={viewModel.filterDraft.to} placeholder="dd/mm/yyyy" className="w-full bg-transparent outline-none placeholder:text-white/35" />
               </div>
@@ -679,13 +679,13 @@ function FilterModal({
               setCategoryMenuOpen((open) => !open);
               setSourceMenuOpen(false);
             }}
-            className="flex h-[32px] items-center justify-between rounded-[8px] bg-[#2a2a2a] px-3 text-[14px] text-white/78"
+            className="flex h-[32px] items-center justify-between rounded-[8px] bg-[var(--color-surface-muted)] px-3 text-[14px] text-white/78"
           >
             <span>{selectedCategoryLabel || "Select"}</span>
             <span className="text-white/82"><ChevronDownIcon /></span>
           </button>
           {categoryMenuOpen ? (
-            <div className="mt-2 overflow-hidden rounded-[8px] border border-white/15 bg-[#1f1f1f]">
+            <div className="mt-2 overflow-hidden rounded-[8px] border border-white/15 bg-[var(--color-surface-elevated)]">
               {categoryOptions.map((option) => (
                 <button
                   key={option.id}
@@ -716,13 +716,13 @@ function FilterModal({
                 setSourceMenuOpen((open) => !open);
                 setCategoryMenuOpen(false);
               }}
-              className="flex h-[32px] items-center justify-between rounded-[8px] bg-[#2a2a2a] px-3 text-[14px] text-white/78"
+              className="flex h-[32px] items-center justify-between rounded-[8px] bg-[var(--color-surface-muted)] px-3 text-[14px] text-white/78"
             >
               <span>{selectedSource || "Select"}</span>
               <span className="text-white/82"><ChevronDownIcon /></span>
             </button>
             {sourceMenuOpen ? (
-              <div className="mt-2 overflow-hidden rounded-[8px] border border-white/15 bg-[#1f1f1f]">
+              <div className="mt-2 overflow-hidden rounded-[8px] border border-white/15 bg-[var(--color-surface-elevated)]">
                 {sourceOptions.map((option) => (
                   <button
                     key={option}
@@ -786,7 +786,7 @@ function SuccessModal({ viewModel, onClose }: { viewModel: TestimoniesViewModel;
       <ModalCloseControl onClose={onClose} className="absolute inset-0" ariaLabel="Close testimony approved success modal">
         <span className="sr-only">Close testimony approved success modal</span>
       </ModalCloseControl>
-      <div className="relative z-10 w-full max-w-[420px] rounded-[24px] bg-[#1f1f1f] px-8 py-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+      <div className="relative z-10 w-full max-w-[420px] rounded-[24px] bg-[var(--color-surface-elevated)] px-8 py-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="mx-auto flex h-[102px] w-[102px] items-center justify-center rounded-full bg-[#9B68D5] text-[62px] text-white">✓</div>
         <p className="mt-10 text-[28px] font-semibold leading-[1.3] text-white">{viewModel.successMessage}</p>
       </div>
@@ -947,7 +947,7 @@ function TestimonySettingsModal({ viewModel, onClose }: { viewModel: Testimonies
       <ModalCloseControl onClose={onClose} className="absolute inset-0" ariaLabel="Close testimony settings modal">
         <span className="sr-only">Close testimony settings modal</span>
       </ModalCloseControl>
-      <div className="relative z-10 w-full max-w-[720px] overflow-hidden rounded-[24px] bg-[#1f1f1f] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+      <div className="relative z-10 w-full max-w-[720px] overflow-hidden rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <h2 className="text-[28px] font-semibold text-white">Testimony Settings</h2>
           <ModalCloseControl onClose={onClose} className="text-white/90" ariaLabel="Close testimony settings">
@@ -977,13 +977,13 @@ function TestimonySettingsModal({ viewModel, onClose }: { viewModel: Testimonies
                 value={newName}
                 onChange={(event) => setNewName(event.target.value)}
                 placeholder="Category name"
-                className="h-[44px] rounded-[10px] bg-[#2a2a2a] px-3 text-[14px] text-white outline-none"
+                className="h-[44px] rounded-[10px] bg-[var(--color-surface-muted)] px-3 text-[14px] text-white outline-none"
               />
               <input
                 value={newDescription}
                 onChange={(event) => setNewDescription(event.target.value)}
                 placeholder="Description (optional)"
-                className="h-[44px] rounded-[10px] bg-[#2a2a2a] px-3 text-[14px] text-white outline-none"
+                className="h-[44px] rounded-[10px] bg-[var(--color-surface-muted)] px-3 text-[14px] text-white outline-none"
               />
               <button
                 type="button"
@@ -996,20 +996,20 @@ function TestimonySettingsModal({ viewModel, onClose }: { viewModel: Testimonies
             </div>
             <div className="mt-5 space-y-2">
               {sortedCategories.map((category) => (
-                <div key={category.id} className="flex items-center justify-between rounded-[12px] border border-white/10 bg-[#262626] px-4 py-3">
+                <div key={category.id} className="flex items-center justify-between rounded-[12px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-3">
                   <div>
                     {editingId === category.id ? (
                       <div className="space-y-2">
                         <input
                           value={editingName}
                           onChange={(event) => setEditingName(event.target.value)}
-                          className="h-[36px] w-[240px] rounded-[8px] bg-[#1f1f1f] px-3 text-[13px] text-white outline-none"
+                          className="h-[36px] w-[240px] rounded-[8px] bg-[var(--color-surface-elevated)] px-3 text-[13px] text-white outline-none"
                           placeholder="Category name"
                         />
                         <input
                           value={editingDescription}
                           onChange={(event) => setEditingDescription(event.target.value)}
-                          className="h-[36px] w-[300px] rounded-[8px] bg-[#1f1f1f] px-3 text-[13px] text-white outline-none"
+                          className="h-[36px] w-[300px] rounded-[8px] bg-[var(--color-surface-elevated)] px-3 text-[13px] text-white outline-none"
                           placeholder="Description"
                         />
                       </div>
@@ -1096,7 +1096,7 @@ function VideoDetailsModal({
       <DetailCloseControl viewModel={viewModel} onClose={onClose} className="absolute inset-0" ariaLabel="Close video details modal">
         <span className="sr-only">Close video details modal</span>
       </DetailCloseControl>
-      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[580px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[580px] flex-col overflow-hidden rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <h2 className="text-[28px] font-semibold text-white">Video Details</h2>
           <DetailCloseControl viewModel={viewModel} onClose={onClose} className="text-white/90" ariaLabel="Close video details">
@@ -1105,8 +1105,8 @@ function VideoDetailsModal({
         </div>
         <div className="overflow-y-auto px-6 py-6">
           <DetailOriginBanner viewModel={viewModel} />
-          <div className="overflow-hidden rounded-[20px] bg-[#202020]">
-            <div className="relative h-[318px] bg-[#111]">
+          <div className="overflow-hidden rounded-[20px] bg-[var(--color-surface-muted)]">
+            <div className="relative h-[318px] bg-[var(--color-surface-elevated)]">
               {hasPlayableVideo ? (
                 <video
                   controls
@@ -1278,7 +1278,7 @@ function EditVideoModal({ row, viewModel, onClose }: { row: VideoTestimonyRow; v
       <ModalCloseControl onClose={onClose} className="absolute inset-0" ariaLabel="Close edit video modal">
         <span className="sr-only">Close edit video modal</span>
       </ModalCloseControl>
-      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <h2 className="text-[28px] font-semibold text-white">Edit Video testimony</h2>
           <ModalCloseControl onClose={onClose} className="text-white/90" ariaLabel="Close edit video">
@@ -1291,7 +1291,7 @@ function EditVideoModal({ row, viewModel, onClose }: { row: VideoTestimonyRow; v
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              className="w-full rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 text-[15px] text-white outline-none ring-[#9B68D5]/50 focus:ring-2"
+              className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[15px] text-white outline-none ring-[#9B68D5]/50 focus:ring-2"
             />
           </div>
           <div className="mt-6">
@@ -1300,7 +1300,7 @@ function EditVideoModal({ row, viewModel, onClose }: { row: VideoTestimonyRow; v
               <select
                 value={categoryId}
                 onChange={(event) => setCategoryId(event.target.value)}
-                className="w-full appearance-none rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 pr-10 text-[15px] text-white outline-none ring-[#9B68D5]/50 focus:ring-2"
+                className="w-full appearance-none rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 pr-10 text-[15px] text-white outline-none ring-[#9B68D5]/50 focus:ring-2"
               >
                 <option value="" disabled>
                   Select a category
@@ -1325,7 +1325,7 @@ function EditVideoModal({ row, viewModel, onClose }: { row: VideoTestimonyRow; v
                     type="datetime-local"
                     value={scheduledPublishAt}
                     onChange={(event) => setScheduledPublishAt(event.target.value)}
-                    className="w-full rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 pr-10 text-[15px] text-white outline-none ring-[#9B68D5]/50 focus:ring-2"
+                    className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 pr-10 text-[15px] text-white outline-none ring-[#9B68D5]/50 focus:ring-2"
                   />
                   <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/92">
                     <CalendarIcon />
@@ -1401,7 +1401,7 @@ function DeleteVideoModal({ row, viewModel, onClose }: { row: VideoTestimonyRow;
       <ModalCloseControl onClose={onClose} className="absolute inset-0" ariaLabel="Close delete video modal">
         <span className="sr-only">Close delete video modal</span>
       </ModalCloseControl>
-      <div className="relative z-10 w-full max-w-[420px] rounded-[24px] bg-[#1f1f1f] px-8 py-10 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+      <div className="relative z-10 w-full max-w-[420px] rounded-[24px] bg-[var(--color-surface-elevated)] px-8 py-10 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <h2 className="text-[28px] font-semibold text-white">Delete Video?</h2>
         <p className="mt-5 text-[16px] leading-8 text-white/72">This video testimony will be removed from the list.</p>
         {error ? <p className="mt-3 text-[13px] text-[#ef4335]">{error}</p> : null}

@@ -87,7 +87,10 @@ export function DonationsPage({ viewModel }: { viewModel: DonationsViewModel }) 
         ...loadingDonationsViewModel(current, tab),
         phaseState: "error",
         errorMessage: "We could not load donations right now. Please try again.",
-        showingLabel: "Page 1 of 1",
+        showingLabel: "Showing 0 of 0",
+        page: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
       }));
     }
   }

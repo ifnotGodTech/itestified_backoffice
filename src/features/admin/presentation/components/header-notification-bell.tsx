@@ -76,14 +76,14 @@ export function HeaderNotificationBell() {
     <Link
       href="/notifications-history?panel=1"
       aria-label="Open notifications"
-      className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[#252525] transition-colors"
+      className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[var(--color-border-subtle)]/40 bg-[var(--color-surface-muted)] transition-colors"
     >
       {count > 0 ? (
-        <span className="absolute -right-1 -top-1 inline-flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#ef4335] px-1 text-[10px] font-semibold text-white">
+        <span className="absolute -right-1 -top-1 inline-flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--color-danger)] px-1 text-[10px] font-semibold text-[var(--color-text-primary)]">
           {count > 99 ? "99+" : count}
         </span>
       ) : null}
-      <BellIcon stroke="#BFBFBF" />
+      <BellIcon stroke="var(--color-text-secondary)" />
     </Link>
   );
 }

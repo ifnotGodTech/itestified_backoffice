@@ -10,7 +10,7 @@ export function AuthShell({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#33214b_0%,#171717_34%,#0d0d0d_100%)] text-[var(--color-text-primary)]">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#33214b_0%,var(--color-surface-elevated)_34%,var(--color-surface-strong)_100%)] text-[var(--color-text-primary)]">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col justify-center gap-10 px-6 py-10 lg:flex-row lg:items-center lg:px-10">
         <section className="max-w-xl space-y-6">
           <div className="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-[0.24em] text-[var(--color-text-muted)]">

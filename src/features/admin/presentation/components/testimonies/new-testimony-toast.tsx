@@ -56,7 +56,7 @@ export function NewTestimonyToast() {
   return (
     <div className="fixed right-6 top-6 z-[80] w-full max-w-[380px] rounded-[14px] border border-[#9B68D5]/40 bg-[#221a2c] px-4 py-4 shadow-[0_18px_40px_rgba(0,0,0,0.35)]">
       <p className="text-[13px] font-semibold text-[#cda4ff]">{item.title}</p>
-      <p className="mt-1 text-[13px] leading-5 text-white/85">{item.message}</p>
+      <p className="mt-1 text-[13px] leading-5 text-[#ffffff]/85">{item.message}</p>
       <div className="mt-3 flex justify-end">
         <button
           type="button"

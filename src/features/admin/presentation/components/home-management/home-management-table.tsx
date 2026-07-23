@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { HomeManagementRow, HomeManagementViewModel } from "@/features/admin/domain/entities/home-management";
+import { AdminErrorState } from "@/features/admin/presentation/components/shared/admin-table-primitives";
 
 function ThumbnailCell({ row }: { row: HomeManagementRow }) {
   if (row.kind === "picture") {
@@ -15,7 +16,7 @@ function ThumbnailCell({ row }: { row: HomeManagementRow }) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="relative h-8 w-8 overflow-hidden rounded bg-[#2b2b2b]">
+      <span className="relative h-8 w-8 overflow-hidden rounded bg-[var(--color-surface-muted)]">
         {row.thumbnailSrc ? <Image src={row.thumbnailSrc} alt={row.thumbnailLabel} fill sizes="64px" className="object-cover opacity-80" /> : null}
       </span>
     </div>
@@ -61,16 +62,7 @@ function HomeManagementTableEmpty({ activeTab }: { activeTab: HomeManagementView
 }
 
 function HomeManagementTableError({ message }: { message?: string }) {
-  return (
-    <div className="px-8 py-14">
-      <div className="rounded-[18px] border border-[#ef4335]/30 bg-[#2a1615] px-6 py-6">
-        <h3 className="text-[20px] font-semibold text-white">Unable to load home page content</h3>
-        <p className="mt-3 max-w-[520px] text-[15px] leading-7 text-white/70">
-          {message ?? "An unexpected error occurred while loading this section."}
-        </p>
-      </div>
-    </div>
-  );
+  return <AdminErrorState title="Unable to load home page content" message={message} />;
 }
 
 function HomeManagementPictureTable({
@@ -82,7 +74,7 @@ function HomeManagementPictureTable({
 }) {
   return (
     <>
-      <div className="grid grid-cols-[64px_72px_1.3fr_1fr_1fr_1.2fr_0.9fr_0.8fr_54px] bg-[#2a2a2a] px-3 py-[9px] text-[10px] font-medium text-white/70">
+      <div className="grid grid-cols-[64px_72px_1.3fr_1fr_1fr_1.2fr_0.9fr_0.8fr_54px] bg-[var(--color-surface-muted)] px-3 py-[9px] text-[10px] font-medium text-white/70">
         <span>S/N</span>
         <span>Thumbnail</span>
         <span>Title</span>
@@ -126,7 +118,7 @@ function HomeManagementTestimonyTable({
 }) {
   return (
     <>
-      <div className="grid grid-cols-[64px_72px_1.1fr_0.85fr_0.8fr_0.95fr_1fr_0.6fr_0.6fr_0.9fr_0.7fr_54px] bg-[#2a2a2a] px-3 py-[9px] text-[10px] font-medium text-white/70">
+      <div className="grid grid-cols-[64px_72px_1.1fr_0.85fr_0.8fr_0.95fr_1fr_0.6fr_0.6fr_0.9fr_0.7fr_54px] bg-[var(--color-surface-muted)] px-3 py-[9px] text-[10px] font-medium text-white/70">
         <span>S/N</span>
         <span>Thumbnail</span>
         <span>Title</span>
@@ -178,7 +170,7 @@ export function HomeManagementContentTable({
   const showTableData = viewModel.phaseState === "populated";
 
   return (
-    <div className="overflow-hidden rounded-[18px] bg-[#171717]">
+    <div className="overflow-hidden rounded-[18px] bg-[var(--color-surface-elevated)]">
       <div className="px-4 pb-3 pt-4 text-[16px] font-medium text-white/90">{tableTitleForTab(viewModel.activeTab)}</div>
       <div className="border-t border-white/5">
         {viewModel.phaseState === "loading" ? <HomeManagementTableLoading pictureMode={pictureMode} /> : null}

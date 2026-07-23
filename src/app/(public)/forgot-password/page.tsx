@@ -133,7 +133,7 @@ export default function ForgotPasswordPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter Email Address"
-              className="rounded-lg border-white/5 bg-[#171717] px-4 py-3.5 text-[0.95rem] focus:border-[var(--color-primary)]"
+              className="rounded-lg border-white/5 bg-[var(--color-surface-elevated)] px-4 py-3.5 text-[0.95rem] focus:border-[var(--color-primary)]"
               required
             />
           </label>
@@ -155,7 +155,7 @@ export default function ForgotPasswordPage() {
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
               placeholder="Enter reset code"
-              className="rounded-lg border-white/5 bg-[#171717] px-4 py-3.5 text-[0.95rem] focus:border-[var(--color-primary)]"
+              className="rounded-lg border-white/5 bg-[var(--color-surface-elevated)] px-4 py-3.5 text-[0.95rem] focus:border-[var(--color-primary)]"
               required
             />
           </label>
@@ -171,7 +171,7 @@ export default function ForgotPasswordPage() {
         <form onSubmit={onComplete} className="space-y-4">
           <PasswordField label="New Password" value={password} onChange={setPassword} />
           <PasswordField label="Confirm New Password" value={confirmPassword} onChange={setConfirmPassword} />
-          <ul className="space-y-2 pl-2 text-[13px] leading-6 text-[#d6d6d6]">
+          <ul className="space-y-2 pl-2 text-[13px] leading-6 text-[var(--color-text-secondary)]">
             {rules.map((rule) => (
               <li key={rule.label}>• {rule.label}</li>
             ))}

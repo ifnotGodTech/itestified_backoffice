@@ -1,4 +1,5 @@
 import type { AdminShellViewModel } from "@/features/admin/domain/entities/shell";
+import type { AdminPaginationFields } from "@/features/admin/domain/entities/pagination";
 
 export type AdminManagementState = "populated" | "empty" | "loading" | "error";
 
@@ -19,7 +20,7 @@ export type AdminManagementRow = {
   canDelete: boolean;
 };
 
-export type AdminManagementViewModel = {
+export type AdminManagementViewModel = AdminPaginationFields & {
   shell: AdminShellViewModel;
   phaseState: AdminManagementState;
   rows: AdminManagementRow[];

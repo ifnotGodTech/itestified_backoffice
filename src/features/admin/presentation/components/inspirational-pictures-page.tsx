@@ -8,6 +8,8 @@ import { AdminDashboardShell } from "@/features/admin/presentation/components/ad
 import {
   AdminActionMenuBackdrop,
   AdminActionMenuPanel,
+  AdminErrorState,
+  AdminPaginationFooter,
   AdminRowMenuIcon,
   AdminSearchIcon,
   AdminStatusBadge,
@@ -20,7 +22,7 @@ function StatusPill({ status }: { status: InspirationalPictureRow["status"] }) {
       ? "border-[#0cbc32]/25 bg-[#0d3215] text-[#0cbc32]"
       : status === "Scheduled"
         ? "border-[#f0c400]/25 bg-[#2f2906] text-[#f0c400]"
-        : "border-white/20 bg-[#252525] text-white/70";
+        : "border-white/20 bg-[var(--color-surface-muted)] text-white/70";
 
   return <AdminStatusBadge label={status} toneClassName={cls} />;
 }
@@ -61,6 +63,14 @@ function picturesStatusHref(viewModel: InspirationalPicturesViewModel, status: I
   });
 }
 
+function paginationHref(viewModel: InspirationalPicturesViewModel, page: number) {
+  return buildInspirationalPicturesHref({
+    status: viewModel.activeStatus,
+    q: viewModel.searchQuery,
+    page,
+  });
+}
+
 function picturesApiHref(viewModel: InspirationalPicturesViewModel, status: InspirationalPictureStatus) {
   const params = new URLSearchParams();
   params.set("status", status);
@@ -94,11 +104,11 @@ function ActionMenu({
   onView?: (row: InspirationalPictureRow) => void;
 }) {
   return (
-    <AdminActionMenuPanel className="min-w-[99px] rounded-[10px] border-[#787878] bg-[#292929] shadow-[0_2px_10px_4px_rgba(0,0,0,0.1)]">
-      <button type="button" onClick={() => onView?.(row)} className="block w-full border-b border-[#787878] px-2 py-[6px] text-left text-[10px] leading-[1.36] text-white hover:bg-white/[0.04]">
+    <AdminActionMenuPanel className="min-w-[99px] rounded-[10px] border-[var(--color-border-soft)] bg-[var(--color-surface-panel)] shadow-[0_2px_10px_4px_rgba(0,0,0,0.1)]">
+      <button type="button" onClick={() => onView?.(row)} className="block w-full border-b border-[var(--color-border-soft)] px-2 py-[6px] text-left text-[10px] leading-[1.36] text-white hover:bg-white/[0.04]">
         View
       </button>
-      <Link href={buildInspirationalPicturesHref({ status: viewModel.activeStatus, q: viewModel.searchQuery, edit: row.id })} className="block border-b border-[#787878] px-2 py-[6px] text-[10px] leading-[1.36] text-white hover:bg-white/[0.04]">
+      <Link href={buildInspirationalPicturesHref({ status: viewModel.activeStatus, q: viewModel.searchQuery, edit: row.id })} className="block border-b border-[var(--color-border-soft)] px-2 py-[6px] text-[10px] leading-[1.36] text-white hover:bg-white/[0.04]">
         Edit
       </Link>
       <Link href={buildInspirationalPicturesHref({ status: viewModel.activeStatus, q: viewModel.searchQuery, remove: row.id })} className="block px-2 py-[6px] text-[10px] leading-[1.36] text-[#ef4335] hover:bg-white/[0.04]">
@@ -139,7 +149,7 @@ function DetailModal({ row, viewModel, onClose }: { row: InspirationalPictureRow
       ) : (
         <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close picture details modal" />
       )}
-      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[561px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_2px_10px_4px_rgba(0,0,0,0.1)]">
+      <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[561px] flex-col overflow-hidden rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_2px_10px_4px_rgba(0,0,0,0.1)]">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-6">
           <h2 className="text-[28px] font-semibold leading-[1.18] text-white">Picture Details</h2>
           {onClose ? (
@@ -149,7 +159,7 @@ function DetailModal({ row, viewModel, onClose }: { row: InspirationalPictureRow
           )}
         </div>
         <div className="overflow-y-auto px-6 pb-7 pt-6">
-          <div className="relative h-[297px] overflow-hidden rounded-[16px] bg-[radial-gradient(circle_at_top,#5d3d76_0%,#31213f_38%,#1f1f1f_100%)]">
+          <div className="relative h-[297px] overflow-hidden rounded-[16px] bg-[radial-gradient(circle_at_top,#5d3d76_0%,#31213f_38%,var(--color-surface-elevated)_100%)]">
             <SafePictureImage src={row.imageSrc} alt={row.title} sizes="280px" className="object-contain p-10 opacity-90" />
           </div>
           <dl className="mt-8 space-y-0 text-[16px] text-white/90">
@@ -185,7 +195,7 @@ function EditModal({ row, viewModel }: { row: InspirationalPictureRow; viewModel
       <form
         action={`/api/admin/content/inspirational-pictures/${row.id}`}
         method="POST"
-        className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[561px] flex-col overflow-hidden rounded-[24px] bg-[#1e1e1e] shadow-[0_2px_10px_4px_rgba(0,0,0,0.1)]"
+        className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[561px] flex-col overflow-hidden rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_2px_10px_4px_rgba(0,0,0,0.1)]"
       >
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-6">
           <h2 className="text-[28px] font-semibold leading-[1.18] text-white">Edit Picture</h2>
@@ -194,19 +204,19 @@ function EditModal({ row, viewModel }: { row: InspirationalPictureRow; viewModel
         <div className="overflow-y-auto px-6 pb-6 pt-7">
           <div>
             <p className="mb-3 text-[16px] leading-[1.5] text-white/90">Title</p>
-            <input name="title" defaultValue={row.title} className="w-full rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 text-[15px] leading-[1.5] text-white" />
+            <input name="title" defaultValue={row.title} className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[15px] leading-[1.5] text-white" />
           </div>
           <div className="mt-6">
             <p className="mb-3 text-[16px] leading-[1.5] text-white/90">Category</p>
-            <input name="category" defaultValue={row.category} className="w-full rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 text-[15px] leading-[1.5] text-white" />
+            <input name="category" defaultValue={row.category} className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[15px] leading-[1.5] text-white" />
           </div>
           <div className="mt-6">
             <p className="mb-3 text-[16px] leading-[1.5] text-white/90">Image URL</p>
-            <input name="image_url" defaultValue={row.imageUrl ?? row.imageSrc} className="w-full rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 text-[15px] leading-[1.5] text-white" />
+            <input name="image_url" defaultValue={row.imageUrl ?? row.imageSrc} className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[15px] leading-[1.5] text-white" />
           </div>
           <div className="mt-6">
             <p className="mb-3 text-[16px] leading-[1.5] text-white/90">Source</p>
-            <input name="source" defaultValue={row.source} className="w-full rounded-[10px] border border-white/10 bg-[#2a2a2a] px-4 py-4 text-[15px] leading-[1.5] text-white" />
+            <input name="source" defaultValue={row.source} className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[15px] leading-[1.5] text-white" />
           </div>
           <input type="hidden" name="status" value={row.status === "Scheduled" ? "scheduled" : row.status === "Uploaded" ? "published" : "draft"} />
         </div>
@@ -224,7 +234,7 @@ function DeleteModal({ viewModel }: { viewModel: InspirationalPicturesViewModel 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
       <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close delete picture modal" />
-      <div className="relative z-10 w-full max-w-[398px] rounded-[24px] bg-[#1f1f1f] px-8 py-10 text-center shadow-[0_2px_10px_4px_rgba(0,0,0,0.1)]">
+      <div className="relative z-10 w-full max-w-[398px] rounded-[24px] bg-[var(--color-surface-elevated)] px-8 py-10 text-center shadow-[0_2px_10px_4px_rgba(0,0,0,0.1)]">
         <h2 className="text-[28px] font-semibold leading-[1.18] text-white">Delete This Picture?</h2>
         <p className="mt-5 text-[16px] leading-8 text-white/72">Are you sure you want to delete this picture? This action cannot be undone.</p>
         <div className="mt-8 flex justify-center gap-4">
@@ -246,7 +256,7 @@ function SuccessModal({ viewModel }: { viewModel: InspirationalPicturesViewModel
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
       <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close upload success modal" />
-      <div className="relative z-10 w-full max-w-[398px] rounded-[24px] bg-[#1f1f1f] px-8 py-12 text-center shadow-[0_2px_10px_4px_rgba(0,0,0,0.1)]">
+      <div className="relative z-10 w-full max-w-[398px] rounded-[24px] bg-[var(--color-surface-elevated)] px-8 py-12 text-center shadow-[0_2px_10px_4px_rgba(0,0,0,0.1)]">
         <div className="mx-auto flex h-[102px] w-[102px] items-center justify-center rounded-full bg-[#9B68D5] text-[62px] text-white">✓</div>
         <p className="mt-10 text-[28px] font-semibold leading-[1.3] text-white">{viewModel.successMessage}</p>
       </div>
@@ -256,7 +266,7 @@ function SuccessModal({ viewModel }: { viewModel: InspirationalPicturesViewModel
 
 function EmptyState() {
   return (
-    <div className="rounded-[20px] bg-[#171717] px-8 py-16 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+    <div className="rounded-[20px] bg-[var(--color-surface-elevated)] px-8 py-16 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
       <p className="text-[18px] font-medium text-white/90">No Pictures here Yet</p>
     </div>
   );
@@ -265,7 +275,7 @@ function EmptyState() {
 function UploadScreen() {
   return (
     <div className="max-w-[1248px] pt-6 md:pt-8">
-      <form action="/api/admin/content/inspirational-pictures" method="POST" className="rounded-[24px] bg-[#171717] px-6 py-8 shadow-[0_20px_60px_rgba(0,0,0,0.35)] md:px-10 md:py-10">
+      <form action="/api/admin/content/inspirational-pictures" method="POST" className="rounded-[24px] bg-[var(--color-surface-elevated)] px-6 py-8 shadow-[0_20px_60px_rgba(0,0,0,0.35)] md:px-10 md:py-10">
         <div className="flex items-start justify-between gap-6">
           <h2 className="text-[32px] font-semibold leading-[1.36] text-white">Upload Picture</h2>
           <Link href={buildInspirationalPicturesHref({})} aria-label="Close upload picture screen" className="inline-flex h-6 w-6 items-center justify-center text-[20px] leading-none text-white/90">
@@ -277,19 +287,19 @@ function UploadScreen() {
           <div className="space-y-6">
             <div>
               <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Picture Source</p>
-              <input name="source" placeholder="https://..." className="w-full rounded-[10px] border border-white/10 bg-[#242424] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35" />
+              <input name="source" placeholder="https://..." className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35" />
             </div>
             <div>
               <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Category</p>
-              <input name="category" placeholder="Faith" className="w-full rounded-[10px] border border-white/10 bg-[#242424] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35" />
+              <input name="category" placeholder="Faith" className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35" />
             </div>
             <div>
               <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Title</p>
-              <input name="title" placeholder="Morning Mercy" className="w-full rounded-[10px] border border-white/10 bg-[#242424] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35" />
+              <input name="title" placeholder="Morning Mercy" className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35" />
             </div>
             <div>
               <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Caption</p>
-              <textarea name="caption" placeholder="Type caption..." className="w-full rounded-[10px] border border-white/10 bg-[#242424] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35" />
+              <textarea name="caption" placeholder="Type caption..." className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35" />
             </div>
             <div>
               <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Upload Status</p>
@@ -309,16 +319,16 @@ function UploadScreen() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <input type="datetime-local" name="publish_at" className="rounded-[10px] border border-white/10 bg-[#242424] px-4 py-3 text-[14px] text-white/85" />
-              <input type="datetime-local" name="expires_at" className="rounded-[10px] border border-white/10 bg-[#242424] px-4 py-3 text-[14px] text-white/85" />
+              <input type="datetime-local" name="publish_at" className="rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-3 text-[14px] text-white/85" />
+              <input type="datetime-local" name="expires_at" className="rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-3 text-[14px] text-white/85" />
             </div>
           </div>
-          <div className="rounded-[16px] border border-dashed border-white/10 bg-[#1f1f1f] p-5">
-            <div className="flex h-[250px] items-center justify-center rounded-[12px] border border-dashed border-white/10 bg-[#242424] text-center">
+          <div className="rounded-[16px] border border-dashed border-white/10 bg-[var(--color-surface-elevated)] p-5">
+            <div className="flex h-[250px] items-center justify-center rounded-[12px] border border-dashed border-white/10 bg-[var(--color-surface-muted)] text-center">
               <div className="max-w-[255px]">
                 <p className="text-[14px] leading-[1.5] text-white/90">Drag & drop or choose file here to upload</p>
                 <p className="mt-2 text-[12px] leading-[1.4] text-white/40">JPG, PNG, Max size (20mb)</p>
-                <input name="image_url" placeholder="https://images.example.com/pic.jpg" className="mt-3 w-full rounded-[8px] border border-white/10 bg-[#1a1a1a] px-3 py-2 text-[12px] text-white/85 placeholder:text-white/35" />
+                <input name="image_url" placeholder="https://images.example.com/pic.jpg" className="mt-3 w-full rounded-[8px] border border-white/10 bg-[var(--color-surface-elevated)] px-3 py-2 text-[12px] text-white/85 placeholder:text-white/35" />
               </div>
             </div>
           </div>
@@ -356,7 +366,7 @@ function PicturesGrid({
       : "grid-cols-[76px_99px_135px_135px_135px_115px_64px]";
 
   return (
-    <div className="rounded-[20px] bg-[#171717] px-5 pb-10 pt-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+    <div className="rounded-[20px] bg-[var(--color-surface-elevated)] px-5 pb-10 pt-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
       <div className="flex flex-col gap-6 border-b border-white/10 px-1 pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-5">
           <h2 className="text-[16px] font-normal leading-[1.36] text-white">Inspirational Pictures</h2>
@@ -401,7 +411,7 @@ function PicturesGrid({
               <div key={row.id} className={`grid ${tableColumns} items-center px-4 py-3 text-[10px] text-white/90`}>
                 <div className="text-[10px] leading-[1.36] text-white/70">{index + 1}</div>
                 <div className="flex items-center">
-                  <div className="relative h-[50px] w-[67px] overflow-hidden rounded-[8px] bg-[radial-gradient(circle_at_top,#5d3d76_0%,#31213f_38%,#1f1f1f_100%)]">
+                  <div className="relative h-[50px] w-[67px] overflow-hidden rounded-[8px] bg-[radial-gradient(circle_at_top,#5d3d76_0%,#31213f_38%,var(--color-surface-elevated)_100%)]">
                     <SafePictureImage src={row.imageSrc} alt={row.title} sizes="56px" className="object-contain p-2 opacity-90" />
                   </div>
                 </div>
@@ -436,13 +446,13 @@ function PicturesGrid({
         </div>
       </div>
 
-      <div className="mt-10 flex items-center justify-between text-[12px] text-white/45">
-        <span>{viewModel.showingLabel}</span>
-        <div className="flex gap-3">
-          <button type="button" className="h-[35px] min-w-[75px] rounded-[8px] border border-white/20 px-3 py-2 text-[14px] text-white/45">Previous</button>
-          <button type="button" className="h-[35px] min-w-[59px] rounded-[8px] border border-[#9B68D5] px-3 py-2 text-[14px] text-[#9B68D5]">Next</button>
-        </div>
-      </div>
+      <AdminPaginationFooter
+        showingLabel={viewModel.showingLabel}
+        hasPreviousPage={viewModel.hasPreviousPage}
+        hasNextPage={viewModel.hasNextPage}
+        previousHref={paginationHref(viewModel, viewModel.page - 1)}
+        nextHref={paginationHref(viewModel, viewModel.page + 1)}
+      />
     </div>
   );
 }
@@ -484,6 +494,10 @@ export function InspirationalPicturesPage({ viewModel }: { viewModel: Inspiratio
         ...loadingPicturesViewModel(current, status),
         phaseState: "error",
         errorMessage: "We could not load inspirational pictures right now. Please try again.",
+        showingLabel: "Showing 0 of 0",
+        page: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
       }));
     }
   }
@@ -501,8 +515,12 @@ export function InspirationalPicturesPage({ viewModel }: { viewModel: Inspiratio
     <AdminDashboardShell viewModel={interactiveViewModel.shell} pageTitle={interactiveViewModel.activeScreen === "upload" ? undefined : "Inspirational Pictures"}>
       {interactiveViewModel.activeScreen === "upload" ? <UploadScreen /> : null}
       {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "empty" ? <EmptyState /> : null}
-      {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "loading" ? <div className="rounded-[20px] bg-[#171717] px-8 py-16 text-center text-white/70">Loading pictures...</div> : null}
-      {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "error" ? <div className="rounded-[20px] bg-[#171717] px-8 py-16 text-center text-white/70">{interactiveViewModel.errorMessage}</div> : null}
+      {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "loading" ? <div className="rounded-[20px] bg-[var(--color-surface-elevated)] px-8 py-16 text-center text-white/70">Loading pictures...</div> : null}
+      {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "error" ? (
+        <div className="rounded-[20px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <AdminErrorState title="Unable to load inspirational pictures" message={interactiveViewModel.errorMessage} />
+        </div>
+      ) : null}
       {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "populated" ? (
         <div className="relative">
           <PicturesGrid

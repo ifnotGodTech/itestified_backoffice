@@ -16,6 +16,7 @@ export default async function InspirationalPicturesRoute({
     edit?: string;
     remove?: string;
     success?: string;
+    page?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -37,6 +38,7 @@ export default async function InspirationalPicturesRoute({
       edit: params.edit,
       remove: params.remove,
       success: params.success,
+      page: params.page,
       fullName: session?.email ?? undefined,
     },
     cookieHeader,

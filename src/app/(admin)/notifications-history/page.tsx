@@ -19,6 +19,7 @@ export default async function NotificationsHistoryRoute({
     delete?: string;
     deleteAll?: string;
     success?: string;
+    page?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -43,6 +44,7 @@ export default async function NotificationsHistoryRoute({
       delete: params.delete,
       deleteAll: params.deleteAll,
       success: params.success,
+      page: params.page,
       fullName: session?.email ?? undefined,
     },
     cookieHeader,

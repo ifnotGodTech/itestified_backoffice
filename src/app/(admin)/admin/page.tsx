@@ -20,6 +20,7 @@ export default async function AdminRoutePage({
     remove?: string;
     success?: string;
     successType?: string;
+    page?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -40,6 +41,7 @@ export default async function AdminRoutePage({
     remove: params.remove,
     success: params.success,
     successType: params.successType,
+    page: params.page,
     fullName: session?.fullName ?? session?.email,
   });
 

@@ -13,6 +13,7 @@ export type NotificationsHistoryRouteParams = {
   delete?: number | null;
   deleteAll?: boolean | null;
   success?: string | null;
+  page?: number | null;
 };
 
 export function buildNotificationsHistoryHref(params: NotificationsHistoryRouteParams) {
@@ -29,6 +30,7 @@ export function buildNotificationsHistoryHref(params: NotificationsHistoryRouteP
   if (params.delete) search.set("delete", String(params.delete));
   if (params.deleteAll) search.set("deleteAll", "1");
   if (params.success) search.set("success", params.success);
+  if (params.page && params.page > 1) search.set("page", String(params.page));
   const query = search.toString();
   return query ? `/notifications-history?${query}` : "/notifications-history";
 }

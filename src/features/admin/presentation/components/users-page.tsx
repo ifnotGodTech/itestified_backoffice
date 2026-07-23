@@ -74,6 +74,9 @@ export function UsersPage({ viewModel }: { viewModel: UserManagementViewModel })
         phaseState: "error",
         errorMessage: "We could not load user records right now. Please try again.",
         showingLabel: "Showing 0 of 0",
+        page: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
       }));
     }
   }
@@ -94,7 +97,7 @@ export function UsersPage({ viewModel }: { viewModel: UserManagementViewModel })
       ) : null}
       <div className="space-y-5">
         <div className="flex max-w-[1080px] items-center justify-between gap-4">
-          <div className="flex rounded-[10px] bg-[#262626] p-1">
+          <div className="flex rounded-[10px] bg-[var(--color-surface-muted)] p-1">
             {interactiveViewModel.tabs.map((tab) => {
               const active = tab.key === interactiveViewModel.activeTab;
 

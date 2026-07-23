@@ -3,6 +3,8 @@ import type { DonationRow, DonationTab, DonationsViewModel } from "@/features/ad
 import {
   AdminActionMenuBackdrop,
   AdminActionMenuPanel,
+  AdminErrorState,
+  AdminPaginationFooter,
   AdminRowMenuIcon,
   AdminSearchIcon,
   AdminStatusBadge,
@@ -66,7 +68,7 @@ function DonationActionMenu({
   const openUp = viewModel.rows.length - viewModel.rows.indexOf(row) <= 1;
 
   return (
-    <AdminActionMenuPanel className={`absolute right-0 z-50 min-w-[156px] rounded-[12px] border-[#626262] bg-[#2a2a2a] ${openUp ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"}`}>
+    <AdminActionMenuPanel className={`absolute right-0 z-50 min-w-[156px] rounded-[12px] border-[var(--color-border-soft)] bg-[var(--color-surface-muted)] ${openUp ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"}`}>
       <button
         type="button"
         onClick={() => onView?.(row)}
@@ -104,7 +106,7 @@ function HeroCard({ viewModel }: { viewModel: DonationsViewModel }) {
   if (!viewModel.heroCard) return null;
 
   return (
-    <div className="mb-6 rounded-[16px] border border-white/10 bg-[#1c1c1c] px-6 py-6 shadow-[0_12px_36px_rgba(0,0,0,0.2)]">
+    <div className="mb-6 rounded-[16px] border border-white/10 bg-[var(--color-surface-elevated)] px-6 py-6 shadow-[0_12px_36px_rgba(0,0,0,0.2)]">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-[14px] text-white/55">{viewModel.heroCard.label}</p>
@@ -127,7 +129,7 @@ function HeroCard({ viewModel }: { viewModel: DonationsViewModel }) {
             <span>⌄</span>
           </Link>
           {viewModel.showMonthMenu ? (
-            <div className="absolute right-12 top-[38px] z-50 min-w-[132px] overflow-hidden rounded-[12px] border border-white/10 bg-[#242424] shadow-[0_14px_24px_rgba(0,0,0,0.35)]">
+            <div className="absolute right-12 top-[38px] z-50 min-w-[132px] overflow-hidden rounded-[12px] border border-white/10 bg-[var(--color-surface-muted)] shadow-[0_14px_24px_rgba(0,0,0,0.35)]">
               {viewModel.monthOptions.map((month) => (
                 <Link
                   key={month}
@@ -147,6 +149,21 @@ function HeroCard({ viewModel }: { viewModel: DonationsViewModel }) {
       </div>
     </div>
   );
+}
+
+function paginationHref(viewModel: DonationsViewModel, page: number) {
+  return buildDonationsHref({
+    tab: viewModel.activeTab,
+    month: viewModel.selectedMonth,
+    q: viewModel.searchQuery,
+    minAmount: viewModel.filterDraft.minAmount,
+    maxAmount: viewModel.filterDraft.maxAmount,
+    currency: viewModel.filterDraft.currency,
+    from: viewModel.filterDraft.from,
+    to: viewModel.filterDraft.to,
+    statusFilter: viewModel.filterDraft.status,
+    page,
+  });
 }
 
 export function DonationsTable({
@@ -172,7 +189,7 @@ export function DonationsTable({
     <div className="max-w-[1248px] pt-6 md:pt-8">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-[30px] font-semibold leading-[1.2] text-[#f4f4f4]">{viewModel.pageTitle}</h1>
+          <h1 className="text-[30px] font-semibold leading-[1.2] text-[var(--color-text-primary)]">{viewModel.pageTitle}</h1>
           <p className="mt-2 text-[15px] text-white/50">{viewModel.pageDescription}</p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -209,7 +226,7 @@ export function DonationsTable({
             readOnly
             value={viewModel.searchQuery}
             placeholder={viewModel.searchPlaceholder}
-            className="h-[40px] w-full rounded-[8px] border border-white/5 bg-[#1b1b1b] pl-10 pr-4 text-[12px] text-white/75 outline-none placeholder:text-white/32"
+            className="h-[40px] w-full rounded-[8px] border border-white/5 bg-[var(--color-surface-elevated)] pl-10 pr-4 text-[12px] text-white/75 outline-none placeholder:text-white/32"
           />
         </div>
         <div className="flex items-center gap-3 self-end">
@@ -231,7 +248,7 @@ export function DonationsTable({
 
       <HeroCard viewModel={viewModel} />
 
-      <div className="relative mt-7 rounded-[16px] border border-white/10 bg-[#111111] shadow-[0_20px_40px_rgba(0,0,0,0.18)]">
+      <div className="relative mt-7 rounded-[16px] border border-white/10 bg-[var(--color-surface-elevated)] shadow-[0_20px_40px_rgba(0,0,0,0.18)]">
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
           <h2 className="text-[17px] font-semibold text-white">{viewModel.tableTitle}</h2>
           {showHeaderBadges ? (
@@ -250,11 +267,11 @@ export function DonationsTable({
 
         <div className="overflow-x-auto">
           {viewModel.phaseState === "loading" ? <div className="px-8 py-16 text-center text-white/70">Loading donations...</div> : null}
-          {viewModel.phaseState === "error" ? <div className="px-8 py-16 text-center text-white/70">{viewModel.errorMessage}</div> : null}
+          {viewModel.phaseState === "error" ? <AdminErrorState title="Unable to load donations" message={viewModel.errorMessage} /> : null}
           {viewModel.phaseState === "empty" ? <div className="px-8 py-16 text-center text-[18px] font-medium text-white/90">No Donations Yet</div> : null}
           {viewModel.phaseState === "populated" ? (
             <>
-              <div className={`${tableGridClass} bg-[#181818] px-4 py-[12px] text-[11px] font-medium text-white/72`}>
+              <div className={`${tableGridClass} bg-[var(--color-surface-elevated)] px-4 py-[12px] text-[11px] font-medium text-white/72`}>
                 <span>□</span>
                 <span>S/N ↕</span>
                 <span>Transaction ID</span>
@@ -298,17 +315,13 @@ export function DonationsTable({
           ) : null}
         </div>
 
-        <div className="flex items-center justify-between px-6 py-5 text-[12px] text-white/72">
-          <span>{viewModel.showingLabel}</span>
-          <div className="flex gap-3">
-            <button type="button" className="rounded-[10px] border border-white/15 px-5 py-2 text-[14px] text-white/72">
-              Previous
-            </button>
-            <button type="button" className="rounded-[10px] border border-white/15 px-5 py-2 text-[14px] text-white/88">
-              Next
-            </button>
-          </div>
-        </div>
+        <AdminPaginationFooter
+          showingLabel={viewModel.showingLabel}
+          hasPreviousPage={viewModel.hasPreviousPage}
+          hasNextPage={viewModel.hasNextPage}
+          previousHref={paginationHref(viewModel, viewModel.page - 1)}
+          nextHref={paginationHref(viewModel, viewModel.page + 1)}
+        />
 
         {viewModel.showActionMenu && viewModel.selectedRow ? (
           onCloseMenu ? (

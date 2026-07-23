@@ -118,7 +118,7 @@ export function DonationsOverlays({
     <>
       {showDetails && selectedRow ? (
         <OverlayShell closeLabel="Close donation detail modal" onClose={closeDetails}>
-          <div className="relative z-10 w-full max-w-[620px] rounded-[20px] bg-[#1f1f1f] px-6 pb-6 pt-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <div className="relative z-10 w-full max-w-[620px] rounded-[20px] bg-[var(--color-surface-elevated)] px-6 pb-6 pt-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <CloseControl href={close} onClose={closeDetails} className="absolute right-8 top-5" label="Close donation detail modal">
               <CloseX />
             </CloseControl>
@@ -147,7 +147,7 @@ export function DonationsOverlays({
 
       {showFilter ? (
         <OverlayShell closeLabel="Close donations filter modal" onClose={closeFilterOverlay}>
-          <form action="/donations" className="relative z-10 w-full max-w-[380px] overflow-hidden rounded-[20px] border border-white/15 bg-[#1d1d1d] shadow-[0_14px_40px_rgba(0,0,0,0.45)]">
+          <form action="/donations" className="relative z-10 w-full max-w-[380px] overflow-hidden rounded-[20px] border border-white/15 bg-[var(--color-surface-elevated)] shadow-[0_14px_40px_rgba(0,0,0,0.45)]">
             <input type="hidden" name="tab" value={viewModel.activeTab} />
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <h2 className="text-[14px] font-normal text-white">Filter</h2>
@@ -166,11 +166,11 @@ export function DonationsOverlays({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <p className="mb-2 text-[12px] text-white/45">Minimum</p>
-                    <input name="minAmount" defaultValue={viewModel.filterDraft.minAmount} placeholder="e.g 500" className="h-[32px] w-full rounded-[8px] bg-[#2a2a2a] px-4 text-[12px] text-white/80 outline-none placeholder:text-white/28" />
+                    <input name="minAmount" defaultValue={viewModel.filterDraft.minAmount} placeholder="e.g 500" className="h-[32px] w-full rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[12px] text-white/80 outline-none placeholder:text-white/28" />
                   </div>
                   <div>
                     <p className="mb-2 text-[12px] text-white/45">Maximum</p>
-                    <input name="maxAmount" defaultValue={viewModel.filterDraft.maxAmount} placeholder="e.g 500000" className="h-[32px] w-full rounded-[8px] bg-[#2a2a2a] px-4 text-[12px] text-white/80 outline-none placeholder:text-white/28" />
+                    <input name="maxAmount" defaultValue={viewModel.filterDraft.maxAmount} placeholder="e.g 500000" className="h-[32px] w-full rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[12px] text-white/80 outline-none placeholder:text-white/28" />
                   </div>
                 </div>
               </div>
@@ -183,7 +183,7 @@ export function DonationsOverlays({
                   </Link>
                 </div>
                 <input type="hidden" name="currency" value={viewModel.filterDraft.currency ?? ""} />
-                <div className="flex h-[40px] items-center justify-between rounded-[8px] bg-[#2a2a2a] px-4 text-[14px] text-white/76">
+                <div className="flex h-[40px] items-center justify-between rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[14px] text-white/76">
                   <span>{viewModel.filterDraft.currency ?? "Select"}</span>
                   <span>⌄</span>
                 </div>
@@ -216,11 +216,11 @@ export function DonationsOverlays({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <p className="mb-2 text-[12px] text-white/45">From</p>
-                    <input name="from" defaultValue={viewModel.filterDraft.from} placeholder="dd/mm/yyyy" className="h-[32px] w-full rounded-[8px] bg-[#2a2a2a] px-4 text-[12px] text-white/80 outline-none placeholder:text-white/28" />
+                    <input name="from" defaultValue={viewModel.filterDraft.from} placeholder="dd/mm/yyyy" className="h-[32px] w-full rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[12px] text-white/80 outline-none placeholder:text-white/28" />
                   </div>
                   <div>
                     <p className="mb-2 text-[12px] text-white/45">To</p>
-                    <input name="to" defaultValue={viewModel.filterDraft.to} placeholder="dd/mm/yyyy" className="h-[32px] w-full rounded-[8px] bg-[#2a2a2a] px-4 text-[12px] text-white/80 outline-none placeholder:text-white/28" />
+                    <input name="to" defaultValue={viewModel.filterDraft.to} placeholder="dd/mm/yyyy" className="h-[32px] w-full rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[12px] text-white/80 outline-none placeholder:text-white/28" />
                   </div>
                 </div>
               </div>
@@ -239,7 +239,7 @@ export function DonationsOverlays({
 
       {viewModel.showReverseConfirm && viewModel.selectedRow && !isDismissed(reverseKey, "reverse") ? (
         <OverlayShell closeLabel="Close reverse donation modal" onClose={() => dismissRouteOverlay(reverseKey)}>
-          <div className="relative z-10 w-full max-w-[513px] rounded-[20px] bg-[#1f1f1f] px-10 pb-5 pt-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <div className="relative z-10 w-full max-w-[513px] rounded-[20px] bg-[var(--color-surface-elevated)] px-10 pb-5 pt-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <CloseControl href={closeHref(viewModel)} onClose={() => dismissRouteOverlay(reverseKey)} className="absolute right-8 top-5" label="Close reverse donation modal">
               <CloseX />
             </CloseControl>
@@ -255,7 +255,7 @@ export function DonationsOverlays({
 
       {viewModel.showReasonModal && viewModel.selectedRow && !isDismissed(reasonKey, "reason") ? (
         <OverlayShell closeLabel="Close reversal reason modal" onClose={() => dismissRouteOverlay(reasonKey)}>
-          <div className="relative z-10 w-full max-w-[640px] rounded-[20px] bg-[#1f1f1f] px-6 pb-6 pt-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <div className="relative z-10 w-full max-w-[640px] rounded-[20px] bg-[var(--color-surface-elevated)] px-6 pb-6 pt-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <CloseControl href={closeHref(viewModel)} onClose={() => dismissRouteOverlay(reasonKey)} className="absolute right-8 top-5" label="Close reversal reason modal">
               <CloseX />
             </CloseControl>
@@ -276,14 +276,14 @@ export function DonationsOverlays({
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div>
                 <p className="mb-2 text-[14px] text-white">Donation amount</p>
-                <div className="flex h-[44px] items-center justify-between rounded-[8px] bg-[#2a2a2a] px-4 text-[14px] text-white/85">
+                <div className="flex h-[44px] items-center justify-between rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[14px] text-white/85">
                   <span>{viewModel.selectedRow.amount}</span>
                   <span className="border-l border-white/10 pl-4">{viewModel.selectedRow.currency}</span>
                 </div>
               </div>
               <div>
                 <p className="mb-2 text-[14px] text-white">Reason for Reversal<span className="text-[#b27bff]">*</span></p>
-                <div className="flex h-[44px] items-center justify-between rounded-[8px] bg-[#2a2a2a] px-4 text-[14px] text-white/75">
+                <div className="flex h-[44px] items-center justify-between rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[14px] text-white/75">
                   <span>Admin verification request</span>
                   <span>⌄</span>
                 </div>
@@ -306,7 +306,7 @@ export function DonationsOverlays({
 
       {viewModel.showDeleteConfirm && viewModel.selectedRow && !isDismissed(deleteKey, "remove") ? (
         <OverlayShell closeLabel="Close delete donation modal" onClose={() => dismissRouteOverlay(deleteKey)}>
-          <div className="relative z-10 w-full max-w-[578px] rounded-[20px] bg-[#1f1f1f] px-12 pb-10 pt-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <div className="relative z-10 w-full max-w-[578px] rounded-[20px] bg-[var(--color-surface-elevated)] px-12 pb-10 pt-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <h2 className="text-[28px] font-semibold text-white">Delete Donation?</h2>
             <p className="mx-auto mt-8 max-w-[460px] text-[18px] leading-[1.4] text-white/78">Are you sure you want to delete this donation? This action cannot be undone.</p>
             <div className="mt-16 flex justify-center gap-6">
@@ -319,7 +319,7 @@ export function DonationsOverlays({
 
       {viewModel.showSuccess && viewModel.successMessage && !isDismissed(successKey, "success") ? (
         <OverlayShell closeLabel="Close donation success modal" onClose={() => dismissRouteOverlay(successKey)}>
-          <div className="relative z-10 w-full max-w-[390px] rounded-[20px] bg-[#1f1f1f] px-8 py-8 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <div className="relative z-10 w-full max-w-[390px] rounded-[20px] bg-[var(--color-surface-elevated)] px-8 py-8 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <div className="mx-auto flex h-[102px] w-[102px] items-center justify-center rounded-full bg-[#9B68D5] text-[62px] text-white">✓</div>
             <p className="mt-10 text-[28px] font-semibold leading-[1.2] text-white">{viewModel.successMessage}</p>
             <p className="mt-4 text-[18px] text-white/72">{viewModel.successMessage === "Refund Successful" ? "Refund of ₦1,000 initiated" : "Your update has been saved."}</p>
@@ -329,7 +329,7 @@ export function DonationsOverlays({
 
       {viewModel.showRefundConfirm && viewModel.selectedRow && !isDismissed("refund", "refund") ? (
         <OverlayShell closeLabel="Close refund modal" onClose={() => dismissRouteOverlay("refund")}>
-          <div className="relative z-10 w-full max-w-[390px] rounded-[20px] bg-[#1f1f1f] px-8 py-8 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <div className="relative z-10 w-full max-w-[390px] rounded-[20px] bg-[var(--color-surface-elevated)] px-8 py-8 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
             <div className="mx-auto flex h-[102px] w-[102px] items-center justify-center rounded-full bg-[#9B68D5] text-[62px] text-white">✓</div>
             <p className="mt-10 text-[28px] font-semibold leading-[1.2] text-white">Refund Successful</p>
             <p className="mt-4 text-[18px] text-white/72">Refund of ₦1,000 initiated</p>

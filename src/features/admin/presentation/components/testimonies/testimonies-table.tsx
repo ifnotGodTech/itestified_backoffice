@@ -13,6 +13,7 @@ import type {
   VideoTestimonyRow,
 } from "@/features/admin/domain/entities/testimonies";
 import { buildTestimoniesHref } from "@/features/admin/presentation/state/testimonies-route-state";
+import { AdminErrorState, AdminPaginationFooter } from "@/features/admin/presentation/components/shared/admin-table-primitives";
 
 function SearchIcon() {
   return (
@@ -49,7 +50,7 @@ function StatusPill({ status }: { status: TestimonyStatus }) {
         ? "border-[#ef4335]/25 bg-[#321313] text-[#ef4335]"
         : status === "Scheduled" || status === "Pending"
           ? "border-[#f0c400]/25 bg-[#2f2906] text-[#f0c400]"
-          : "border-white/20 bg-[#252525] text-white/70";
+          : "border-white/20 bg-[var(--color-surface-muted)] text-white/70";
 
   return <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] leading-none ${cls}`}>{status}</span>;
 }
@@ -82,16 +83,7 @@ function TestimoniesLoading({ video = false }: { video?: boolean }) {
 }
 
 function TestimoniesError({ message }: { message?: string }) {
-  return (
-    <div className="px-8 py-14">
-      <div className="rounded-[18px] border border-[#ef4335]/30 bg-[#2a1615] px-6 py-6">
-        <h3 className="text-[20px] font-semibold text-white">Unable to load testimonies</h3>
-        <p className="mt-3 max-w-[520px] text-[15px] leading-7 text-white/70">
-          {message ?? "An unexpected error occurred while loading this section."}
-        </p>
-      </div>
-    </div>
-  );
+  return <AdminErrorState title="Unable to load testimonies" message={message} />;
 }
 
 function TextActionMenu({
@@ -107,7 +99,7 @@ function TextActionMenu({
   const canArchive = row.status === "Approved" || row.status === "Scheduled";
 
   return (
-    <div className={`absolute right-0 z-50 min-w-[118px] overflow-hidden rounded-[12px] border border-[#5b5b5b] bg-[#242424] text-left shadow-[0_14px_24px_rgba(0,0,0,0.35)] ${openUp ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"}`}>
+    <div className={`absolute right-0 z-50 min-w-[118px] overflow-hidden rounded-[12px] border border-[var(--color-border-soft)] bg-[var(--color-surface-muted)] text-left shadow-[0_14px_24px_rgba(0,0,0,0.35)] ${openUp ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"}`}>
       <button type="button" onClick={() => onView(row)} className="block w-full border-b border-white/10 px-4 py-2 text-left text-[14px] text-white/90 hover:bg-white/[0.04]">
         View
       </button>
@@ -163,7 +155,7 @@ function VideoActionMenu({
   }
 
   return (
-    <div className={`absolute right-0 z-50 min-w-[126px] overflow-hidden rounded-[12px] border border-[#5b5b5b] bg-[#242424] text-left shadow-[0_14px_24px_rgba(0,0,0,0.35)] ${openUp ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"}`}>
+    <div className={`absolute right-0 z-50 min-w-[126px] overflow-hidden rounded-[12px] border border-[var(--color-border-soft)] bg-[var(--color-surface-muted)] text-left shadow-[0_14px_24px_rgba(0,0,0,0.35)] ${openUp ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"}`}>
       <button type="button" onClick={() => onView(row)} className="block w-full border-b border-white/10 px-4 py-2 text-left text-[14px] text-white/90 hover:bg-white/[0.04]">
         View
       </button>
@@ -261,7 +253,7 @@ function TextTable({
 }) {
   return (
     <>
-      <div className="grid grid-cols-[64px_1.1fr_1fr_1fr_0.8fr_0.9fr_0.8fr_110px_54px] bg-[#2a2a2a] px-3 py-[9px] text-[10px] font-medium text-white/70">
+      <div className="grid grid-cols-[64px_1.1fr_1fr_1fr_0.8fr_0.9fr_0.8fr_110px_54px] bg-[var(--color-surface-muted)] px-3 py-[9px] text-[10px] font-medium text-white/70">
         <span>S/N</span>
         <span>Name</span>
         <span>Category</span>
@@ -330,7 +322,7 @@ function EngagementSelector({ viewModel }: { viewModel: TestimoniesViewModel }) 
         <span>Engagement: {activeLabel}</span>
         <span className="ml-2 text-white/70">▾</span>
       </summary>
-      <div className="absolute right-0 z-30 mt-2 min-w-[176px] overflow-hidden rounded-[10px] border border-white/10 bg-[#232323] shadow-[0_12px_24px_rgba(0,0,0,0.35)]">
+      <div className="absolute right-0 z-30 mt-2 min-w-[176px] overflow-hidden rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] shadow-[0_12px_24px_rgba(0,0,0,0.35)]">
         {options.map((option) => (
           <Link
             key={option.key}
@@ -431,6 +423,21 @@ function isBottomActionRow(viewModel: TestimoniesViewModel, row: TestimonyRow | 
   return viewModel.rows.length - index <= 2;
 }
 
+function paginationHref(viewModel: TestimoniesViewModel, page: number) {
+  return buildTestimoniesHref({
+    tab: viewModel.activeTab,
+    videoStatus: viewModel.activeTab === "video" ? viewModel.activeVideoStatus : null,
+    engagement: viewModel.activeTab === "video" ? viewModel.activeVideoEngagement : null,
+    q: viewModel.searchQuery,
+    from: viewModel.filterDraft.from,
+    to: viewModel.filterDraft.to,
+    category: viewModel.filterDraft.category,
+    source: viewModel.activeTab === "video" ? viewModel.filterDraft.source : undefined,
+    statusFilter: viewModel.activeTab === "text" ? viewModel.filterDraft.status : undefined,
+    page,
+  });
+}
+
 export function TestimoniesTable({
   viewModel,
   onOpenFilter,
@@ -503,13 +510,13 @@ export function TestimoniesTable({
           ) : null}
         </div>
 
-        <div className="flex items-center justify-between px-4 py-10 text-[12px] text-[var(--color-text-muted)] md:px-5">
-          <span>{viewModel.showingLabel}</span>
-          <div className="flex gap-3">
-            <button type="button" className="rounded-[8px] border border-white/20 px-4 py-2 text-white/45">Previous</button>
-            <button type="button" className="rounded-[8px] border border-[var(--color-primary)] px-5 py-2 text-[var(--color-primary)]">Next</button>
-          </div>
-        </div>
+        <AdminPaginationFooter
+          showingLabel={viewModel.showingLabel}
+          hasPreviousPage={viewModel.hasPreviousPage}
+          hasNextPage={viewModel.hasNextPage}
+          previousHref={paginationHref(viewModel, viewModel.page - 1)}
+          nextHref={paginationHref(viewModel, viewModel.page + 1)}
+        />
       </div>
 
       {showDetachedActionMenu && openMenuRow?.kind === "text" ? (

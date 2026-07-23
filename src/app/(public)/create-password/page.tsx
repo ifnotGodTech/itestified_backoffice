@@ -10,7 +10,7 @@ export default function CreatePasswordPage() {
       description="Password creation now happens through invitation acceptance."
     >
       <div className="space-y-4" data-testid="create-password-form">
-        <p className="text-sm text-[#d0d0d0]">
+        <p className="text-sm text-[var(--color-text-secondary)]">
           This page is no longer used for entry-code setup. Ask a super admin to send your invite code.
         </p>
         <Link
