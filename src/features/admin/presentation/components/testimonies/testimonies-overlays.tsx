@@ -180,10 +180,12 @@ function PendingDetailModal({
   row,
   viewModel,
   onClose,
+  onActionComplete,
 }: {
   row: TextTestimonyRow;
   viewModel: TestimoniesViewModel;
   onClose?: () => void;
+  onActionComplete?: () => void;
 }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -192,6 +194,7 @@ function PendingDetailModal({
     setSubmitting(true);
     const response = await fetch(`/api/admin/testimonies/${row.id}/approve`, { method: "POST" });
     if (response.ok) {
+      onActionComplete?.();
       router.push(
         buildTestimoniesHref({
           tab: viewModel.activeTab,
@@ -1398,12 +1401,14 @@ export function TestimoniesOverlays({
   onCloseFilterModal,
   detailRow,
   onCloseDetailModal,
+  onActionComplete,
 }: {
   viewModel: TestimoniesViewModel;
   showFilterModal?: boolean;
   onCloseFilterModal?: () => void;
   detailRow?: TestimonyRow | null;
   onCloseDetailModal?: () => void;
+  onActionComplete?: () => void;
 }) {
   const router = useRouter();
   const selectedDetailRow = detailRow ?? viewModel.selectedRow;
@@ -1424,7 +1429,7 @@ export function TestimoniesOverlays({
 
   return (
     <>
-      {showDetails && selectedDetailRow?.kind === "text" && selectedDetailRow.status === "Pending" ? <PendingDetailModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} /> : null}
+      {showDetails && selectedDetailRow?.kind === "text" && selectedDetailRow.status === "Pending" ? <PendingDetailModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} onActionComplete={onActionComplete} /> : null}
       {showDetails && selectedDetailRow?.kind === "text" && selectedDetailRow.status !== "Pending" ? <ApprovedDetailModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} /> : null}
       {showDetails && selectedDetailRow?.kind === "video" ? <VideoDetailsModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} /> : null}
       {viewModel.showRejectModal && viewModel.selectedRow?.kind === "text" ? <RejectModal row={viewModel.selectedRow} viewModel={viewModel} /> : null}

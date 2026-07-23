@@ -165,6 +165,12 @@ export function TestimoniesPage({ viewModel }: { viewModel: TestimoniesViewModel
   }, [viewModel]);
 
   useEffect(() => {
+    if (!viewModel.showSuccess) return;
+    setShowFilterModal(false);
+    setDetailRow(null);
+  }, [viewModel.showSuccess]);
+
+  useEffect(() => {
     if (!canClientSwitchTabs || tabCache[inactiveTab] || typeof fetch !== "function") return;
     const controller = new AbortController();
     fetch(tabListApiHref(currentViewModel, inactiveTab), { signal: controller.signal })
@@ -237,6 +243,10 @@ export function TestimoniesPage({ viewModel }: { viewModel: TestimoniesViewModel
         onCloseFilterModal={() => setShowFilterModal(false)}
         detailRow={detailRow}
         onCloseDetailModal={() => setDetailRow(null)}
+        onActionComplete={() => {
+          setShowFilterModal(false);
+          setDetailRow(null);
+        }}
       />
     </AdminDashboardShell>
   );

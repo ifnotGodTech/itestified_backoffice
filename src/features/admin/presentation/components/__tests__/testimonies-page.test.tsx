@@ -144,6 +144,45 @@ describe("TestimoniesPage", () => {
     expect(screen.queryByText("Approve Testimony")).not.toBeInTheDocument();
   });
 
+  test("closes locally opened pending detail after approval succeeds", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes("/approve")) {
+        return Promise.resolve({ ok: true, json: async () => ({}) });
+      }
+      if (url.includes("/api/admin/testimonies/")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            body: "Full pending testimony detail.",
+            moderation_history: [],
+          }),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => getTestimoniesViewModel({ tab: "video" }),
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<TestimoniesPage viewModel={getTestimoniesViewModel({})} />);
+
+    await user.click(screen.getByRole("button", { name: "Open actions for testimony 1" }));
+    await user.click(screen.getByRole("button", { name: "View" }));
+    await waitFor(() => {
+      expect(screen.getByText("Full pending testimony detail.")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Approve Testimony" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith("/api/admin/testimonies/1/approve", { method: "POST" });
+    });
+    expect(routerPush).toHaveBeenCalledWith(expect.stringContaining("success=approve"));
+    expect(screen.queryByText("Approve Testimony")).not.toBeInTheDocument();
+    expect(screen.queryByText("Full pending testimony detail.")).not.toBeInTheDocument();
+  });
+
   test("renders the pending testimony detail state", () => {
     const viewModel = getTestimoniesViewModel({ view: "1" });
     render(<TestimoniesPage viewModel={viewModel} />);
