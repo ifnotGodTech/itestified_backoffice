@@ -47,6 +47,16 @@ describe("settings pages", () => {
     expect(screen.getByText("Email address updated successfully.")).toBeInTheDocument();
   });
 
+  // Regression coverage for UI_UX_REVIEW_TODO.md B3: an error banner used to render
+  // directly alongside fully populated-looking (but fake fallback) profile fields.
+  test("hides profile picture and info cards behind the error banner", () => {
+    render(<MyProfilePage viewModel={getMyProfileViewModel({ state: "error" })} />);
+    expect(screen.getByText("Unable to load your profile")).toBeInTheDocument();
+    expect(screen.queryByText("Personal Information")).not.toBeInTheDocument();
+    expect(screen.queryByText("Contact Information")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Open profile picture actions")).not.toBeInTheDocument();
+  });
+
   test("renders notification settings, success, and error states", () => {
     render(<NotificationSettingsPage viewModel={getNotificationSettingsViewModel({})} />);
     expect(screen.getByRole("heading", { name: "Notification settings", level: 1 })).toBeInTheDocument();

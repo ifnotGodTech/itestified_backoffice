@@ -39,4 +39,35 @@ describe("AnalyticsPage", () => {
     render(<AnalyticsPage viewModel={getAnalyticsViewModel({ state: "error" })} />);
     expect(screen.getByText("We could not load analytics right now. Please try again.")).toBeInTheDocument();
   });
+
+  test("category engagement and top testimonies are not uniform placeholder data", () => {
+    const viewModel = getAnalyticsViewModel({});
+
+    const categoryRows = viewModel.categoryRows ?? [];
+    expect(categoryRows.length).toBeGreaterThan(0);
+    expect(new Set(categoryRows.map((row) => row.likes)).size).toBeGreaterThan(1);
+
+    const topRows = viewModel.topRows ?? [];
+    expect(topRows.length).toBeGreaterThan(0);
+    expect(new Set(topRows.map((row) => row.title)).size).toBe(topRows.length);
+
+    // The donut's displayed percentage must reflect real proportions, not a hardcoded "0%".
+    const segments = viewModel.donutSegments ?? [];
+    expect(segments.length).toBeGreaterThan(0);
+    for (const segment of segments) {
+      expect(segment.percent).toBeGreaterThan(0);
+      expect(segment.value).not.toContain("0%");
+    }
+    const totalPercent = segments.reduce((sum, segment) => sum + segment.percent, 0);
+    expect(totalPercent).toBeGreaterThan(95);
+    expect(totalPercent).toBeLessThanOrEqual(100.1);
+  });
+
+  test("top list title reflects the selected testimony mode instead of always saying Videos", () => {
+    const textViewModel = getAnalyticsViewModel({ mode: "text" });
+    expect(textViewModel.topListTitle).toBe("Top Performing Testimonies");
+
+    const videoViewModel = getAnalyticsViewModel({ mode: "video" });
+    expect(videoViewModel.topListTitle).toBe("Top Performing Videos");
+  });
 });

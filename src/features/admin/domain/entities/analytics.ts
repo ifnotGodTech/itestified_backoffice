@@ -55,7 +55,7 @@ export type AnalyticsViewModel = {
   categoryRows?: AnalyticsCategoryRow[];
   donutTitle?: string;
   donutSubtitle?: string;
-  donutSegments?: Array<{ label: string; value: string; color: string }>;
+  donutSegments?: Array<{ label: string; value: string; color: string; percent: number }>;
   topListTitle?: string;
   topListSubtitle?: string;
   topRows?: AnalyticsTopRow[];

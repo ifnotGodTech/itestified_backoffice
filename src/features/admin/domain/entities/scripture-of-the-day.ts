@@ -3,6 +3,7 @@ import type { AdminPaginationFields } from "@/features/admin/domain/entities/pag
 
 export type ScriptureStatus = "Uploaded" | "Scheduled";
 export type ScriptureTab = "all" | "uploaded" | "scheduled";
+export type ScriptureState = "populated" | "empty" | "loading" | "error";
 
 export type ScriptureRow = {
   id: number;
@@ -33,6 +34,8 @@ export type ScriptureOfTheDayViewModel = AdminPaginationFields & {
   shell: AdminShellViewModel;
   activeTab: ScriptureTab;
   tabs: Array<{ key: ScriptureTab; label: string }>;
+  phaseState: ScriptureState;
+  errorMessage?: string;
   searchQuery: string;
   rows: ScriptureRow[];
   totalRows: number;

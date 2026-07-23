@@ -16,7 +16,7 @@ export default async function OverviewPage({
     .map((entry) => `${entry.name}=${entry.value}`)
     .join("; ");
   const viewModel = await getAdminOverviewViewModelFromApi({
-    empty: params.state === "empty",
+    state: params.state,
     fullName: session?.fullName ?? session?.email,
   }, cookieHeader);
 

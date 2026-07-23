@@ -216,12 +216,24 @@ function DonutLegend({ viewModel }: { viewModel: AnalyticsViewModel }) {
   );
 }
 
+function donutConicGradient(segments: Array<{ color: string; percent: number }>): string {
+  const total = segments.reduce((sum, segment) => sum + segment.percent, 0) || 1;
+  let cursor = 0;
+  const stops = segments.map((segment) => {
+    const start = (cursor / total) * 100;
+    cursor += segment.percent;
+    const end = (cursor / total) * 100;
+    return `${segment.color} ${start}% ${end}%`;
+  });
+  return `conic-gradient(${stops.join(", ")})`;
+}
+
 function DonutChart({ viewModel }: { viewModel: AnalyticsViewModel }) {
   const segments = viewModel.donutSegments ?? [];
   return (
     <SectionCard title={viewModel.donutTitle ?? ""} subtitle={viewModel.donutSubtitle}>
       <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start">
-        <div className="relative h-[160px] w-[160px] rounded-full" style={{ background: `conic-gradient(${segments.map((s, i) => `${s.color} ${i * (100 / segments.length)}% ${(i + 1) * (100 / segments.length)}%`).join(", ")})` }}>
+        <div className="relative h-[160px] w-[160px] rounded-full" style={{ background: donutConicGradient(segments) }}>
           <div className="absolute inset-[24px] rounded-full bg-[var(--color-surface-elevated)]" />
         </div>
         <div className="flex-1">

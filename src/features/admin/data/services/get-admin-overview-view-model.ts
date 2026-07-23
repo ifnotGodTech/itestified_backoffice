@@ -1,4 +1,5 @@
 import type {
+  AdminOverviewState,
   AdminOverviewTableRow,
   AdminOverviewViewModel,
 } from "@/features/admin/domain/entities/overview";
@@ -13,11 +14,17 @@ const filledRows: AdminOverviewTableRow[] = [
   { id: 5, category: "Financial Miracles", type: "Video", likes: 150, shares: 55, comments: 50, overall: 255 },
 ];
 
+function normalizeState(state?: string): AdminOverviewState {
+  if (state === "empty" || state === "error") return state;
+  return "populated";
+}
+
 export function getAdminOverviewViewModel(input: {
-  empty?: boolean;
+  state?: string;
   fullName?: string;
 }): AdminOverviewViewModel {
-  const empty = input.empty ?? false;
+  const phaseState = normalizeState(input.state);
+  const populated = phaseState === "populated";
 
   return {
     shell: getAdminShellViewModel({
@@ -25,11 +32,12 @@ export function getAdminOverviewViewModel(input: {
       fullName: input.fullName,
     }),
     metrics: [
-      { label: "Pending Testimonies", value: empty ? 0 : 100 },
-      { label: "Pending Donations", value: empty ? 0 : 10 },
+      { label: "Pending Testimonies", value: populated ? 100 : 0 },
+      { label: "Pending Donations", value: populated ? 10 : 0 },
     ],
-    rows: empty ? [] : filledRows,
-    empty,
+    rows: populated ? filledRows : [],
+    phaseState,
+    errorMessage: phaseState === "error" ? "We could not load your overview right now. Please try again." : undefined,
   };
 }
 
@@ -41,7 +49,7 @@ type BackendTestimonyRow = {
 };
 
 export async function getAdminOverviewViewModelFromApi(
-  input: { empty?: boolean; fullName?: string },
+  input: { state?: string; fullName?: string },
   cookieHeader: string,
 ): Promise<AdminOverviewViewModel> {
   try {
@@ -57,7 +65,7 @@ export async function getAdminOverviewViewModelFromApi(
     ]);
 
     if (!pendingTestimoniesResponse.ok || !pendingDonationsResponse.ok) {
-      return getAdminOverviewViewModel({ ...input, empty: true });
+      return getAdminOverviewViewModel({ ...input, state: "error" });
     }
 
     const pendingTestimoniesPayload = (await pendingTestimoniesResponse.json().catch(() => ({}))) as {
@@ -92,7 +100,7 @@ export async function getAdminOverviewViewModelFromApi(
 
     const pendingTestimonies = pendingTestimoniesPayload.count ?? 0;
     const pendingDonations = pendingDonationsPayload.count ?? 0;
-    const empty = pendingTestimonies === 0 && pendingDonations === 0 && topRows.length === 0;
+    const isEmpty = pendingTestimonies === 0 && pendingDonations === 0 && topRows.length === 0;
 
     return {
       shell: getAdminShellViewModel({
@@ -104,9 +112,9 @@ export async function getAdminOverviewViewModelFromApi(
         { label: "Pending Donations", value: pendingDonations },
       ],
       rows: topRows,
-      empty,
+      phaseState: isEmpty ? "empty" : "populated",
     };
   } catch {
-    return getAdminOverviewViewModel({ ...input, empty: true });
+    return getAdminOverviewViewModel({ ...input, state: "error" });
   }
 }

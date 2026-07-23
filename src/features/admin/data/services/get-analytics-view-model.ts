@@ -25,6 +25,10 @@ function normalizeState(state?: string): AnalyticsState {
 
 const periods = ["Last 7 days", "Jan 2024", "Jun 2024"];
 
+function formatPercent(count: number, total: number): number {
+  return total === 0 ? 0 : Math.round((count / total) * 1000) / 10;
+}
+
 const testimonyMetrics = {
   text: [
     { label: "Total Submissions", value: "15,000", change: "+ 5.25% from last period", trend: "up" },
@@ -80,6 +84,26 @@ const donationMetrics: AnalyticsMetric[] = [
   { label: "Successful Donations", value: "350", change: "+ 5.1% from last period", trend: "up" },
   { label: "Pending Donations", value: "22", change: "- 2.4% from last period", trend: "down" },
   { label: "Refunded", value: "8", change: "No change from last period", trend: "neutral" },
+];
+
+const CATEGORY_ENGAGEMENT = [
+  { category: "Healing", likes: 320, comments: 145, shares: 88, posts: 220, color: "#D84DFF" },
+  { category: "Deliverance", likes: 210, comments: 96, shares: 54, posts: 140, color: "#8A54FF" },
+  { category: "Breakthrough", likes: 175, comments: 80, shares: 41, posts: 95, color: "#FF49A6" },
+  { category: "Faith", likes: 260, comments: 110, shares: 63, posts: 175, color: "#67F0FF" },
+  { category: "Finance", likes: 140, comments: 58, shares: 30, posts: 60, color: "#F1D94A" },
+  { category: "Salvation", likes: 300, comments: 130, shares: 77, posts: 190, color: "#6BFFB4" },
+  { category: "Career", likes: 95, comments: 40, shares: 18, posts: 45, color: "#FF7A59" },
+  { category: "Marriage Restoration", likes: 180, comments: 75, shares: 44, posts: 105, color: "#D84DFF" },
+] as const;
+
+const TOP_TESTIMONIES: AnalyticsTopRow[] = [
+  { title: "Miraculous Healing from Cancer", metricA: "342", metricB: "1,204", actionLabel: "View" },
+  { title: "Delivered from Years of Addiction", metricA: "298", metricB: "980", actionLabel: "View" },
+  { title: "God Restored My Marriage", metricA: "265", metricB: "875", actionLabel: "View" },
+  { title: "Breakthrough After 10 Years of Waiting", metricA: "240", metricB: "810", actionLabel: "View" },
+  { title: "Financial Miracle in My Business", metricA: "198", metricB: "640", actionLabel: "View" },
+  { title: "Salvation Testimony: From Darkness to Light", metricA: "175", metricB: "590", actionLabel: "View" },
 ];
 
 const donationTopRows: AnalyticsTopRow[] = [
@@ -140,9 +164,9 @@ export function getAnalyticsViewModel(input: {
       donutTitle: "Donation Channels",
       donutSubtitle: "Percentage breakdown of donations by payment method.",
       donutSegments: [
-        { label: "Flutterwave", value: "54%", color: "#D84DFF" },
-        { label: "Paystack", value: "32%", color: "#55F2C6" },
-        { label: "Bank Transfer", value: "14%", color: "#F6D85B" },
+        { label: "Flutterwave", value: "54%", color: "#D84DFF", percent: 54 },
+        { label: "Paystack", value: "32%", color: "#55F2C6", percent: 32 },
+        { label: "Bank Transfer", value: "14%", color: "#F6D85B", percent: 14 },
       ],
       topListTitle: "Top Donation Sources",
       topListSubtitle: "Highest contribution sources and their share of total donations.",
@@ -171,38 +195,26 @@ export function getAnalyticsViewModel(input: {
     chartPoints: testimonyChart,
     categoryTableTitle: "Engagement by Category",
     categoryTableSubtitle: "Engagement metrics and interaction breakdown",
-    categoryRows: [
-      { category: "Healing", likes: 100, comments: 100, shares: 100 },
-      { category: "Deliverance", likes: 100, comments: 100, shares: 100 },
-      { category: "Breakthrough", likes: 100, comments: 100, shares: 100 },
-      { category: "Faith", likes: 100, comments: 100, shares: 100 },
-      { category: "Finance", likes: 100, comments: 100, shares: 100 },
-      { category: "Salvation", likes: 100, comments: 100, shares: 100 },
-      { category: "Career", likes: 100, comments: 100, shares: 100 },
-      { category: "Marriage Restoration", likes: 100, comments: 100, shares: 100 },
-    ],
+    categoryRows: CATEGORY_ENGAGEMENT.map((row) => ({
+      category: row.category,
+      likes: row.likes,
+      comments: row.comments,
+      shares: row.shares,
+    })),
     donutTitle: testimonyMode === "text" ? "Text Distribution by Category" : "Video Distribution by Category",
     donutSubtitle: testimonyMode === "text" ? "Percentage breakdown of submitted text testimonies" : "Percentage breakdown of uploaded video testimonies",
-    donutSegments: [
-      { label: "Healing", value: "100 Posts\n0%", color: "#D84DFF" },
-      { label: "Deliverance", value: "100 Posts\n0%", color: "#8A54FF" },
-      { label: "Breakthrough", value: "100 Posts\n0%", color: "#FF49A6" },
-      { label: "Faith", value: "100 Posts\n0%", color: "#67F0FF" },
-      { label: "Finance", value: "100 Posts\n0%", color: "#D84DFF" },
-      { label: "Salvation", value: "100 Posts\n0%", color: "#F1D94A" },
-      { label: "Career", value: "100 Posts\n0%", color: "#6BFFB4" },
-      { label: "Marriage Restoration", value: "100 Posts\n0%", color: "#FF7A59" },
-    ],
-    topListTitle: testimonyMode === "text" ? "Top Performing Videos" : "Top Performing Videos",
+    donutSegments: (() => {
+      const totalPosts = CATEGORY_ENGAGEMENT.reduce((sum, row) => sum + row.posts, 0);
+      return CATEGORY_ENGAGEMENT.map((row) => ({
+        label: row.category,
+        value: `${row.posts} Posts\n${formatPercent(row.posts, totalPosts)}%`,
+        color: row.color,
+        percent: formatPercent(row.posts, totalPosts),
+      }));
+    })(),
+    topListTitle: testimonyMode === "text" ? "Top Performing Testimonies" : "Top Performing Videos",
     topListSubtitle: "Highest viewed testimonies with engagement metrics",
-    topRows: [
-      { title: "Miraculous Healing from Cancer", metricA: "100", metricB: "90", actionLabel: "View" },
-      { title: "Miraculous Healing from Cancer", metricA: "100", metricB: "90", actionLabel: "View" },
-      { title: "Miraculous Healing from Cancer", metricA: "100", metricB: "90", actionLabel: "View" },
-      { title: "Miraculous Healing from Cancer", metricA: "100", metricB: "90", actionLabel: "View" },
-      { title: "Miraculous Healing from Cancer", metricA: "100", metricB: "90", actionLabel: "View" },
-      { title: "Miraculous Healing from Cancer", metricA: "100", metricB: "90", actionLabel: "View" },
-    ],
+    topRows: TOP_TESTIMONIES,
     errorMessage: phaseState === "error" ? "We could not load analytics right now. Please try again." : undefined,
   };
 }

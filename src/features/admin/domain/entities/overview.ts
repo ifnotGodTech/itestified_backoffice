@@ -15,9 +15,12 @@ export type AdminOverviewMetric = {
   value: number;
 };
 
+export type AdminOverviewState = "populated" | "empty" | "error";
+
 export type AdminOverviewViewModel = {
   shell: AdminShellViewModel;
   metrics: AdminOverviewMetric[];
   rows: AdminOverviewTableRow[];
-  empty: boolean;
+  phaseState: AdminOverviewState;
+  errorMessage?: string;
 };

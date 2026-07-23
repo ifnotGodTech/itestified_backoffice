@@ -6,6 +6,7 @@ import type {
   ScriptureFilterDraft,
   ScriptureOfTheDayViewModel,
   ScriptureRow,
+  ScriptureState,
   ScriptureTab,
 } from "@/features/admin/domain/entities/scripture-of-the-day";
 
@@ -54,6 +55,11 @@ const SCRIPTURE_ROWS: ScriptureRow[] = [
 function normalizeTab(tab?: string): ScriptureTab {
   if (tab === "uploaded" || tab === "scheduled") return tab;
   return "all";
+}
+
+function normalizeState(state?: string): ScriptureState {
+  if (state === "empty" || state === "loading" || state === "error") return state;
+  return "populated";
 }
 
 function buildScriptureHref(params: {
@@ -132,8 +138,10 @@ export function getScriptureOfTheDayViewModel(input: {
   bibleText?: string;
   bibleVersion?: string;
   page?: string;
+  state?: string;
 }): ScriptureOfTheDayViewModel {
   const activeTab = normalizeTab(input.tab);
+  const phaseState = normalizeState(input.state);
   const searchQuery = input.q?.trim() ?? "";
   const scheduleEntryCount = Math.min(Math.max(Number(input.count ?? "1") || 1, 1), 20);
   const filterDraft: ScriptureFilterDraft = {
@@ -155,8 +163,9 @@ export function getScriptureOfTheDayViewModel(input: {
       )
     : filteredRows;
 
+  const allRows = phaseState === "populated" ? searchedRows : [];
   const page = parsePageParam(input.page);
-  const { pageRows: rows, hasNextPage, hasPreviousPage } = paginateRows(searchedRows, page);
+  const { pageRows: rows, hasNextPage, hasPreviousPage } = paginateRows(allRows, page);
   const selectedId = Number(input.menu ?? input.view ?? input.edit ?? input.remove ?? "");
   const selectedRow = Number.isFinite(selectedId) ? SCRIPTURE_ROWS.find((row) => row.id === selectedId) ?? null : null;
   const editDraft = getBaseDraft({
@@ -179,10 +188,12 @@ export function getScriptureOfTheDayViewModel(input: {
       { key: "uploaded", label: "Uploaded" },
       { key: "scheduled", label: "Scheduled" },
     ],
+    phaseState,
+    errorMessage: phaseState === "error" ? "We could not load scriptures right now. Please try again." : undefined,
     searchQuery,
     rows,
-    totalRows: searchedRows.length,
-    showingLabel: formatShowingLabel(page, rows.length, searchedRows.length),
+    totalRows: allRows.length,
+    showingLabel: formatShowingLabel(page, rows.length, allRows.length),
     page,
     hasNextPage,
     hasPreviousPage,
@@ -261,6 +272,25 @@ export async function getScriptureOfTheDayViewModelFromApi(
   cookieHeader: string,
 ): Promise<ScriptureOfTheDayViewModel> {
   const page = parsePageParam(input.page);
+
+  // On failure we must not fall back to the mock builder's rows/selectedRow as-is: it resolves
+  // selectedRow from ?menu=/?view=/?edit=/?remove= against fixture data regardless of whether the
+  // real fetch succeeded, and showDetails/showEdit/showDeleteConfirm/showActionMenu gate directly
+  // on that leaked row (same class of bug as the testimonies fixture leak — see UI_UX_REVIEW_TODO.md A4).
+  function errorViewModel(): ScriptureOfTheDayViewModel {
+    return {
+      ...getScriptureOfTheDayViewModel({ ...input, state: "error" }),
+      page,
+      hasNextPage: false,
+      hasPreviousPage: page > 1,
+      selectedRow: null,
+      showActionMenu: false,
+      showDetails: false,
+      showEdit: false,
+      showDeleteConfirm: false,
+    };
+  }
+
   try {
     const tab = input.tab;
     const params = new URLSearchParams();
@@ -276,7 +306,7 @@ export async function getScriptureOfTheDayViewModelFromApi(
       cache: "no-store",
     });
     if (!response.ok) {
-      return getScriptureOfTheDayViewModel({ ...input, tab, q: input.q });
+      return errorViewModel();
     }
     const payload = (await response.json().catch(() => ({}))) as {
       count?: number;
@@ -299,6 +329,6 @@ export async function getScriptureOfTheDayViewModelFromApi(
       selectedRow: Number.isFinite(selectedId) ? rows.find((row) => row.id === selectedId) ?? null : null,
     };
   } catch {
-    return getScriptureOfTheDayViewModel(input);
+    return errorViewModel();
   }
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ScriptureOfTheDayViewModel, ScriptureRow, ScriptureStatus, ScriptureTab } from "@/features/admin/domain/entities/scripture-of-the-day";
-import { AdminPaginationFooter } from "@/features/admin/presentation/components/shared/admin-table-primitives";
+import { AdminErrorState, AdminPaginationFooter } from "@/features/admin/presentation/components/shared/admin-table-primitives";
 import { buildScriptureOfTheDayHref } from "@/features/admin/presentation/state/scripture-of-the-day-route-state";
 
 function paginationHref(viewModel: ScriptureOfTheDayViewModel, page: number) {
@@ -104,6 +104,18 @@ function SearchAndFilter({ viewModel, onOpenFilter }: { viewModel: ScriptureOfTh
   );
 }
 
+function ScriptureEmpty() {
+  return (
+    <div className="px-8 py-16 text-center">
+      <p className="text-[18px] font-medium text-white/90">No Scriptures Yet</p>
+    </div>
+  );
+}
+
+function ScriptureLoading() {
+  return <div className="px-8 py-16 text-center text-white/70">Loading scriptures...</div>;
+}
+
 export function ScriptureOfTheDayOverviewTable({
   viewModel,
   onTabChange,
@@ -128,17 +140,23 @@ export function ScriptureOfTheDayOverviewTable({
           <SearchAndFilter viewModel={viewModel} onOpenFilter={onOpenFilter} />
         </div>
         <div className="border-t border-white/5">
-          <div className="grid grid-cols-[64px_116px_116px_1.2fr_100px_1.05fr_110px_54px] bg-[var(--color-surface-muted)] px-3 py-[9px] text-[10px] font-medium text-white/70">
-            <span>S/N</span>
-            <span>Date</span>
-            <span>Bible Text</span>
-            <span>Scripture</span>
-            <span>Bible Version</span>
-            <span>Prayer</span>
-            <span>Status</span>
-            <span>Action</span>
-          </div>
-          {viewModel.rows.map((row) => (
+          {viewModel.phaseState === "loading" ? <ScriptureLoading /> : null}
+          {viewModel.phaseState === "error" ? <AdminErrorState title="Unable to load scriptures" message={viewModel.errorMessage} /> : null}
+          {viewModel.phaseState === "empty" ? <ScriptureEmpty /> : null}
+          {viewModel.phaseState === "populated" && viewModel.rows.length === 0 ? <ScriptureEmpty /> : null}
+          {viewModel.phaseState === "populated" && viewModel.rows.length > 0 ? (
+            <>
+              <div className="grid grid-cols-[64px_116px_116px_1.2fr_100px_1.05fr_110px_54px] bg-[var(--color-surface-muted)] px-3 py-[9px] text-[10px] font-medium text-white/70">
+                <span>S/N</span>
+                <span>Date</span>
+                <span>Bible Text</span>
+                <span>Scripture</span>
+                <span>Bible Version</span>
+                <span>Prayer</span>
+                <span>Status</span>
+                <span>Action</span>
+              </div>
+              {viewModel.rows.map((row) => (
             <div
               key={row.id}
               className="grid grid-cols-[64px_116px_116px_1.2fr_100px_1.05fr_110px_54px] items-center border-t border-white/10 px-3 py-[9px] text-[12px] text-white/85"
@@ -198,7 +216,9 @@ export function ScriptureOfTheDayOverviewTable({
                 ) : null}
               </div>
             </div>
-          ))}
+              ))}
+            </>
+          ) : null}
         </div>
         <AdminPaginationFooter
           showingLabel={viewModel.showingLabel}

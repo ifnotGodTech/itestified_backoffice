@@ -35,12 +35,15 @@ function loadingScriptureViewModel(viewModel: ScriptureOfTheDayViewModel, tab: S
   return {
     ...viewModel,
     activeTab: tab,
+    phaseState: "loading",
     rows: [],
     totalRows: 0,
     selectedRow: null,
     showingLabel: "Loading scriptures...",
     showActionMenu: false,
     showDetails: false,
+    showEdit: false,
+    showDeleteConfirm: false,
     showFilterModal: false,
   };
 }
@@ -78,7 +81,12 @@ export function ScriptureOfTheDayPage({ viewModel }: { viewModel: ScriptureOfThe
       setTabCache((current) => ({ ...current, [tab]: nextViewModel }));
       setCurrentViewModel(nextViewModel);
     } catch {
-      setCurrentViewModel((current) => loadingScriptureViewModel(current, tab));
+      setCurrentViewModel((current) => ({
+        ...loadingScriptureViewModel(current, tab),
+        phaseState: "error",
+        errorMessage: "We could not load scriptures right now. Please try again.",
+        showingLabel: "Showing 0 of 0",
+      }));
     }
   }
 

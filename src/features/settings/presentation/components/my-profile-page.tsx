@@ -142,7 +142,7 @@ export function MyProfilePage({ viewModel }: { viewModel: MyProfileViewModel }) 
         </div>
 
         <div className="bg-[var(--color-surface-strong)] px-4 py-6">
-          <ProfilePicture viewModel={viewModel} />
+          {viewModel.phaseState !== "loading" && viewModel.phaseState !== "error" ? <ProfilePicture viewModel={viewModel} /> : null}
 
           {viewModel.phaseState === "loading" ? <div className="rounded-[14px] bg-[var(--color-surface-elevated)] px-6 py-16 text-center text-white/60">Loading profile...</div> : null}
           {viewModel.phaseState === "error" ? (
@@ -153,118 +153,120 @@ export function MyProfilePage({ viewModel }: { viewModel: MyProfileViewModel }) 
           {viewModel.phaseState === "success" ? <div className="mb-4 rounded-[12px] border border-[#0CBC32]/25 bg-[#0f2615] px-4 py-3 text-[13px] text-[#8de7a0]">{viewModel.successMessage}</div> : null}
           {viewModel.phaseState === "validation" ? <div className="mb-4 rounded-[12px] border border-[#FF8D28]/25 bg-[#2a1a0d] px-4 py-3 text-[13px] text-[#ffbf7a]">{viewModel.validationMessage}</div> : null}
 
-          <div className="space-y-4">
-            <SettingsCard
-              title="Personal Information"
-              highlighted={isEditing}
-              actions={
-                viewModel.screen === "profile" ? (
-                  <Link href={buildMyProfileHref({ screen: "personal" })} className="inline-flex items-center gap-1.5 text-[12px] text-[#b888ff]">
-                    <span>✎</span>
-                    <span>Edit</span>
-                  </Link>
-                ) : (
-                  <div className="flex gap-3">
-                    <Link href="/my-profile" className="inline-flex h-[30px] items-center rounded-[8px] border border-[#9B68D5] px-4 text-[12px] text-[#c590ff]">Cancel</Link>
-                    <Link href={buildMyProfileHref({ state: "success" })} className="inline-flex h-[30px] items-center rounded-[8px] bg-[#9B68D5]/45 px-4 text-[12px] text-white">
-                      Save Changes
+          {viewModel.phaseState !== "loading" && viewModel.phaseState !== "error" ? (
+            <div className="space-y-4">
+              <SettingsCard
+                title="Personal Information"
+                highlighted={isEditing}
+                actions={
+                  viewModel.screen === "profile" ? (
+                    <Link href={buildMyProfileHref({ screen: "personal" })} className="inline-flex items-center gap-1.5 text-[12px] text-[#b888ff]">
+                      <span>✎</span>
+                      <span>Edit</span>
                     </Link>
-                  </div>
-                )
-              }
-            >
-              {!isPersonalEdit ? (
-                <>
-                  <FieldRow label="Role" value={viewModel.roleLabel} />
-                  <FieldRow label="Full Name" value={viewModel.fullName} />
-                  <FieldRow label="Mobile Number" value={viewModel.mobileNumber} />
-                </>
-              ) : (
-                <div className="space-y-4">
-                  <label className="block">
-                    <span className="mb-2 block text-[14px] text-white">Full Name</span>
-                    <input value={viewModel.fullName} readOnly aria-label="Full Name" className="h-11 w-full rounded-[6px] border border-white/6 bg-[var(--color-surface-muted)] px-3 text-[14px] text-white/70 outline-none" />
-                  </label>
-                  <label className="block">
-                    <span className="mb-2 block text-[14px] text-white">Mobile Number</span>
-                    <input value={viewModel.mobileNumber} readOnly aria-label="Mobile Number" className="h-11 w-full rounded-[6px] border border-white/6 bg-[var(--color-surface-muted)] px-3 text-[14px] text-white/70 outline-none" />
-                  </label>
-                </div>
-              )}
-            </SettingsCard>
-
-            <SettingsCard
-              title="Contact Information"
-              highlighted={isEditing}
-              subtitle={
-                viewModel.screen === "profile"
-                  ? "To proceed, please click the button below to send a verification code to your current email address."
-                  : isContactEdit
-                    ? "Enter Your New Email Address"
-                    : "Please enter the OTP Sent to oreore@yopmail.com to continue"
-              }
-              actions={
-                viewModel.screen === "profile" ? (
-                  <Link href={buildMyProfileHref({ screen: "contact" })} className="inline-flex items-center gap-1.5 text-[12px] text-[#b888ff]">
-                    <span>✎</span>
-                    <span>Edit</span>
-                  </Link>
-                ) : (
-                  <Link href="/my-profile" className="inline-flex h-[30px] items-center rounded-[8px] border border-[#9B68D5] px-4 text-[12px] text-[#c590ff]">Cancel</Link>
-                )
-              }
-            >
-              {viewModel.screen === "profile" ? (
-                <div>
-                  <p className="text-[14px] text-white">Email Address</p>
-                  <p className="mt-3 text-[14px] text-white/68">{viewModel.emailAddress}</p>
-                  <Link href={buildMyProfileHref({ screen: "otp" })} className="mt-6 inline-flex h-8 items-center rounded-[8px] bg-[#9B68D5] px-4 text-[12px] font-semibold text-white">Send OTP</Link>
-                </div>
-              ) : null}
-
-              {isContactEdit ? (
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-[14px] text-white">Old Email Address</p>
-                    <p className="mt-3 text-[14px] text-white/68">{viewModel.emailAddress}</p>
-                  </div>
-                  <label className="block">
-                    <span className="mb-2 block text-[14px] text-white">New Email Address</span>
-                    <input value="" readOnly aria-label="New Email Address" placeholder="Enter new Email Address" className="h-11 w-full rounded-[6px] border border-white/6 bg-[var(--color-surface-muted)] px-3 text-[12px] text-white/65 outline-none" />
-                  </label>
-                  <label className="block">
-                    <span className="mb-2 block text-[14px] text-white">Confirm Email Address</span>
-                    <input value="" readOnly aria-label="Confirm Email Address" placeholder="Confirm Email Address" className="h-11 w-full rounded-[6px] border border-white/6 bg-[var(--color-surface-muted)] px-3 text-[12px] text-white/65 outline-none" />
-                  </label>
-                  <Link href={buildMyProfileHref({ screen: "otp" })} className="inline-flex h-8 items-center rounded-[8px] bg-white/45 px-4 text-[11px] text-white">
-                    Save
-                  </Link>
-                </div>
-              ) : null}
-
-              {isOtp ? (
-                <div>
-                  <p className="text-[14px] text-white">Email Address</p>
-                  <p className="mt-3 text-[14px] text-white/68">{viewModel.emailAddress}</p>
-                  <label className="mt-6 block">
-                    <span className="mb-2 block text-[14px] text-white">OTP</span>
-                    <div className="flex items-center gap-3">
-                      <input value="1234" readOnly aria-label="OTP" className="h-11 flex-1 rounded-[6px] border border-white/6 bg-[var(--color-surface-muted)] px-3 text-[12px] text-white/75 outline-none" />
-                      <Link href={buildMyProfileHref({ screen: "otp", state: "success" })} className="inline-flex h-8 items-center rounded-[8px] bg-[#9B68D5] px-4 text-[11px] text-white/90">
-                        Verify
+                  ) : (
+                    <div className="flex gap-3">
+                      <Link href="/my-profile" className="inline-flex h-[30px] items-center rounded-[8px] border border-[#9B68D5] px-4 text-[12px] text-[#c590ff]">Cancel</Link>
+                      <Link href={buildMyProfileHref({ state: "success" })} className="inline-flex h-[30px] items-center rounded-[8px] bg-[#9B68D5]/45 px-4 text-[12px] text-white">
+                        Save Changes
                       </Link>
                     </div>
-                  </label>
-                  <div className="mt-4 flex items-center gap-2 text-[12px] text-white/52">
-                    <span>Didn&apos;t receive an Email?</span>
-                    <Link href={buildMyProfileHref({ screen: "otp", state: "validation" })} className="text-[#9B68D5]">
-                      Resend OTP
+                  )
+                }
+              >
+                {!isPersonalEdit ? (
+                  <>
+                    <FieldRow label="Role" value={viewModel.roleLabel} />
+                    <FieldRow label="Full Name" value={viewModel.fullName} />
+                    <FieldRow label="Mobile Number" value={viewModel.mobileNumber} />
+                  </>
+                ) : (
+                  <div className="space-y-4">
+                    <label className="block">
+                      <span className="mb-2 block text-[14px] text-white">Full Name</span>
+                      <input value={viewModel.fullName} readOnly aria-label="Full Name" className="h-11 w-full rounded-[6px] border border-white/6 bg-[var(--color-surface-muted)] px-3 text-[14px] text-white/70 outline-none" />
+                    </label>
+                    <label className="block">
+                      <span className="mb-2 block text-[14px] text-white">Mobile Number</span>
+                      <input value={viewModel.mobileNumber} readOnly aria-label="Mobile Number" className="h-11 w-full rounded-[6px] border border-white/6 bg-[var(--color-surface-muted)] px-3 text-[14px] text-white/70 outline-none" />
+                    </label>
+                  </div>
+                )}
+              </SettingsCard>
+
+              <SettingsCard
+                title="Contact Information"
+                highlighted={isEditing}
+                subtitle={
+                  viewModel.screen === "profile"
+                    ? "To proceed, please click the button below to send a verification code to your current email address."
+                    : isContactEdit
+                      ? "Enter Your New Email Address"
+                      : "Please enter the OTP Sent to oreore@yopmail.com to continue"
+                }
+                actions={
+                  viewModel.screen === "profile" ? (
+                    <Link href={buildMyProfileHref({ screen: "contact" })} className="inline-flex items-center gap-1.5 text-[12px] text-[#b888ff]">
+                      <span>✎</span>
+                      <span>Edit</span>
+                    </Link>
+                  ) : (
+                    <Link href="/my-profile" className="inline-flex h-[30px] items-center rounded-[8px] border border-[#9B68D5] px-4 text-[12px] text-[#c590ff]">Cancel</Link>
+                  )
+                }
+              >
+                {viewModel.screen === "profile" ? (
+                  <div>
+                    <p className="text-[14px] text-white">Email Address</p>
+                    <p className="mt-3 text-[14px] text-white/68">{viewModel.emailAddress}</p>
+                    <Link href={buildMyProfileHref({ screen: "otp" })} className="mt-6 inline-flex h-8 items-center rounded-[8px] bg-[#9B68D5] px-4 text-[12px] font-semibold text-white">Send OTP</Link>
+                  </div>
+                ) : null}
+
+                {isContactEdit ? (
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-[14px] text-white">Old Email Address</p>
+                      <p className="mt-3 text-[14px] text-white/68">{viewModel.emailAddress}</p>
+                    </div>
+                    <label className="block">
+                      <span className="mb-2 block text-[14px] text-white">New Email Address</span>
+                      <input value="" readOnly aria-label="New Email Address" placeholder="Enter new Email Address" className="h-11 w-full rounded-[6px] border border-white/6 bg-[var(--color-surface-muted)] px-3 text-[12px] text-white/65 outline-none" />
+                    </label>
+                    <label className="block">
+                      <span className="mb-2 block text-[14px] text-white">Confirm Email Address</span>
+                      <input value="" readOnly aria-label="Confirm Email Address" placeholder="Confirm Email Address" className="h-11 w-full rounded-[6px] border border-white/6 bg-[var(--color-surface-muted)] px-3 text-[12px] text-white/65 outline-none" />
+                    </label>
+                    <Link href={buildMyProfileHref({ screen: "otp" })} className="inline-flex h-8 items-center rounded-[8px] bg-white/45 px-4 text-[11px] text-white">
+                      Save
                     </Link>
                   </div>
-                </div>
-              ) : null}
-            </SettingsCard>
-          </div>
+                ) : null}
+
+                {isOtp ? (
+                  <div>
+                    <p className="text-[14px] text-white">Email Address</p>
+                    <p className="mt-3 text-[14px] text-white/68">{viewModel.emailAddress}</p>
+                    <label className="mt-6 block">
+                      <span className="mb-2 block text-[14px] text-white">OTP</span>
+                      <div className="flex items-center gap-3">
+                        <input value="1234" readOnly aria-label="OTP" className="h-11 flex-1 rounded-[6px] border border-white/6 bg-[var(--color-surface-muted)] px-3 text-[12px] text-white/75 outline-none" />
+                        <Link href={buildMyProfileHref({ screen: "otp", state: "success" })} className="inline-flex h-8 items-center rounded-[8px] bg-[#9B68D5] px-4 text-[11px] text-white/90">
+                          Verify
+                        </Link>
+                      </div>
+                    </label>
+                    <div className="mt-4 flex items-center gap-2 text-[12px] text-white/52">
+                      <span>Didn&apos;t receive an Email?</span>
+                      <Link href={buildMyProfileHref({ screen: "otp", state: "validation" })} className="text-[#9B68D5]">
+                        Resend OTP
+                      </Link>
+                    </div>
+                  </div>
+                ) : null}
+              </SettingsCard>
+            </div>
+          ) : null}
         </div>
 
         {viewModel.showPasswordModal ? <PasswordModal screen={viewModel.screen} /> : null}

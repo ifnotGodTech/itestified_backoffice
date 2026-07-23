@@ -323,15 +323,56 @@ an error in light mode too (confirmed on Notification Settings and My
 Profile); Reviews (mock-only, no `FromApi`) correctly never shows an error
 state at all — unrelated pre-existing gap (B6), unaffected by this fix.
 
-### A6. Analytics page is a non-functional prototype
-Entirely mock-only (`get-analytics-view-model.ts`, no `FromApi` exists). Every
-row in "Engagement by Category" is identically `100 / 100 / 100` across all 8
-categories; the donut chart shows `0%` on every segment despite each having
-"100 Posts" (the percentage calculation is simply broken in the mock); "Top
-Performing Videos" repeats the exact same title ("Miraculous Healing from
-Cancer") six times with identical stats. This isn't usable for a real design
-or stakeholder review in its current state — needs both real backend wiring
-*and* the percentage-calculation bug fixed in the interim mock.
+### A6. Analytics page is a non-functional prototype — mock quality ✅ FIXED, backend wiring still blocked
+Every row in "Engagement by Category" was identically `100 / 100 / 100`
+across all 8 categories; the donut chart showed `0%` on every segment despite
+each having "100 Posts"; "Top Performing Videos" repeated the exact same
+title ("Miraculous Healing from Cancer") six times with identical stats.
+
+**Checked first**: whether "real backend wiring" was actually achievable.
+`grep`ed the Django backend for any analytics endpoint — there is none.
+Building a `getAnalyticsViewModelFromApi` against an endpoint that doesn't
+exist would mean inventing an API contract nobody has agreed to, which is
+backend-team-scoped design work, not a frontend fix. This is the same
+situation as B6 (Reviews/Admin Management) — noted there, not re-solved
+here. **Backend wiring stays open; tracked below as B7.**
+
+**What was actually fixed** (`get-analytics-view-model.ts`,
+`analytics-page.tsx`, `domain/entities/analytics.ts`):
+- Two bugs, not one. The `0%` text was the visible symptom, but the pie
+  chart's actual slice *sizes* were a second, separate, deeper bug: `DonutChart`
+  computed each wedge as an equal `100 / segments.length` share via
+  `conic-gradient`, completely ignoring the data — so even with correct
+  percentage text, the visual pie would have stayed evenly divided regardless
+  of real proportions. Fixed both: `donutSegments` gained a numeric `percent`
+  field (computed from a real per-category post count, not display-string
+  parsing), and `DonutChart` now builds its `conic-gradient` stops
+  proportionally from that field via a small `donutConicGradient` helper.
+  Confirmed this bug was live on the Donations donut too (54/32/14 split
+  was *also* rendering as three equal thirds before this fix).
+- `CATEGORY_ENGAGEMENT` replaces the uniform 100/100/100 rows with distinct,
+  plausible per-category numbers, used as the single source for both the
+  category table and the (now-correct) donut percentages, so the two can't
+  drift apart.
+- `TOP_TESTIMONIES` replaces the 6x-repeated "Miraculous Healing from
+  Cancer" row with 6 distinct titles and varied like/view counts.
+- Fixed `topListTitle: testimonyMode === "text" ? "Top Performing Videos" : "Top Performing Videos"`
+  — both ternary branches returned the identical string, so the text-mode
+  view was mislabeled "Top Performing *Videos*". Now reads "Top Performing
+  Testimonies" in text mode, "Top Performing Videos" in video mode.
+
+**Verified**: added 2 regression tests to `analytics-page.test.tsx` —
+category rows are no longer uniform, top-row titles are unique, every donut
+segment has `percent > 0` and the set sums to ~100 (not the old always-0
+case), and the top-list title genuinely varies by mode instead of being a
+no-op ternary. `tsc --noEmit`, `eslint .`, `vitest run` (132/132, up from
+130), `next build` all clean. Screenshotted Testimony Analytics in both text
+and video mode, Donation Analytics, and Testimony Analytics in light mode
+(4 screenshots) — zero console errors. Visually confirmed the donut charts
+now show genuinely unequal, proportional wedges matching their percentage
+labels (both testimony-category and donation-channel donuts), the category
+table has realistic varied numbers, and the top-performing lists show six
+distinct, readable entries.
 
 ---
 
@@ -343,33 +384,146 @@ but the fallback behavior on failure is either misleading or contradicts
 itself. This is different from A — the fix here is in the *data layer*, not
 layout.
 
-### B1. Scripture of the Day silently serves fake data as if it succeeded
-`get-scripture-of-the-day-view-model.ts`'s `getScriptureOfTheDayViewModelFromApi`
-returns `getScriptureOfTheDayViewModel(input)` directly on both `!response.ok`
-and `catch` — **no error flag, no banner, nothing.** Confirmed live: with the
-backend down, `/scripture-of-the-day` renders 3 confident-looking rows
-("Jeremiah 29:11", Uploaded/Scheduled badges) with zero indication they're
-fake. This is the most dangerous finding in the review — every other service
-at least tells the admin something went wrong. Needs an explicit `error`
-phase state here just like `donations`/`users`/`testimonies` have.
+### B1. Scripture of the Day silently serves fake data as if it succeeded — ✅ FIXED
+`getScriptureOfTheDayViewModelFromApi` returned `getScriptureOfTheDayViewModel(input)`
+directly on both `!response.ok` and `catch` — no error flag, no banner,
+nothing. With the backend down, `/scripture-of-the-day` rendered 3
+confident-looking rows ("Jeremiah 29:11", Uploaded/Scheduled badges) with no
+indication they were fake.
 
-### B2. Overview page can't distinguish "nothing pending" from "backend unreachable"
+**Worse than scoped, same as A4**: this service didn't have a `phaseState`
+field *at all* — unlike every other vertical, there was no error/loading/
+empty concept to wire up in the first place. And checking how
+`scripture-of-the-day-overlays.tsx` consumes the view model found the exact
+same fixture-leak class of bug fixed in A4: `showDetails`/`showEdit`/
+`showDeleteConfirm` all gate directly on `viewModel.selectedRow`, which the
+mock builder resolves from `?menu=`/`?view=`/`?edit=`/`?remove=` regardless
+of whether the real fetch succeeded. `/scripture-of-the-day?edit=1` with the
+backend down would have opened a real-looking "Edit Scripture" form
+pre-filled with fixture content.
+
+**Fix**:
+- `domain/entities/scripture-of-the-day.ts`: added `ScriptureState` and
+  `phaseState`/`errorMessage` fields to the view model — bringing this
+  vertical in line with the `phaseState` pattern every other service
+  already has.
+- `get-scripture-of-the-day-view-model.ts`: the mock builder now gates
+  `rows` on `phaseState === "populated"`, matching the other mocks. Both
+  `FromApi` error branches route through one `errorViewModel()` helper that
+  sets `phaseState: "error"` and explicitly nulls `selectedRow` plus all
+  four modal/menu flags — the same leak-prevention shape as A4's testimonies
+  fix, applied here for the first time.
+- `scripture-of-the-day-overview-table.tsx`: rows are now gated on
+  `phaseState === "populated"`, with `loading`/`error`/`empty` branches
+  added — the `error` branch uses the shared `AdminErrorState` from A5, so
+  this vertical gets the same visual language as everywhere else for free.
+- `scripture-of-the-day-page.tsx`: the client-side tab-switch fetch catch
+  handler was leaving the view permanently stuck on "Loading scriptures..."
+  on failure (no error path existed to fall into); now sets an explicit
+  error state, and `loadingScriptureViewModel` also clears `showEdit`/
+  `showDeleteConfirm` so an in-flight tab switch can't leave a stale modal
+  flag set either.
+
+**Verified**: new `get-scripture-of-the-day-view-model.test.ts` (3 tests: a
+real successful mapping, and the two failure paths asserting `phaseState`,
+zero rows, null `selectedRow`, and all four modal flags false). `tsc --noEmit`,
+`eslint .`, `vitest run` (135/135, up from 132), `next build` all clean.
+Browser-reproduced the original bug: `/scripture-of-the-day` with the
+backend down now shows the standard error card and zero rows; confirmed via
+`innerText` (what a user actually sees) that "Jeremiah 29:11" no longer
+appears anywhere visible — it's only present in Next.js's inert hydration
+`<script>` payload (an unused prop value, same as any client component ships
+for any unrendered field; verified this is not a real leak by checking
+`innerText` vs `textContent` separately). `?edit=1` with the backend down no
+longer opens the Edit Scripture form. Checked in both dark and light mode.
+
+### B2. Overview page can't distinguish "nothing pending" from "backend unreachable" — ✅ FIXED
 `get-admin-overview-view-model.ts`'s `catch` block and `!response.ok` branch
-both collapse to `getAdminOverviewViewModel({ ...input, empty: true })` — the
+both collapsed to `getAdminOverviewViewModel({ ...input, empty: true })` — the
 same visual state as a genuinely quiet day (0 pending testimonies, 0 pending
 donations, "No Data here Yet"). This is the landing page every admin sees
-first; a transient backend outage would look identical to "you're all caught
-up," which risks real pending items going unnoticed. `AdminOverviewViewModel`
-has no `errorMessage`/error phase at all today — needs one, mirroring the
-pattern already used elsewhere.
+first; a transient backend outage looked identical to "you're all caught
+up," which risked real pending items going unnoticed. `AdminOverviewViewModel`
+had no `errorMessage`/error phase at all — exactly as scoped, confirmed by
+reading the file: only an `empty: boolean` field existed, no `phaseState`
+concept like every other vertical already has.
 
-### B3. My Profile shows an error banner *and* stale fields at the same time
-`/my-profile` renders "We could not load your profile right now" directly
+**Fix**:
+- `domain/entities/overview.ts`: replaced `empty: boolean` with the standard
+  `AdminOverviewState = "populated" | "empty" | "error"` `phaseState` field
+  plus an optional `errorMessage`, matching the pattern from A5/B1.
+- `get-admin-overview-view-model.ts`: the mock builder now takes a generic
+  `state?: string` input normalized through `normalizeState()` (recognizing
+  `"empty"` and `"error"`, defaulting to `"populated"`) instead of a single
+  boolean. `getAdminOverviewViewModelFromApi`'s `!response.ok` branch and its
+  `catch` block both now route through `getAdminOverviewViewModel({ ...input,
+  state: "error" })`, setting a real `phaseState: "error"` with a concrete
+  `errorMessage` instead of silently reusing the empty-state shape.
+- `overview/page.tsx`: passes `state: params.state` straight through instead
+  of narrowly translating it into `empty: params.state === "empty"`.
+- `admin-overview.tsx`: restructured around `phaseState` — the metrics grid
+  now renders an em-dash ("—") instead of "0" when `phaseState === "error"`
+  (a bare `0` would read as "confirmed caught up" when the truth is "couldn't
+  check"), and the table area now has three distinct branches: populated rows,
+  the existing "No Data here Yet" empty state, or the shared `AdminErrorState`
+  card from A5 on error. The dead half of the old `tableColumns` ternary
+  (unreachable once the header row moved inside the populated-only branch)
+  was removed.
+
+**Verified**: updated `admin-overview.test.tsx`'s existing empty-state test
+for the new `{ state: "empty" }` input shape, and added a regression test
+asserting the error state renders "Unable to load your overview," never "No
+Data here Yet" or a bare "0," and shows exactly two dash placeholders.
+`tsc --noEmit`, `eslint .`, `vitest run` (136/136, up from 135), `next build`
+all clean. Browser-verified with Playwright against the dev server (no
+backend running, so every request naturally exercises the error path): the
+Overview page now shows the red-tinted `AdminErrorState` card with dash
+metrics instead of misleading zeros, confirmed in both dark and light theme
+with zero console errors. Populated/empty visual states are unchanged from
+before and remain covered by the existing passing component tests.
+
+### B3. My Profile shows an error banner *and* stale fields at the same time — ✅ FIXED
+`/my-profile` rendered "We could not load your profile right now" directly
 above a fully populated Personal Information / Contact Information block
 (Role: Super Admin, Full Name: E2E Admin, etc.) sourced from the mock
-fallback. Pick one: either hide the form fields when `phaseState === "error"`,
-or drop the error banner if you're intentionally showing cached/fallback data
-(and label it as such).
+fallback — exactly as scoped. Confirmed by reading the code:
+`MyProfileViewModel` already had a `phaseState` field (unlike B1/scripture-
+of-the-day, which needed the field added from scratch), and the component
+already branched on it to show the `AdminErrorState` banner — but the
+`<div className="space-y-4">` block containing both `SettingsCard`s, and the
+`ProfilePicture` avatar above it, rendered **unconditionally** with no
+`phaseState` guard at all, so the error banner and the populated-looking
+fields always appeared together.
+
+**Fix**: `my-profile-page.tsx` — wrapped both `<ProfilePicture>` and the
+Personal/Contact Information `<div className="space-y-4">` block in
+`viewModel.phaseState !== "loading" && viewModel.phaseState !== "error"`,
+mirroring the exact guard already used by the sibling
+`notification-settings-page.tsx` in the same feature directory (which had
+this right from the start) — so the fix brings `my-profile-page.tsx` in line
+with an established pattern rather than inventing a new one. The password-
+change modal and its empty `readOnly` inputs were left untouched: they're
+driven purely by a URL query flag, not by fetched profile data, so there's
+no fabricated-record leak risk there (checked, unlike the A4/B1 modal
+leaks).
+
+**Also found, logged separately as B8**: `roleLabel` ("Super Admin") is
+never read from the `/profile/me/` API response even on a fully successful
+load — `get-my-profile-view-model.ts`'s `getMyProfileViewModelFromApi` merge
+only overrides `fullName`/`emailAddress`/`mobileNumber`/`hasProfileImage`
+from the real payload, leaving `roleLabel` hardcoded from the mock builder
+in every case. Out of B3's literal scope (not phaseState-specific — it's
+wrong on success too), so left unfixed here.
+
+**Verified**: added a regression test in `settings-pages.test.tsx` asserting
+that on `state: "error"`, "Unable to load your profile" shows while
+"Personal Information," "Contact Information," and the profile-picture-menu
+trigger are all absent. `tsc --noEmit`, `eslint .`, `vitest run` (137/137, up
+from 136), `next build` all clean. Browser-verified with Playwright against
+the dev server (no backend, so `/my-profile` naturally hits the error path):
+confirmed via `innerText` that "Personal Information" no longer appears
+anywhere on the error page, in both dark and light theme, zero console
+errors.
 
 ### B4. Donations header stats are hardcoded regardless of load state
 `get-donations-view-model.ts:154,166,249-250,379` — `Donors (3)` and
@@ -397,7 +551,28 @@ oversight: when the backend endpoints exist, these need the same
 `...FromApi` treatment (with a real error state per section A/B pattern
 above) that the other 8 services already have.
 
----
+### B7. Analytics has no backend endpoint to wire to at all
+Same shape as B6, one level further back: `get-reviews-view-model.ts` and
+`get-admin-management-view-model.ts` at least have a real Django app/model
+behind them, just no API endpoint wired up yet. Analytics has neither —
+`grep`ed the backend for any `analytics` route and found nothing. Getting
+real data here means designing and building new Django aggregation
+endpoints (engagement-by-category, top-testimonies-by-views, distribution
+percentages, time-series) across the testimonies/donations/users apps —
+backend design work, out of scope for a frontend pass. The mock's *data
+quality* was fixed (see A6 above); the mock is now internally consistent and
+presentable, but it is still a mock.
+
+### B8. My Profile's Role field is hardcoded, even on a successful load
+Found while fixing B3. `get-my-profile-view-model.ts`'s
+`getMyProfileViewModelFromApi` fetches `/profile/me/` and merges
+`full_name`/`email`/`phone_number`/`avatar` from the real payload over the
+mock builder's defaults — but never touches `roleLabel`, so "Role: Super
+Admin" renders on every real page load regardless of the signed-in admin's
+actual role. Unlike B1–B3/B4, this isn't a `phaseState`-leak (it's wrong on
+`populated` too, not just `error`) — likely needs a `role` field added to the
+backend's `/profile/me/` response, or reading it off the existing session,
+if the session already carries it.
 
 ## C. Smaller polish (not blocking, worth a pass)
 
