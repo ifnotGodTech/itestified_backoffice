@@ -8,6 +8,7 @@ const e2eSession: SessionData = {
   userId: "e2e-admin@itestified.app",
   email: "e2e-admin@itestified.app",
   role: "admin",
+  roleLabel: "Super Admin",
   mustChangePassword: false,
   fullName: "E2E Admin",
 };
@@ -15,11 +16,12 @@ const e2eSession: SessionData = {
 function mapBackendSession(payload: Record<string, unknown>): SessionData | null {
   const email = typeof payload.email === "string" ? payload.email : null;
   const role = payload.role === "admin" ? "admin" : null;
+  const roleLabel = typeof payload.role_label === "string" ? payload.role_label : undefined;
   const mustChangePassword = payload.must_change_password === true;
   const fullName = typeof payload.full_name === "string" ? payload.full_name : undefined;
 
   if (!email || !role) return null;
-  return { userId: email, email, role, mustChangePassword, fullName };
+  return { userId: email, email, role, roleLabel, mustChangePassword, fullName };
 }
 
 const fetchBackendSession = cache(async function fetchBackendSession(cookieHeader?: string | null): Promise<SessionData | null> {

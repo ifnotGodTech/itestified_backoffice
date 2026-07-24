@@ -57,6 +57,17 @@ describe("settings pages", () => {
     expect(screen.queryByLabelText("Open profile picture actions")).not.toBeInTheDocument();
   });
 
+  // Regression coverage for UI_UX_REVIEW_TODO.md B8: the Role field used to always
+  // read "Super Admin" regardless of the signed-in admin's actual role.
+  test("shows the real role label when provided, falling back to the mock default", () => {
+    render(<MyProfilePage viewModel={getMyProfileViewModel({ roleLabel: "Content Admin" })} />);
+    expect(screen.getByText("Content Admin")).toBeInTheDocument();
+    expect(screen.queryByText("Super Admin")).not.toBeInTheDocument();
+    cleanup();
+    render(<MyProfilePage viewModel={getMyProfileViewModel({})} />);
+    expect(screen.getByText("Super Admin")).toBeInTheDocument();
+  });
+
   test("renders notification settings, success, and error states", () => {
     render(<NotificationSettingsPage viewModel={getNotificationSettingsViewModel({})} />);
     expect(screen.getByRole("heading", { name: "Notification settings", level: 1 })).toBeInTheDocument();

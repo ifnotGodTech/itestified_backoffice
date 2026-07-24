@@ -252,10 +252,16 @@ export function getDonationsViewModel(input: {
     errorMessage: phaseState === "error" ? "We could not load donations right now. Please try again." : undefined,
     filterDraft,
     searchPlaceholder: "Search by Email, Transaction ID or Amount....",
-    topStats: [
-      { label: `Donors (${donationRows.length - 1})`, value: "", tone: "info" },
-      { label: "Total Donations (₦1,000,000)", value: "", tone: "accent" },
-    ],
+    topStats:
+      phaseState === "error"
+        ? [
+            { label: "Donors (—)", value: "", tone: "info" },
+            { label: "Total Donations (—)", value: "", tone: "accent" },
+          ]
+        : [
+            { label: `Donors (${donationRows.length - 1})`, value: "", tone: "info" },
+            { label: "Total Donations (₦1,000,000)", value: "", tone: "accent" },
+          ],
     heroCard: getHeroCard(activeTab),
     tableTitle: getTableTitle(activeTab),
     tableBadge: getTableBadge(activeTab, rows),

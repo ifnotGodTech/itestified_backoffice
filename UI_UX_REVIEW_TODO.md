@@ -525,22 +525,76 @@ confirmed via `innerText` that "Personal Information" no longer appears
 anywhere on the error page, in both dark and light theme, zero console
 errors.
 
-### B4. Donations header stats are hardcoded regardless of load state
-`get-donations-view-model.ts:154,166,249-250,379` — `Donors (3)` and
-`Total Donations (₦1,000,000)` come from the mock `donationRows` fixture and
-render in the page header even when the table body below says "We could not
-load donations right now." Same root cause as B1/B2: the error branch
-(`get-donations-view-model.ts:362-363,384-385`) reuses the mock builder
-wholesale instead of zeroing out or hiding the derived stats.
+### B4. Donations header stats are hardcoded regardless of load state — ✅ FIXED
+`get-donations-view-model.ts` — `Donors (3)` and `Total Donations
+(₦1,000,000)` (the `topStats` pills next to the page title) came from the
+mock `donationRows` fixture and rendered in the page header even when the
+table body below said "We could not load donations right now." Confirmed
+exactly as scoped: both of `getDonationsViewModelFromApi`'s failure branches
+(`!response.ok` and `catch`) fall back to `getDonationsViewModel({ ...input,
+state: "error" })`, and the mock builder's `topStats` was a flat literal with
+no `phaseState` branching at all — same root cause as B1/B2.
 
-### B5. Sidebar "Notifications history" badge is a hardcoded literal, not live data
-`get-admin-shell-view-model.ts:11` — `badge: "10"` is a string literal, shown
-on every page regardless of actual unread count. This sits right next to a
+**Fix**: `get-donations-view-model.ts` — `topStats` now branches on
+`phaseState`: on `"error"` it returns `Donors (—)` / `Total Donations (—)`
+instead of the fixture numbers; every other state is unchanged. The real
+`FromApi` success path already computed genuine `topStats` from the live
+payload (`rows.length` / `getTotalDonationsLabel(rawResults)`), so this was
+purely the error-fallback path that needed fixing.
+
+**Deliberately left out of scope, logged separately as B9**: the *tab-scoped*
+badge next to the table title (`tableBadge.totalLabel`, e.g. "Successful
+Donations (₦5,000)") is a different element from `topStats` and is fake in
+*every* state, not just on error — `getTableBadge()` picks a hardcoded string
+purely from `activeTab`, never from real row data, so it's wrong even when
+`phaseState === "populated"`. Partially patching just its `donorsLabel` would
+have left a pill showing one honest field ("Donors (—)") next to one still-
+fake one ("Successful Donations (₦5,000)") in the same badge, which is worse
+than leaving it alone — this needs its own real-data wiring, not a
+phaseState guard.
+
+**Verified**: extended the existing "renders empty and error states" test in
+`donations-page.test.tsx` to assert `Donors (—)` / `Total Donations (—)`
+render on `state: "error"` and the old fixture strings ("Donors (3)",
+"₦1,000,000") do not. `tsc --noEmit`, `eslint .`, `vitest run` (137/137,
+same count — extended an existing test rather than adding a new one),
+`next build` all clean. Browser-verified with Playwright against the dev
+server (no backend, so `/donations` naturally hits the error path): header
+pills show em-dashes next to the "Unable to load donations" banner in both
+dark and light theme, zero console errors.
+
+### B5. Sidebar "Notifications history" badge is a hardcoded literal, not live data — ✅ FIXED
+`get-admin-shell-view-model.ts:11` — `badge: "10"` was a string literal,
+shown on every page regardless of actual unread count, right next to a
 *correctly* implemented live unread-count bell in the header
-(`header-notification-bell.tsx`, polls `/api/admin/notifications/unread-testimony-count`
-every 30s) — the inconsistency will be confusing the moment the two numbers
-disagree in a real demo. Wire the sidebar badge to the same source, or drop
-it until it can be.
+(`header-notification-bell.tsx`, polling `/api/admin/notifications/unread-testimony-count`
+every 30s) — confirmed exactly as scoped: two sources of truth for the same
+number, guaranteed to disagree the moment there's a real unread testimony.
+
+**Fix**: rather than duplicating the header bell's polling/caching logic,
+extracted it into a shared `useUnreadTestimonyCount` hook at
+`presentation/hooks/use-unread-testimony-count.ts` (same sessionStorage-
+cached, 30s-interval, 15s-freshness-gated polling, byte-for-byte the same
+behavior as before). `header-notification-bell.tsx` now consumes the hook
+instead of owning the logic. `admin-sidebar-nav.tsx` consumes the same hook
+and a new `badgeForItem()` helper overrides the "Notifications history" nav
+item's badge with the live count (formatted the same way as the header bell:
+hidden at 0, "99+" above 99) — every other nav item's `badge` field, if any
+is ever set, passes through unchanged. The hardcoded `badge: "10"` was
+deleted from `get-admin-shell-view-model.ts` entirely, so there's no literal
+left to drift out of sync. `AdminMobileNav` needed no separate fix — it
+already renders through the same `AdminSidebarNav` component.
+
+**Verified**: added a regression test to `admin-dashboard-shell.test.tsx`
+stubbing the unread-count endpoint to return `4` and asserting the sidebar
+never shows "10" and does show "4" (via `findAllByText`, since the same
+count now renders in both the header bell and the sidebar badge). `tsc
+--noEmit`, `eslint .`, `vitest run` (138/138, up from 137), `next build` all
+clean. Browser-verified with Playwright: with no backend (endpoint returns
+`{ count: 0 }`), confirmed the literal "10" appears nowhere on the page at
+all; with the endpoint mocked to return `7`, confirmed "7" appears exactly
+twice (header bell + sidebar badge) and "10" appears nowhere, in both dark
+and light theme, zero console errors.
 
 ### B6. Reviews and Admin Management have no backend integration attempt yet
 `get-reviews-view-model.ts` and `get-admin-management-view-model.ts` export
@@ -550,6 +604,29 @@ fine for now, but flagging so it's an explicit, tracked gap rather than an
 oversight: when the backend endpoints exist, these need the same
 `...FromApi` treatment (with a real error state per section A/B pattern
 above) that the other 8 services already have.
+
+**Backend readiness, checked against the Django `backend/` repo (2026-07-24)**
+— the two halves of this item are not equally far along:
+- **Reviews** (star rating + review text, "RE-001" etc.): no backend model,
+  app, or endpoint exists at all — `grep`ed the whole backend for
+  `rating`/`app_review`/`feedback` and found nothing. Same situation as B7
+  (Analytics): needs backend design work from scratch (a new Django app)
+  before any frontend `FromApi` wiring is possible.
+- **Admin Management**: partially further along. `apps/users/models.py`
+  already has real `AdminRole` and `AdminAssignment` models, and
+  `apps/authn/api/urls.py` already exposes `admin/invitations/` (inviting a
+  new admin). But there's no list/detail/deactivate endpoint for *existing*
+  admin staff — `apps/users/api/urls.py`'s `AdminUserListView`/
+  `AdminUserDetailView`/`AdminUserDeactivateView` are for regular app users
+  (mobile testifiers), not internal admin accounts. The table this page
+  needs (full name, email, role, status, last active) has no matching
+  endpoint yet, even though the underlying role/assignment data model
+  exists.
+
+Left as a tracked gap, not fixed here — this needs backend feature work
+(new endpoints, and for Reviews a new Django app entirely) in a separate
+repo, which is a different kind of change than the frontend-only fixes in
+B1–B5.
 
 ### B7. Analytics has no backend endpoint to wire to at all
 Same shape as B6, one level further back: `get-reviews-view-model.ts` and
@@ -563,16 +640,83 @@ backend design work, out of scope for a frontend pass. The mock's *data
 quality* was fixed (see A6 above); the mock is now internally consistent and
 presentable, but it is still a mock.
 
-### B8. My Profile's Role field is hardcoded, even on a successful load
+**Re-checked against the Django `backend/` repo (2026-07-24)**, same pass as
+B6: confirmed there is still no `analytics` app, model, or route anywhere in
+the backend — `grep`ed all of `apps/*/api/urls.py` for anything analytics-
+related and found nothing, not even a partial model like Admin Management
+has. Left as a tracked gap, not fixed here, per the same reasoning as B6 —
+this is backend feature design work in a separate repo, not a frontend fix.
+
+### B8. My Profile's Role field is hardcoded, even on a successful load — ✅ FIXED
 Found while fixing B3. `get-my-profile-view-model.ts`'s
-`getMyProfileViewModelFromApi` fetches `/profile/me/` and merges
+`getMyProfileViewModelFromApi` fetched `/profile/me/` and merged
 `full_name`/`email`/`phone_number`/`avatar` from the real payload over the
-mock builder's defaults — but never touches `roleLabel`, so "Role: Super
-Admin" renders on every real page load regardless of the signed-in admin's
-actual role. Unlike B1–B3/B4, this isn't a `phaseState`-leak (it's wrong on
-`populated` too, not just `error`) — likely needs a `role` field added to the
-backend's `/profile/me/` response, or reading it off the existing session,
-if the session already carries it.
+mock builder's defaults — but never touched `roleLabel`, so "Role: Super
+Admin" rendered on every real page load regardless of the signed-in admin's
+actual role. Confirmed exactly as scoped by reading the backend's
+`ProfileSerializer` (`fields = ("full_name", "email", "phone_number",
+"avatar")`, backed by the `Profile` model, which has no role relation at
+all) — `/profile/me/` genuinely cannot answer this question, so a backend
+change was required, not just a frontend read.
+
+**Turned out smaller than expected**: rather than needing a new backend
+field, found that `AdminSessionView` (`/auth/admin/session/` — the endpoint
+`session.ts` already calls on every admin page load) already computes the
+signed-in admin's role via the existing `get_active_admin_assignment()`
+selector and returns `role_code` (e.g. `"super_admin"`), just not a human
+label. Session data flows through the frontend on every request already, so
+this needed no new endpoint and no migration.
+
+**Fix**:
+- Backend (`apps/authn/api/views.py`) — `AdminSessionView` now also returns
+  `role_label: assignment.role.name if assignment else None` (the
+  `AdminRole.name` field already stores the human-readable label, e.g.
+  "Super Admin", "Content Admin" — confirmed via existing bootstrap/invite
+  code paths in `apps/authn/services/commands.py`).
+- Frontend `core/auth/types.ts`/`session.ts` — `SessionData` gained an
+  optional `roleLabel` field; `mapBackendSession()` reads `payload.role_label`
+  off the session response; the E2E bypass session was given a matching
+  `roleLabel: "Super Admin"` so local dev behavior is unchanged.
+- `app/(admin)/my-profile/page.tsx` — passes `session?.roleLabel` through to
+  `getMyProfileViewModelFromApi`.
+- `get-my-profile-view-model.ts` — `roleLabel` is now `input.roleLabel ??
+  "Super Admin"` instead of an unconditional literal; the mock/demo default
+  is preserved when no session-derived value is available.
+
+**Verified**: backend — added an assertion to the existing
+`test_super_admin_login_and_session_flow` test confirming `role_label` is
+`"Super Admin"` in the session response; ran the full Django suite and
+confirmed no new failures (10 failures/11 errors pre-exist on `main`, unrelated
+to this change — an environment-level email/SMTP config issue, confirmed via
+`git stash` showing the identical count before this change). Frontend — added
+a regression test to `settings-pages.test.tsx` asserting a custom `roleLabel`
+renders in place of "Super Admin," and that omitting it still falls back to
+the mock default. `tsc --noEmit`, `eslint .`, `vitest run` (139/139, up from
+138), `next build` all clean. Browser-verified the error state renders
+correctly with no regressions (the wiring change doesn't touch that path);
+did **not** verify the live success-path rendering in-browser, because doing
+so would require signing in against a real Django backend process this
+session found already running on port 8000 (started independently, not by
+this session — left untouched to avoid mutating whatever local dev state it
+holds). The exact rendering logic this fix depends on (custom `roleLabel` in,
+"Content Admin" out; omitted `roleLabel` in, "Super Admin" default out) is
+fully exercised by the new component test against the real `MyProfilePage`
+component, which is the same code path the browser renders.
+
+### B9. Donations tab badge and hero card show fixed numbers unrelated to any real data
+Found while fixing B4. Two elements on `/donations` are hardcoded regardless
+of `phaseState`, not just during errors:
+- `get-donations-view-model.ts`'s `getTableBadge()` — the tab-scoped pill
+  next to the table title ("Successful Donations (₦5,000)", "Pending
+  Donations ($10,000)", etc.) is a flat string keyed only on `activeTab`,
+  never computed from `rows`/the API payload. It's wrong even when
+  `phaseState === "populated"`.
+- `getHeroCard()` — the large stat card under the tabs ("Total Successful
+  Donation ₦1,000,000", "0.32%" trend, etc.) is the same: purely
+  `activeTab`-keyed literals, no connection to real data in any state.
+Unlike B4, this isn't a `phaseState`-leak fixable with an error guard — both
+functions need real aggregation numbers (per-tab totals, trend deltas) wired
+in from the backend before they can stop being decorative.
 
 ## C. Smaller polish (not blocking, worth a pass)
 

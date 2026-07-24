@@ -19,6 +19,7 @@ export function getMyProfileViewModel(input: {
   state?: string;
   fullName?: string;
   emailAddress?: string;
+  roleLabel?: string;
 }): MyProfileViewModel {
   const screen = normalizeScreen(input.screen);
   const phaseState = normalizeState(input.state);
@@ -28,7 +29,7 @@ export function getMyProfileViewModel(input: {
     pageTitle: "Profile",
     pageDescription: "Manage Your Account Information",
     fullName: input.fullName ?? "Ore Ore",
-    roleLabel: "Super Admin",
+    roleLabel: input.roleLabel ?? "Super Admin",
     mobileNumber: screen === "profile" || screen === "contact" ? "Not Added Yet" : "091 1234 1234",
     emailAddress: input.emailAddress ?? "oreore@yopmail.com",
     hasProfileImage: true,
@@ -60,6 +61,7 @@ export async function getMyProfileViewModelFromApi(
     state?: string;
     fullName?: string;
     emailAddress?: string;
+    roleLabel?: string;
   },
   cookieHeader: string,
 ): Promise<MyProfileViewModel> {

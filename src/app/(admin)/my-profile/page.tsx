@@ -28,6 +28,7 @@ export default async function MyProfileRoute({
     state: params.state,
     fullName: session?.fullName ?? session?.email,
     emailAddress: session?.email,
+    roleLabel: session?.roleLabel,
   }, cookieHeader);
 
   return <MyProfilePage viewModel={viewModel} />;

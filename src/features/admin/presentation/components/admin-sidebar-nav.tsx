@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import type { AdminNavItem } from "@/features/admin/domain/entities/shell";
 import { AdminSidebarLogoutButton } from "@/features/admin/presentation/components/admin-sidebar-logout-button";
+import { useUnreadTestimonyCount } from "@/features/admin/presentation/hooks/use-unread-testimony-count";
 
 function SidebarIcon({ kind, active = false }: { kind: string; active?: boolean }) {
   const color = active ? "var(--color-text-primary)" : "var(--color-text-secondary)";
@@ -128,6 +129,7 @@ export function AdminSidebarNav({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const unreadTestimonyCount = useUnreadTestimonyCount();
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
     () =>
       Object.fromEntries(
@@ -151,6 +153,11 @@ export function AdminSidebarNav({
 
   function itemMatchesCurrentRoute(item: AdminNavItem) {
     return hrefMatchesCurrentRoute(item.href) || Boolean(item.children?.some((child) => hrefMatchesCurrentRoute(child.href)));
+  }
+
+  function badgeForItem(item: AdminNavItem) {
+    if (item.href !== "/notifications-history") return item.badge;
+    return unreadTestimonyCount > 0 ? (unreadTestimonyCount > 99 ? "99+" : String(unreadTestimonyCount)) : undefined;
   }
 
   return (
@@ -187,9 +194,9 @@ export function AdminSidebarNav({
                     <span>{item.label}</span>
                   </span>
                   <span className="flex items-center gap-2">
-                    {item.badge ? (
+                    {badgeForItem(item) ? (
                       <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-danger)] px-1 text-[10px] text-[var(--color-text-primary)]">
-                        {item.badge}
+                        {badgeForItem(item)}
                       </span>
                     ) : null}
                     <span
@@ -215,9 +222,9 @@ export function AdminSidebarNav({
                     <span>{item.label}</span>
                   </span>
                   <span className="flex items-center gap-2">
-                    {item.badge ? (
+                    {badgeForItem(item) ? (
                       <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-danger)] px-1 text-[10px] text-[var(--color-text-primary)]">
-                        {item.badge}
+                        {badgeForItem(item)}
                       </span>
                     ) : null}
                   </span>

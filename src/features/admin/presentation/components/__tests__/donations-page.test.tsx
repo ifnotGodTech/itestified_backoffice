@@ -67,6 +67,13 @@ describe("DonationsPage", () => {
     cleanup();
     render(<DonationsPage viewModel={getDonationsViewModel({ state: "error" })} />);
     expect(screen.getByText("We could not load donations right now. Please try again.")).toBeInTheDocument();
+    // Regression coverage for UI_UX_REVIEW_TODO.md B4: the header stat pills used to
+    // keep showing fixture-derived numbers ("Donors (3)", "Total Donations (₦1,000,000)")
+    // right next to this same error banner.
+    expect(screen.getByText("Donors (—)")).toBeInTheDocument();
+    expect(screen.getByText("Total Donations (—)")).toBeInTheDocument();
+    expect(screen.queryByText("Donors (3)")).not.toBeInTheDocument();
+    expect(screen.queryByText("Total Donations (₦1,000,000)")).not.toBeInTheDocument();
   });
 
   test("renders filter and action states", () => {
