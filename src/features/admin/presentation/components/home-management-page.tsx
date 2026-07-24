@@ -110,7 +110,13 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
           })}
         </div>
 
-        <form action="/home-management" className="rounded-[18px] bg-[var(--color-surface-elevated)] px-4 py-4">
+        <form
+          key={`${interactiveViewModel.activeTab}-${interactiveViewModel.displayRule}-${interactiveViewModel.testimonyCount}`}
+          action="/home-management"
+          className={`rounded-[18px] bg-[var(--color-surface-elevated)] px-4 py-4 ${
+            interactiveViewModel.phaseState === "loading" ? "pointer-events-none opacity-40" : ""
+          }`}
+        >
           <input type="hidden" name="tab" value={interactiveViewModel.activeTab} />
           {interactiveViewModel.phaseState !== "populated" ? <input type="hidden" name="state" value={interactiveViewModel.phaseState} /> : null}
           <div className="grid grid-cols-[1.25fr_1.6fr_160px] gap-4">

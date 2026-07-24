@@ -12,4 +12,13 @@ describe("AdminRouteLoading", () => {
     expect(screen.getByText("Testimonies")).toBeInTheDocument();
     expect(screen.getByText("Admin Management")).toBeInTheDocument();
   });
+
+  // Regression coverage: the content area used to fake a specific "wide data table" page
+  // shape (headers, rows, pagination) that didn't match most destination pages (Profile,
+  // Notification Settings, Analytics, etc.). Replaced with a shape-agnostic spinner.
+  test("shows a simple spinner for the route content instead of a fake page-shaped skeleton", () => {
+    const { container } = render(<AdminRouteLoading />);
+
+    expect(container.querySelector(".animate-spin")).not.toBeNull();
+  });
 });

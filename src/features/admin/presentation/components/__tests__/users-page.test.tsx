@@ -37,8 +37,18 @@ describe("UsersPage", () => {
     render(<UsersPage viewModel={getUsersViewModel({ tab: "deleted" })} />);
 
     expect(screen.getByText("Deleted accounts")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
     expect(screen.getByText("Felix Stone")).toBeInTheDocument();
+  });
+
+  // Regression coverage: the "Deleted accounts" tab used to show a "Delete" button with no
+  // onClick handler at all, next to per-row checkboxes hardcoded to checked+readOnly (always
+  // "selected", impossible to toggle) — a fully decorative, misleading bulk-delete affordance
+  // with no backing selection state or backend endpoint. Removed rather than left half-built.
+  test("does not show the non-functional bulk-delete affordance on deleted accounts", () => {
+    render(<UsersPage viewModel={getUsersViewModel({ tab: "deleted" })} />);
+
+    expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 
   test("switches user tabs on the client", async () => {

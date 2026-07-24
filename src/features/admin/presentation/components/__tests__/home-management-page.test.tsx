@@ -62,6 +62,33 @@ describe("HomeManagementPage", () => {
     expect(screen.getByRole("button", { name: "Inspirational Pictures" })).toHaveAttribute("aria-pressed", "true");
   });
 
+  // Regression coverage: the Display Rule and count fields are uncontrolled inputs
+  // (defaultValue) with no remount trigger. Switching tabs used to leave them stuck on
+  // whatever the first-loaded tab's values were, even after a real fetch returned fresh
+  // data for the new tab — never updating, not even after loading finished.
+  test("updates the display rule and count fields after switching tabs, not just the table", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(() => {
+        return Promise.resolve({
+          ok: true,
+          json: async () => getHomeManagementViewModel({ tab: "pictures", rule: "Most Shared", count: "2" }),
+        });
+      }),
+    );
+    render(<HomeManagementPage viewModel={getHomeManagementViewModel({ tab: "video", rule: "Trending" })} />);
+
+    expect(screen.getByRole("combobox", { name: "Display Rule" })).toHaveValue("Trending");
+
+    await user.click(screen.getByRole("button", { name: "Inspirational Pictures" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("combobox", { name: "Display Rule" })).toHaveValue("Most Shared");
+    });
+    expect(screen.getByRole("spinbutton", { name: "Number of Pictures" })).toHaveValue(2);
+  });
+
   test("renders the selected testimony count and limits visible rows", () => {
     render(<HomeManagementPage viewModel={getHomeManagementViewModel({ count: "3" })} />);
 

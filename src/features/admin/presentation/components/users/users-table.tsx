@@ -55,8 +55,7 @@ function RegisteredHeader() {
 
 function DeletedHeader() {
   return (
-    <div className="grid grid-cols-[40px_64px_134px_134px_1fr_134px_1fr_72px] bg-[var(--color-surface-muted)] px-3 py-[9px] text-[10px] font-medium text-white/70">
-      <span />
+    <div className="grid grid-cols-[64px_134px_134px_1fr_134px_1fr_72px] bg-[var(--color-surface-muted)] px-3 py-[9px] text-[10px] font-medium text-white/70">
       <span>S/N</span>
       <span>User ID</span>
       <span>Name</span>
@@ -183,10 +182,7 @@ function DeletedRows({
   return (
     <>
       {viewModel.rows.map((row) => (
-        <div key={row.id} className="grid grid-cols-[40px_64px_134px_134px_1fr_134px_1fr_72px] items-center border-t border-white/10 px-3 py-[9px] text-[12px] text-white/85">
-          <span>
-            <input type="checkbox" checked readOnly className="h-4 w-4 accent-[#9B68D5]" />
-          </span>
+        <div key={row.id} className="grid grid-cols-[64px_134px_134px_1fr_134px_1fr_72px] items-center border-t border-white/10 px-3 py-[9px] text-[12px] text-white/85">
           <span>{row.id}</span>
           <span>{row.userId}</span>
           <span>{row.name}</span>
@@ -252,11 +248,6 @@ export function UsersTable({
         <div className="flex items-center justify-between gap-4 px-4 pb-4 pt-4">
           <div className="text-[16px] font-medium text-white/90">User Management</div>
           <div className="flex items-center gap-2">
-            {viewModel.activeTab === "deleted" ? (
-              <button type="button" className="inline-flex h-[34px] items-center justify-center rounded-[8px] bg-[#ef4335] px-4 text-[14px] text-white">
-                Delete
-              </button>
-            ) : null}
             <SearchBar viewModel={viewModel} />
           </div>
         </div>

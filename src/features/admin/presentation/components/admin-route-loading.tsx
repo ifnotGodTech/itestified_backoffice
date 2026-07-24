@@ -69,39 +69,11 @@ export function AdminRouteLoading() {
             </div>
           </header>
 
-          <section className="px-4 py-5">
-            <SkeletonBlock className="mb-5 h-8 w-44" />
-            <div className="max-w-[1248px] overflow-hidden rounded-[20px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-              <div className="flex items-center justify-between px-5 py-6">
-                <SkeletonBlock className="h-6 w-32" />
-                <div className="flex gap-3">
-                  <SkeletonBlock className="h-9 w-40" />
-                  <SkeletonBlock className="h-9 w-24" />
-                </div>
-              </div>
-              <div className="grid grid-cols-[64px_1.1fr_1fr_1fr_0.8fr_0.9fr_0.8fr_110px_54px] bg-[var(--color-surface-muted)] px-3 py-[9px]">
-                {Array.from({ length: 9 }).map((_, index) => (
-                  <SkeletonBlock key={index} className="h-3 w-14" />
-                ))}
-              </div>
-              {Array.from({ length: 8 }).map((_, rowIndex) => (
-                <div
-                  key={rowIndex}
-                  className="grid grid-cols-[64px_1.1fr_1fr_1fr_0.8fr_0.9fr_0.8fr_110px_54px] items-center border-t border-white/10 px-3 py-[13px]"
-                >
-                  {Array.from({ length: 9 }).map((__, cellIndex) => (
-                    <SkeletonBlock key={cellIndex} className={cellIndex === 1 ? "h-4 w-28" : "h-4 w-16"} />
-                  ))}
-                </div>
-              ))}
-              <div className="flex items-center justify-between px-4 py-10">
-                <SkeletonBlock className="h-4 w-28" />
-                <div className="flex gap-3">
-                  <SkeletonBlock className="h-9 w-20" />
-                  <SkeletonBlock className="h-9 w-16" />
-                </div>
-              </div>
-            </div>
+          <section className="flex min-h-[calc(100vh-73px)] items-center justify-center px-4 py-5">
+            <div
+              className="h-10 w-10 animate-spin rounded-full border-[3px] border-white/15 border-t-white/70"
+              aria-hidden="true"
+            />
           </section>
         </main>
       </div>
