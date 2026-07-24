@@ -703,20 +703,76 @@ holds). The exact rendering logic this fix depends on (custom `roleLabel` in,
 fully exercised by the new component test against the real `MyProfilePage`
 component, which is the same code path the browser renders.
 
-### B9. Donations tab badge and hero card show fixed numbers unrelated to any real data
-Found while fixing B4. Two elements on `/donations` are hardcoded regardless
+### B9. Donations tab badge and hero card show fixed numbers unrelated to any real data — 🟡 PARTIALLY FIXED (tab badge only)
+Found while fixing B4. Two elements on `/donations` were hardcoded regardless
 of `phaseState`, not just during errors:
 - `get-donations-view-model.ts`'s `getTableBadge()` — the tab-scoped pill
   next to the table title ("Successful Donations (₦5,000)", "Pending
-  Donations ($10,000)", etc.) is a flat string keyed only on `activeTab`,
-  never computed from `rows`/the API payload. It's wrong even when
+  Donations ($10,000)", etc.) was a flat string keyed only on `activeTab`,
+  never computed from `rows`/the API payload. Wrong even when
   `phaseState === "populated"`.
 - `getHeroCard()` — the large stat card under the tabs ("Total Successful
   Donation ₦1,000,000", "0.32%" trend, etc.) is the same: purely
   `activeTab`-keyed literals, no connection to real data in any state.
-Unlike B4, this isn't a `phaseState`-leak fixable with an error guard — both
-functions need real aggregation numbers (per-tab totals, trend deltas) wired
-in from the backend before they can stop being decorative.
+
+Confirmed by checking the Django backend: `AdminDonationListView` was a plain
+paginated list (`{count, next, previous, results}`), no aggregation of any
+kind. Unlike B8, there was no already-computed value hiding nearby — this
+genuinely needed new backend work. The two pieces turned out to be different
+sizes, so only the smaller one was built:
+
+**Fixed — tab badge total**: a status-filtered `SUM(amount)` aggregate,
+grouped by currency, added to the same list endpoint (no new endpoint
+needed).
+- Backend: new `apps/donations/selectors.py` with
+  `get_donation_totals_by_currency(queryset)`; `AdminDonationListView.list()`
+  now attaches a `totals: [{currency, amount}, ...]` array to the paginated
+  response, computed over the *same filtered queryset* as the current
+  tab/search/date filters — so it's exact, not a client-side sum over just
+  the current page.
+- Frontend: `getTableBadge()` now accepts an optional `realTotals` param;
+  when present, `totalLabel` is built from it (single currency → formatted
+  amount; multiple currencies → "Mixed currencies"; matching the existing
+  convention from B4's `topStats` fix). The mock builder still omits
+  `realTotals`, so demo/mock mode is visually unchanged.
+- Also dashed the tab badge on `phaseState === "error"` (`"Successful
+  Donations (—)"` / `"Donors (—)"`) — this wasn't explicitly asked for, but
+  leaving the old fixture numbers in the error branch (which reuses the mock
+  builder) would have reproduced the exact bug B9 exists to fix, right next
+  to the error banner B4 already fixed. Mirrors `topStats`'s existing
+  error-dash treatment.
+- **Verified**: backend — new `test_admin_donation_list_totals_reflect_active_filters_across_currencies`
+  test (multi-currency SUM assertion); ran the full Django suite, no new
+  failures (140→141 tests, same pre-existing 10 failures/11 errors as
+  `main`, confirmed via `git stash`). Frontend — new
+  `get-donations-view-model.test.ts` (3 tests: real total computed, mixed
+  currencies, error-state dash — not fixture leak). `tsc --noEmit`,
+  `eslint .`, `vitest run` (142/142, up from 139), `next build` all clean.
+  Browser-verified the error-state dash rendering with Playwright in both
+  themes, zero console errors — did not attempt to verify the live
+  "populated real total" rendering in-browser, since doing so would require
+  creating real `Donation` records against the maintainer's own local dev
+  backend (confirmed running independently on port 8000); the exact
+  rendering logic is fully exercised by the new service test against the
+  same `getDonationsViewModelFromApi` code path the browser calls.
+
+**Still open — hero card trend**: deliberately left unfixed. The card's
+value could reuse the same totals aggregate, but its "0.32%" trend needs a
+defined comparison window (e.g. this 30 days vs. previous 30 days) — a
+product decision, not just a query, so it stays a decorative placeholder for
+now.
+
+**New discovery, not fixed (out of scope for B9)**: while testing, found
+`AdminDonationListView.get_queryset()`'s search filter
+(`apps/donations/api/views.py`) does `Q(user__full_name__icontains=q)`, but
+`full_name` lives on the related `Profile` model, not directly on `User` —
+this is an invalid ORM lookup that raises `FieldError` (crashes with a 500)
+on any admin donations search that reaches this line. Confirmed pre-existing
+on `main` via `git stash` (already broken before this session touched the
+file) — this is a real, active bug in the Donations page's "Search by Email,
+Transaction ID or Amount" feature, unrelated to B9's aggregation work.
+Logged here since it was found in the same file; needs its own fix
+(`Q(user__profile__full_name__icontains=q)`).
 
 ## C. Smaller polish (not blocking, worth a pass)
 

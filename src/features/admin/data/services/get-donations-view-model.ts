@@ -144,29 +144,37 @@ function getTableTitle(activeTab: DonationTab) {
   return "All Donations";
 }
 
-function getTableBadge(activeTab: DonationTab, rows: DonationRow[]) {
-  const totalLabel =
-    activeTab === "successful"
-      ? "Successful Donations (₦5,000)"
-      : activeTab === "pending"
-        ? "Pending Donations ($10,000)"
-        : activeTab === "declined"
-          ? "Declined Donations (₦8,000)"
-          : "Total Donations (₦1,000,000)";
+function getTableBadgeTitle(activeTab: DonationTab) {
+  if (activeTab === "successful") return "Successful Donations";
+  if (activeTab === "pending") return "Pending Donations";
+  if (activeTab === "declined") return "Declined Donations";
+  return "Total Donations";
+}
 
-  const totalTone =
-    activeTab === "successful"
-      ? "success"
-      : activeTab === "pending"
-        ? "warning"
-        : activeTab === "declined"
-          ? "danger"
-          : "info";
+function getTableBadgeTone(activeTab: DonationTab) {
+  if (activeTab === "successful") return "success";
+  if (activeTab === "pending") return "warning";
+  if (activeTab === "declined") return "danger";
+  return "info";
+}
+
+function getTableBadge(activeTab: DonationTab, rows: DonationRow[], realTotals?: Array<{ currency: string; amount: number }>) {
+  const title = getTableBadgeTitle(activeTab);
+  const totalLabel =
+    realTotals !== undefined
+      ? `${title} (${formatCurrencyTotals(realTotals)})`
+      : activeTab === "successful"
+        ? "Successful Donations (₦5,000)"
+        : activeTab === "pending"
+          ? "Pending Donations ($10,000)"
+          : activeTab === "declined"
+            ? "Declined Donations (₦8,000)"
+            : "Total Donations (₦1,000,000)";
 
   return {
     donorsLabel: `Donors (${rows.length})`,
     totalLabel,
-    totalTone,
+    totalTone: getTableBadgeTone(activeTab),
   } as const;
 }
 
@@ -264,7 +272,10 @@ export function getDonationsViewModel(input: {
           ],
     heroCard: getHeroCard(activeTab),
     tableTitle: getTableTitle(activeTab),
-    tableBadge: getTableBadge(activeTab, rows),
+    tableBadge:
+      phaseState === "error"
+        ? { donorsLabel: "Donors (—)", totalLabel: `${getTableBadgeTitle(activeTab)} (—)`, totalTone: getTableBadgeTone(activeTab) }
+        : getTableBadge(activeTab, rows),
     summary: {
       cards: [],
     },
@@ -285,6 +296,12 @@ function formatAmount(amountMinor: number, currency: string) {
   const symbol = currency === "USD" ? "$" : "₦";
   const amountMajor = amountMinor / 100;
   return `${symbol}${amountMajor.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function formatCurrencyTotals(totals: Array<{ currency: string; amount: number }>) {
+  if (totals.length === 0) return formatAmount(0, "NGN");
+  if (totals.length > 1) return "Mixed currencies";
+  return formatAmount(totals[0].amount, totals[0].currency);
 }
 
 function toDateLabel(value: string) {
@@ -383,11 +400,14 @@ export async function getDonationsViewModelFromApi(
       results?: Array<Record<string, unknown>>;
       next?: string | null;
       previous?: string | null;
+      totals?: Array<{ currency?: string; amount?: number }>;
     };
     const rawResults = payload.results ?? [];
     const rows = mapRows(rawResults);
     const vm = getDonationsViewModel(input);
     const total = payload.count ?? rows.length;
+    const realTotals = (payload.totals ?? [])
+      .filter((row): row is { currency: string; amount: number } => typeof row.currency === "string" && typeof row.amount === "number");
     return {
       ...vm,
       phaseState: rows.length === 0 ? "empty" : "populated",
@@ -404,7 +424,7 @@ export async function getDonationsViewModelFromApi(
         { label: `Donors (${rows.length})`, value: "", tone: "info" as const },
         { label: getTotalDonationsLabel(rawResults), value: "", tone: "accent" as const },
       ],
-      tableBadge: getTableBadge(vm.activeTab, rows),
+      tableBadge: getTableBadge(vm.activeTab, rows, realTotals),
     };
   } catch {
     return { ...getDonationsViewModel({ ...input, state: "error" }), page, hasNextPage: false, hasPreviousPage: page > 1 };
