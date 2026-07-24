@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { getDonationsViewModel } from "@/features/admin/data/services/get-donations-view-model";
@@ -105,6 +105,35 @@ describe("DonationsPage", () => {
     cleanup();
     render(<DonationsPage viewModel={getDonationsViewModel({ success: "refund" })} />);
     expect(screen.getByText("Refund Successful")).toBeInTheDocument();
+  });
+
+  test("reversal reason modal shows the real donation and requires a typed reason", async () => {
+    // Regression coverage for Phase 5 Slice 7: this modal used to show a
+    // hardcoded donor/email/transaction id and submit a hardcoded reason
+    // ("Admin verification request") regardless of the selected donation or
+    // what the admin typed, defeating the audit trail the backend builds.
+    const user = userEvent.setup();
+    render(<DonationsPage viewModel={getDonationsViewModel({ reason: "2" })} />);
+
+    const modal = screen.getByRole("heading", { name: "Reverse Donation" }).closest("div") as HTMLElement;
+    expect(within(modal).getByText("Adamu Johnson")).toBeInTheDocument();
+    expect(within(modal).getByText("chomuncho@site.com")).toBeInTheDocument();
+    expect(within(modal).getByText("IY46HN5689")).toBeInTheDocument();
+    expect(within(modal).queryByText("Akinlabi Jonah")).not.toBeInTheDocument();
+    expect(within(modal).queryByText("KG08964FH89")).not.toBeInTheDocument();
+
+    const confirmButton = screen.getByRole("button", { name: "Confirm Reversal" });
+    expect(confirmButton).toBeDisabled();
+
+    const reasonField = screen.getByPlaceholderText("Explain why this donation is being reversed");
+    await user.type(reasonField, "Duplicate charge reported by donor");
+
+    expect(confirmButton).toBeEnabled();
+    const form = confirmButton.closest("form");
+    expect(form).toHaveAttribute(
+      "action",
+      expect.stringContaining(encodeURIComponent("Duplicate charge reported by donor")),
+    );
   });
 
   test("closes route-opened reverse modal without router navigation", async () => {

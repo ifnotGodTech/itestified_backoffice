@@ -42,6 +42,73 @@ function CloseX() {
   return <span className="text-[36px] leading-none text-white/90">×</span>;
 }
 
+function ReversalReasonSection({
+  amount,
+  currency,
+  donationId,
+  next,
+  onCancel,
+  cancelHref,
+}: {
+  amount: string;
+  currency: string;
+  donationId: number;
+  next: string;
+  onCancel?: () => void;
+  cancelHref: string;
+}) {
+  const [reason, setReason] = useState("");
+  const trimmedReason = reason.trim();
+
+  return (
+    <>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div>
+          <p className="mb-2 text-[14px] text-white">Donation amount</p>
+          <div className="flex h-[44px] items-center justify-between rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[14px] text-white/85">
+            <span>{amount}</span>
+            <span className="border-l border-white/10 pl-4">{currency}</span>
+          </div>
+        </div>
+        <div>
+          <p className="mb-2 text-[14px] text-white">
+            Reason for Reversal<span className="text-[#b27bff]">*</span>
+          </p>
+          <textarea
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            placeholder="Explain why this donation is being reversed"
+            rows={1}
+            className="w-full resize-none rounded-[8px] bg-[var(--color-surface-muted)] px-4 py-3 text-[14px] text-white/85 outline-none placeholder:text-white/28"
+          />
+        </div>
+      </div>
+      <div className="mt-8 flex justify-end gap-3">
+        <CloseControl
+          href={cancelHref}
+          onClose={onCancel}
+          className="inline-flex h-[42px] min-w-[170px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 text-[14px] text-[#9B68D5]"
+          label="Cancel reversal reason"
+        >
+          Cancel
+        </CloseControl>
+        <form
+          action={`/api/admin/donations/${donationId}/reverse/?reason=${encodeURIComponent(trimmedReason)}&next=${encodeURIComponent(next)}`}
+          method="POST"
+        >
+          <button
+            type="submit"
+            disabled={!trimmedReason}
+            className="inline-flex h-[42px] min-w-[170px] items-center justify-center rounded-[10px] bg-white/55 px-6 text-[14px] text-white/70 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Confirm Reversal
+          </button>
+        </form>
+      </div>
+    </>
+  );
+}
+
 function CloseControl({
   href,
   onClose,
@@ -264,42 +331,24 @@ export function DonationsOverlays({
             <div className="mt-5 rounded-[10px] border border-white/15 px-4 py-4">
               <dl className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-4 text-[14px]">
                 <dt className="text-white/45">Donor name</dt>
-                <dd className="text-white">Akinlabi Jonah</dd>
+                <dd className="text-white">{viewModel.selectedRow.donor}</dd>
                 <dt className="text-white/45">Email</dt>
-                <dd className="text-white">example@email.com</dd>
+                <dd className="text-white">{viewModel.selectedRow.email}</dd>
                 <dt className="text-white/45">Transaction ID</dt>
-                <dd className="text-white">KG08964FH89</dd>
+                <dd className="text-white">{viewModel.selectedRow.reference}</dd>
                 <dt className="text-white/45">Original Amount</dt>
-                <dd className="text-white">₦20,000</dd>
+                <dd className="text-white">{viewModel.selectedRow.amount}</dd>
               </dl>
             </div>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div>
-                <p className="mb-2 text-[14px] text-white">Donation amount</p>
-                <div className="flex h-[44px] items-center justify-between rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[14px] text-white/85">
-                  <span>{viewModel.selectedRow.amount}</span>
-                  <span className="border-l border-white/10 pl-4">{viewModel.selectedRow.currency}</span>
-                </div>
-              </div>
-              <div>
-                <p className="mb-2 text-[14px] text-white">Reason for Reversal<span className="text-[#b27bff]">*</span></p>
-                <div className="flex h-[44px] items-center justify-between rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[14px] text-white/75">
-                  <span>Admin verification request</span>
-                  <span>⌄</span>
-                </div>
-              </div>
-            </div>
-            <div className="mt-8 flex justify-end gap-3">
-              <CloseControl href={closeHref(viewModel)} onClose={() => dismissRouteOverlay(reasonKey)} className="inline-flex h-[42px] min-w-[170px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 text-[14px] text-[#9B68D5]" label="Cancel reversal reason">Cancel</CloseControl>
-              <form action={`/api/admin/donations/${viewModel.selectedRow.id}/reverse/?reason=${encodeURIComponent("Admin verification request")}&next=${encodeURIComponent(buildDonationsHref({ tab: viewModel.activeTab, success: "reverse" }))}`} method="POST">
-                <button
-                  type="submit"
-                  className="inline-flex h-[42px] min-w-[170px] items-center justify-center rounded-[10px] bg-white/55 px-6 text-[14px] text-white/70"
-                >
-                  Confirm Reversal
-                </button>
-              </form>
-            </div>
+            <ReversalReasonSection
+              key={reasonKey}
+              amount={viewModel.selectedRow.amount}
+              currency={viewModel.selectedRow.currency}
+              donationId={viewModel.selectedRow.id}
+              next={buildDonationsHref({ tab: viewModel.activeTab, success: "reverse" })}
+              onCancel={() => dismissRouteOverlay(reasonKey)}
+              cancelHref={closeHref(viewModel)}
+            />
           </div>
         </OverlayShell>
       ) : null}
