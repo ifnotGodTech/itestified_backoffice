@@ -24,11 +24,24 @@ describe("AdminDashboardShell", () => {
       </AdminDashboardShell>,
     );
 
-    expect(screen.getByText("Hello Admin")).toBeInTheDocument();
+    expect(screen.getByText("Hello Elvis")).toBeInTheDocument();
     expect(screen.getByText("Elvis Igiebor")).toBeInTheDocument();
     expect(screen.getByText("Main Menu")).toBeInTheDocument();
     expect(screen.getByText("Testimonies")).toBeInTheDocument();
     expect(screen.getByText("Route content")).toBeInTheDocument();
+  });
+
+  // The header greeting used to be a hardcoded "Hello Admin" literal even though the
+  // signed-in admin's real name was already available and shown in the account pill.
+  test("personalizes the header greeting with the signed-in admin's first name", () => {
+    render(
+      <AdminDashboardShell viewModel={getAdminShellViewModel({ activeHref: "", fullName: "Ore Ore" })} chrome>
+        <div>Route content</div>
+      </AdminDashboardShell>,
+    );
+
+    expect(screen.getByText("Hello Ore")).toBeInTheDocument();
+    expect(screen.queryByText("Hello Admin")).not.toBeInTheDocument();
   });
 
   // Regression coverage for UI_UX_REVIEW_TODO.md B5: the sidebar's "Notifications history"

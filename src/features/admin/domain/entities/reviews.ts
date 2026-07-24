@@ -22,6 +22,8 @@ export type ReviewsFilterDraft = {
 
 export type ReviewsViewModel = AdminPaginationFields & {
   shell: AdminShellViewModel;
+  pageTitle: string;
+  pageDescription: string;
   phaseState: ReviewsState;
   searchQuery: string;
   rows: ReviewRow[];

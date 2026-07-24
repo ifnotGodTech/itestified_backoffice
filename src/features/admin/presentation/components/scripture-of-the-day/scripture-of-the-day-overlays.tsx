@@ -144,7 +144,7 @@ function DeleteConfirmModal({ viewModel, row }: { viewModel: ScriptureOfTheDayVi
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
       <div className="relative w-full max-w-[560px] rounded-[22px] bg-[var(--color-surface-elevated)] px-8 pb-8 pt-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-        <Link href={buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} className="absolute right-6 top-4 text-[34px] leading-none text-white/90">
+        <Link href={buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} className="absolute right-6 top-6 text-[34px] leading-none text-white/90">
           ×
         </Link>
         <h2 className="text-[24px] font-semibold text-white">Delete Scripture?</h2>

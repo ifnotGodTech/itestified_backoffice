@@ -199,6 +199,22 @@ describe("TestimoniesPage", () => {
     expect(screen.getByText("Reject Testimony")).toBeInTheDocument();
   });
 
+  // Regression coverage: the avatar circle in the testimony detail modal used to render
+  // completely empty (no fallback icon) whenever a row had no avatarSrc, looking unfinished.
+  test("shows a fallback icon instead of a blank circle when a testimony has no avatar", () => {
+    const viewModel = getTestimoniesViewModel({ view: "1" });
+    const selectedRow = viewModel.selectedRow;
+    expect(selectedRow?.kind).toBe("text");
+    const viewModelWithoutAvatar = {
+      ...viewModel,
+      selectedRow: selectedRow?.kind === "text" ? { ...selectedRow, avatarSrc: undefined } : selectedRow,
+    };
+
+    render(<TestimoniesPage viewModel={viewModelWithoutAvatar} />);
+
+    expect(document.querySelector('path[d^="M5 19c0-3.3 3.13-5 7-5"]')).not.toBeNull();
+  });
+
   test("keeps pending testimony action buttons inside the detail modal", () => {
     render(<TestimoniesPage viewModel={getTestimoniesViewModel({ view: "1" })} />);
 

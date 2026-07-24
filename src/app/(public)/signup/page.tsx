@@ -20,12 +20,6 @@ export default function SignupPage() {
           Back to Log In
         </Link>
       </div>
-
-      <div className="mt-4 text-left">
-        <Link href="/login" className="text-sm font-medium text-[var(--color-primary)]">
-          I have an account
-        </Link>
-      </div>
     </AdminAuthFrame>
   );
 }

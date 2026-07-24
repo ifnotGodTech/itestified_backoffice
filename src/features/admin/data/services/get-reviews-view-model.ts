@@ -89,6 +89,8 @@ export function getReviewsViewModel(input: {
       activeHref: "/reviews",
       fullName: input.fullName,
     }),
+    pageTitle: "Reviews",
+    pageDescription: "View and manage reviews submitted by users.",
     phaseState,
     searchQuery,
     rows,

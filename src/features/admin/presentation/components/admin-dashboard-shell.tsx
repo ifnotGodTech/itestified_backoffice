@@ -45,7 +45,9 @@ export function AdminDashboardShell({
             <div className="flex min-w-0 items-center gap-3">
               <AdminMobileNav sidebarItems={viewModel.sidebarItems} settingsItems={viewModel.settingsItems} />
               <div className="min-w-0">
-                <p className="truncate text-[15px] font-semibold leading-none text-[var(--color-text-primary)] md:text-[17px]">Hello Admin</p>
+                <p className="truncate text-[15px] font-semibold leading-none text-[var(--color-text-primary)] md:text-[17px]">
+                  Hello {viewModel.fullName.split(" ")[0] || "Admin"}
+                </p>
                 <p className="mt-1 hidden truncate text-[12px] text-[var(--color-text-muted)] sm:block">How are you doing today?</p>
               </div>
             </div>

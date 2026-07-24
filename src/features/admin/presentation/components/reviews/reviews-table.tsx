@@ -112,9 +112,13 @@ export function ReviewsTable({
 
   return (
     <div className="max-w-[1248px] pt-6 md:pt-8">
-      <div className="rounded-[20px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+      <div>
+        <h1 className="text-[30px] font-semibold leading-[1.2] text-[var(--color-text-primary)]">{viewModel.pageTitle}</h1>
+        <p className="mt-2 text-[15px] text-white/50">{viewModel.pageDescription}</p>
+      </div>
+      <div className="mt-7 rounded-[20px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
         <div className="flex flex-col gap-3 px-[14px] py-[12px] sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-[16px] font-normal text-white">Reviews</h1>
+          <h2 className="text-[16px] font-normal text-white">Reviews</h2>
           <div className="flex flex-wrap items-center gap-3">
             {hasSelection ? (
               <Link href={buildReviewsHref({ selected: viewModel.selectedIds.join(","), deleteAll: true })} className="inline-flex h-[28px] items-center gap-[5px] rounded-[8px] bg-[#ef3931] px-4 text-[12px] text-white">

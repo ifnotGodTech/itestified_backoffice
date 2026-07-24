@@ -194,6 +194,21 @@ function ModerationHistoryPanel({ row }: { row: TestimonyRow }) {
   );
 }
 
+function TestimonyAvatar({ avatarSrc, name }: { avatarSrc?: string; name: string }) {
+  return (
+    <div className="relative h-[102px] w-[102px] overflow-hidden rounded-full border-[6px] border-white bg-white">
+      {avatarSrc ? (
+        <Image src={avatarSrc} alt={name} fill sizes="72px" className="object-contain p-3" />
+      ) : (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="absolute inset-0 h-full w-full p-6 text-[var(--color-surface-muted)]" fill="none">
+          <circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M5 19c0-3.3 3.13-5 7-5s7 1.7 7 5" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+        </svg>
+      )}
+    </div>
+  );
+}
+
 function PendingDetailModal({
   row,
   viewModel,
@@ -236,7 +251,7 @@ function PendingDetailModal({
           <DetailCloseControl
             viewModel={viewModel}
             onClose={onClose}
-            className="absolute right-6 top-4 text-[34px] leading-none text-white/90"
+            className="absolute right-6 top-6 text-[34px] leading-none text-white/90"
             ariaLabel="Dismiss testimony detail"
           >
             ×
@@ -247,9 +262,7 @@ function PendingDetailModal({
             <DetailOriginBanner viewModel={viewModel} />
           </div>
           <div className="-mt-16 flex justify-center">
-            <div className="relative h-[102px] w-[102px] overflow-hidden rounded-full border-[6px] border-white bg-white">
-              {row.avatarSrc ? <Image src={row.avatarSrc} alt={row.name} fill sizes="72px" className="object-contain p-3" /> : null}
-            </div>
+            <TestimonyAvatar avatarSrc={row.avatarSrc} name={row.name} />
           </div>
 
           <div className="mt-8">
@@ -308,7 +321,7 @@ function ApprovedDetailModal({
           <DetailCloseControl
             viewModel={viewModel}
             onClose={onClose}
-            className="absolute right-6 top-4 text-[34px] leading-none text-white/90"
+            className="absolute right-6 top-6 text-[34px] leading-none text-white/90"
             ariaLabel="Dismiss approved testimony detail"
           >
             ×
@@ -319,9 +332,7 @@ function ApprovedDetailModal({
             <DetailOriginBanner viewModel={viewModel} />
           </div>
           <div className="-mt-16 flex justify-center">
-            <div className="relative h-[102px] w-[102px] overflow-hidden rounded-full border-[6px] border-white bg-white">
-              {row.avatarSrc ? <Image src={row.avatarSrc} alt={row.name} fill sizes="72px" className="object-contain p-3" /> : null}
-            </div>
+            <TestimonyAvatar avatarSrc={row.avatarSrc} name={row.name} />
           </div>
 
           <div className="mt-8">
@@ -584,7 +595,7 @@ function DeleteTextTestimonyModal({ row, viewModel, onClose }: { row: TextTestim
         <span className="sr-only">Close delete testimony modal</span>
       </ModalCloseControl>
       <div className="relative z-10 w-full max-w-[608px] rounded-[24px] bg-[var(--color-surface-elevated)] px-8 py-10 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-        <ModalCloseControl onClose={onClose} className="absolute right-6 top-4 text-[34px] leading-none text-white/90" ariaLabel="Close delete testimony modal">
+        <ModalCloseControl onClose={onClose} className="absolute right-6 top-6 text-[34px] leading-none text-white/90" ariaLabel="Close delete testimony modal">
           ×
         </ModalCloseControl>
         <h2 className="text-[28px] font-semibold text-white">Delete Testimony?</h2>

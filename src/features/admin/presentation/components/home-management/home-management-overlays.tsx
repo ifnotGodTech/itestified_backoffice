@@ -224,7 +224,7 @@ function HomeManagementRemoveModal({ viewModel, onClose }: { viewModel: HomeMana
         <span className="sr-only">Close remove from home page modal</span>
       </CloseControl>
       <div className="relative w-full max-w-[600px] rounded-[22px] bg-[var(--color-surface-elevated)] px-8 pb-8 pt-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-        <CloseControl href={href} onClose={onClose} className="absolute right-6 top-4 text-[34px] leading-none text-white/90" label="Close remove from home page modal">
+        <CloseControl href={href} onClose={onClose} className="absolute right-6 top-6 text-[34px] leading-none text-white/90" label="Close remove from home page modal">
           ×
         </CloseControl>
         <h2 className="text-[24px] font-semibold text-white">Remove from Home Page?</h2>

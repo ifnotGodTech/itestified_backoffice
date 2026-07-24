@@ -33,6 +33,21 @@ function CloseControl({
   );
 }
 
+function UserAvatar({ avatarSrc, name }: { avatarSrc?: string; name: string }) {
+  return (
+    <div className="relative h-[102px] w-[102px] overflow-hidden rounded-full border-[6px] border-white bg-white">
+      {avatarSrc ? (
+        <Image src={avatarSrc} alt={name} fill sizes="72px" className="object-contain p-3" />
+      ) : (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="absolute inset-0 h-full w-full p-6 text-[var(--color-surface-muted)]" fill="none">
+          <circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M5 19c0-3.3 3.13-5 7-5s7 1.7 7 5" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+        </svg>
+      )}
+    </div>
+  );
+}
+
 function UserProfileModal({
   row,
   viewModel,
@@ -58,15 +73,13 @@ function UserProfileModal({
       </CloseControl>
       <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="relative min-h-[110px] bg-[var(--color-surface-muted)]">
-          <CloseControl href={href} onClose={onClose} className="absolute right-6 top-4 text-[34px] leading-none text-white/90" label="Dismiss user profile">
+          <CloseControl href={href} onClose={onClose} className="absolute right-6 top-6 text-[34px] leading-none text-white/90" label="Dismiss user profile">
             ×
           </CloseControl>
         </div>
         <div className="relative px-8 pb-8 pt-2">
           <div className="-mt-16 flex justify-center">
-            <div className="relative h-[102px] w-[102px] overflow-hidden rounded-full border-[6px] border-white bg-white">
-              {row.avatarSrc ? <Image src={row.avatarSrc} alt={row.name} fill sizes="72px" className="object-contain p-3" /> : null}
-            </div>
+            <UserAvatar avatarSrc={row.avatarSrc} name={row.name} />
           </div>
           <dl className="mt-10 grid grid-cols-[1fr_auto] gap-x-8 gap-y-4 text-[16px] text-white/90">
             <dt className="text-white/85">User ID</dt>
@@ -103,15 +116,13 @@ function DeactivatedAccountDetailModal({
       </CloseControl>
       <div className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="relative min-h-[110px] bg-[var(--color-surface-muted)]">
-          <CloseControl href={href} onClose={onClose} className="absolute right-6 top-4 text-[34px] leading-none text-white/90" label="Dismiss deactivated account detail">
+          <CloseControl href={href} onClose={onClose} className="absolute right-6 top-6 text-[34px] leading-none text-white/90" label="Dismiss deactivated account detail">
             ×
           </CloseControl>
         </div>
         <div className="relative overflow-y-auto px-6 pb-8 pt-2">
           <div className="-mt-16 flex justify-center">
-            <div className="relative h-[102px] w-[102px] overflow-hidden rounded-full border-[6px] border-white bg-white">
-              {row.avatarSrc ? <Image src={row.avatarSrc} alt={row.name} fill sizes="72px" className="object-contain p-3" /> : null}
-            </div>
+            <UserAvatar avatarSrc={row.avatarSrc} name={row.name} />
           </div>
           <dl className="mt-10 grid grid-cols-[1fr_auto] gap-x-8 gap-y-4 text-[16px] text-white/90">
             <dt className="text-white/85">User ID</dt>

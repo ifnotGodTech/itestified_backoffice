@@ -31,6 +31,14 @@ describe("ReviewsPage", () => {
     expect(screen.getByText("John Stone")).toBeInTheDocument();
   });
 
+  // Regression coverage: Reviews used to have no page-header subtitle, unlike other list
+  // pages (e.g. Donations) which show a description under the H1.
+  test("renders a page-header subtitle like other list pages", () => {
+    render(<ReviewsPage viewModel={getReviewsViewModel({})} />);
+
+    expect(screen.getByText("View and manage reviews submitted by users.")).toBeInTheDocument();
+  });
+
   test("renders menu, filter, and details states", () => {
     render(<ReviewsPage viewModel={getReviewsViewModel({ menu: "1" })} />);
     expect(screen.getByText("View details")).toBeInTheDocument();

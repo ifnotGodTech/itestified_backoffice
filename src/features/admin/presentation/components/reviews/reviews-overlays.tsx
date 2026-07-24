@@ -151,7 +151,7 @@ export function ReviewsOverlays({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
           <CloseControl href={rootCloseHref} onClose={onCloseDetails ?? (() => dismissRouteOverlay(detailKey))} className="absolute inset-0" label="Close review detail modal" />
           <div className="relative z-10 w-full max-w-[561px] max-h-[calc(100vh-48px)] overflow-y-auto rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-            <CloseControl href={rootCloseHref} onClose={onCloseDetails ?? (() => dismissRouteOverlay(detailKey))} className="absolute right-[14px] top-[8px] text-[34px] leading-none text-white/90" label="Dismiss review detail">×</CloseControl>
+            <CloseControl href={rootCloseHref} onClose={onCloseDetails ?? (() => dismissRouteOverlay(detailKey))} className="absolute right-6 top-6 text-[34px] leading-none text-white/90" label="Dismiss review detail">×</CloseControl>
             <div className="flex h-[110px] items-end justify-center bg-[var(--color-surface-muted)]">
               <div className="translate-y-[50px] overflow-hidden rounded-full border-[6px] border-white bg-white">
                 <Image src="/admin-avatar.png" alt={viewModel.selectedRow.name} width={100} height={100} className="h-[100px] w-[100px] object-cover" />
