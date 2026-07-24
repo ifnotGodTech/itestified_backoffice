@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { getDonationsViewModelFromApi } from "@/features/admin/data/services/get-donations-view-model";
+import { getDonationsViewModelFromApi, mapDonationDetail } from "@/features/admin/data/services/get-donations-view-model";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -86,5 +86,52 @@ describe("getDonationsViewModelFromApi", () => {
     expect(viewModel.tableBadge.totalLabel).toBe("Successful Donations (—)");
     expect(viewModel.tableBadge.donorsLabel).toBe("Donors (—)");
     expect(viewModel.tableBadge.totalLabel).not.toBe("Successful Donations (₦5,000)");
+  });
+});
+
+describe("mapDonationDetail", () => {
+  // Regression coverage for Phase 5 Slice 6: the dashboard's donation detail
+  // modal used to reuse the list row it already had in memory instead of
+  // calling AdminDonationDetailView, so provider and status history were
+  // never surfaced even though the backend returns them.
+  test("maps provider and status history from the admin detail endpoint payload", () => {
+    const detail = mapDonationDetail({
+      id: 9,
+      donor_name: "Grace Okafor",
+      donor_email: "grace@example.com",
+      amount: 250000,
+      currency: "NGN",
+      status: "reversed",
+      payment_reference: "DON-9",
+      provider: "flutterwave",
+      provider_transaction_id: "FLW998877",
+      created_at: "2026-07-20T10:00:00Z",
+      status_reason: "Requested by donor",
+      status_history: [
+        {
+          id: 1,
+          from_status: "successful",
+          to_status: "reversed",
+          reason: "Duplicate charge",
+          actor_email: "admin@itestified.org",
+          created_at: "2026-07-22T09:30:00Z",
+        },
+      ],
+    });
+
+    expect(detail.provider).toBe("flutterwave");
+    expect(detail.statusReason).toBe("Requested by donor");
+    expect(detail.statusHistory).toHaveLength(1);
+    expect(detail.statusHistory[0]).toMatchObject({
+      fromStatus: "successful",
+      toStatus: "reversed",
+      reason: "Duplicate charge",
+      actorEmail: "admin@itestified.org",
+    });
+  });
+
+  test("defaults status history to an empty list when the backend omits it", () => {
+    const detail = mapDonationDetail({ id: 1, donor_name: "X", donor_email: "x@example.com" });
+    expect(detail.statusHistory).toEqual([]);
   });
 });

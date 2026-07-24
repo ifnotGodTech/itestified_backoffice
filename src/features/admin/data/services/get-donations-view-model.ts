@@ -2,6 +2,7 @@ import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin
 import { backendBaseUrl } from "@/core/auth/backend";
 import { formatShowingLabel, paginateRows, parsePageParam } from "@/features/admin/data/services/pagination";
 import type {
+  DonationDetail,
   DonationRow,
   DonationTab,
   DonationsFilterDraft,
@@ -337,6 +338,38 @@ function mapRows(results: Array<Record<string, unknown>>): DonationRow[] {
       paymentMask: providerTransactionId ? `****${providerTransactionId.slice(-4)}` : "****0000",
     };
   });
+}
+
+export function mapDonationDetail(item: Record<string, unknown>): DonationDetail {
+  const amountMinor = Number(item.amount ?? 0);
+  const currency = String(item.currency ?? "NGN");
+  const providerTransactionId = String(item.provider_transaction_id ?? "");
+  const rawHistory = Array.isArray(item.status_history)
+    ? (item.status_history as Array<Record<string, unknown>>)
+    : [];
+
+  return {
+    id: Number(item.id ?? 0),
+    donor: String(item.donor_name ?? ""),
+    email: String(item.donor_email ?? ""),
+    amount: formatAmount(amountMinor, currency),
+    currency: mapCurrencyLabel(currency),
+    date: toDateLabel(String(item.created_at ?? "")),
+    status: mapStatus(String(item.status ?? "")),
+    reference: String(item.payment_reference ?? ""),
+    paymentMethod: "Flutterwave",
+    paymentMask: providerTransactionId ? `****${providerTransactionId.slice(-4)}` : "****0000",
+    provider: String(item.provider ?? "flutterwave"),
+    statusReason: String(item.status_reason ?? ""),
+    statusHistory: rawHistory.map((entry) => ({
+      id: Number(entry.id ?? 0),
+      fromStatus: String(entry.from_status ?? ""),
+      toStatus: String(entry.to_status ?? ""),
+      reason: String(entry.reason ?? ""),
+      actorEmail: String(entry.actor_email ?? ""),
+      date: toDateLabel(String(entry.created_at ?? "")),
+    })),
+  };
 }
 
 function getTotalDonationsLabel(results: Array<Record<string, unknown>>): string {

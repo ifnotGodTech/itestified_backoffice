@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import type { DonationRow, DonationsViewModel } from "@/features/admin/domain/entities/donations";
+import type { DonationDetail, DonationRow, DonationsViewModel } from "@/features/admin/domain/entities/donations";
 import { buildDonationsHref } from "@/features/admin/presentation/state/donations-route-state";
 
 function closeHref(viewModel: DonationsViewModel) {
@@ -40,6 +40,85 @@ function OverlayShell({
 
 function CloseX() {
   return <span className="text-[36px] leading-none text-white/90">×</span>;
+}
+
+function DonationDetailBody({ row }: { row: DonationRow }) {
+  const [detail, setDetail] = useState<DonationDetail | null>(null);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch(`/api/admin/donations/${row.id}`)
+      .then((response) => {
+        if (!response.ok) throw new Error("Unable to load donation detail.");
+        return response.json() as Promise<DonationDetail>;
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setDetail(data);
+        setLoadState("ready");
+      })
+      .catch(() => {
+        if (!cancelled) setLoadState("error");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [row.id]);
+
+  if (loadState === "loading") {
+    return <p className="mt-5 text-[14px] text-white/55">Loading donation detail...</p>;
+  }
+
+  if (loadState === "error" || !detail) {
+    return <p className="mt-5 text-[14px] text-[#ef4335]">We could not load this donation&apos;s full detail.</p>;
+  }
+
+  return (
+    <>
+      <div className="mt-5 rounded-[10px] border border-white/15 px-4 py-4">
+        <dl className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-4 text-[14px]">
+          <dt className="text-white/45">Donor name</dt>
+          <dd className="text-white">{detail.donor}</dd>
+          <dt className="text-white/45">Email</dt>
+          <dd className="text-white">{detail.email}</dd>
+          <dt className="text-white/45">Payment reference</dt>
+          <dd className="text-white">{detail.reference}</dd>
+          <dt className="text-white/45">Amount</dt>
+          <dd className="text-white">{detail.amount}</dd>
+          <dt className="text-white/45">Currency</dt>
+          <dd className="text-white">{detail.currency}</dd>
+          <dt className="text-white/45">Provider</dt>
+          <dd className="text-white">{detail.provider}</dd>
+          <dt className="text-white/45">Status</dt>
+          <dd className="text-white">{detail.status}</dd>
+          <dt className="text-white/45">Date</dt>
+          <dd className="text-white">{detail.date}</dd>
+        </dl>
+      </div>
+      <div className="mt-5">
+        <h3 className="text-[14px] font-semibold text-white">Status history</h3>
+        {detail.statusHistory.length === 0 ? (
+          <p className="mt-2 text-[13px] text-white/45">No status changes recorded yet.</p>
+        ) : (
+          <ul className="mt-2 space-y-2">
+            {detail.statusHistory.map((entry) => (
+              <li key={entry.id} className="rounded-[8px] border border-white/10 px-3 py-2 text-[13px] text-white/75">
+                <span className="text-white">
+                  {entry.fromStatus || "—"} → {entry.toStatus}
+                </span>
+                <span className="ml-2 text-white/45">{entry.date}</span>
+                {entry.reason ? <p className="mt-1 text-white/55">{entry.reason}</p> : null}
+                {entry.actorEmail ? <p className="mt-1 text-white/35">by {entry.actorEmail}</p> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </>
+  );
 }
 
 function ReversalReasonSection({
@@ -190,24 +269,7 @@ export function DonationsOverlays({
               <CloseX />
             </CloseControl>
             <h2 className="text-[20px] font-semibold text-white">Donation Detail</h2>
-            <div className="mt-5 rounded-[10px] border border-white/15 px-4 py-4">
-              <dl className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-4 text-[14px]">
-                <dt className="text-white/45">Donor name</dt>
-                <dd className="text-white">{selectedRow.donor}</dd>
-                <dt className="text-white/45">Email</dt>
-                <dd className="text-white">{selectedRow.email}</dd>
-                <dt className="text-white/45">Payment reference</dt>
-                <dd className="text-white">{selectedRow.reference}</dd>
-                <dt className="text-white/45">Amount</dt>
-                <dd className="text-white">{selectedRow.amount}</dd>
-                <dt className="text-white/45">Currency</dt>
-                <dd className="text-white">{selectedRow.currency}</dd>
-                <dt className="text-white/45">Status</dt>
-                <dd className="text-white">{selectedRow.status}</dd>
-                <dt className="text-white/45">Date</dt>
-                <dd className="text-white">{selectedRow.date}</dd>
-              </dl>
-            </div>
+            <DonationDetailBody key={selectedRow.id} row={selectedRow} />
           </div>
         </OverlayShell>
       ) : null}

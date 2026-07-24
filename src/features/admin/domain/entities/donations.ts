@@ -17,6 +17,21 @@ export type DonationRow = {
   paymentMask: string;
 };
 
+export type DonationStatusHistoryEntry = {
+  id: number;
+  fromStatus: string;
+  toStatus: string;
+  reason: string;
+  actorEmail: string;
+  date: string;
+};
+
+export type DonationDetail = DonationRow & {
+  provider: string;
+  statusReason: string;
+  statusHistory: DonationStatusHistoryEntry[];
+};
+
 export type DonationsFilterDraft = {
   minAmount?: string;
   maxAmount?: string;

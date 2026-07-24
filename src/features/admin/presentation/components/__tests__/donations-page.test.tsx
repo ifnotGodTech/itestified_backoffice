@@ -136,6 +136,49 @@ describe("DonationsPage", () => {
     );
   });
 
+  test("donation detail modal fetches the full record from the admin detail endpoint", async () => {
+    // Regression coverage for Phase 5 Slice 6: the modal used to render only
+    // the fields already present on the list row (no provider, no status
+    // history) instead of calling AdminDonationDetailView, so the backend's
+    // full record was never actually surfaced to the admin.
+    const fetchMock = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: async () => ({
+          id: 1,
+          donor: "Ben Bruce",
+          email: "amanda@site.so",
+          amount: "₦5,000",
+          currency: "Naira (₦)",
+          date: "05 Aug, 2025",
+          status: "successful",
+          reference: "KY23FN5325",
+          paymentMethod: "Flutterwave",
+          paymentMask: "****3709",
+          provider: "flutterwave",
+          statusReason: "",
+          statusHistory: [
+            {
+              id: 1,
+              fromStatus: "pending",
+              toStatus: "successful",
+              reason: "Payment confirmed by gateway",
+              actorEmail: "system@itestified.org",
+              date: "05 Aug, 2025",
+            },
+          ],
+        }),
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DonationsPage viewModel={getDonationsViewModel({ detail: "1" })} />);
+
+    expect(await screen.findByText("flutterwave")).toBeInTheDocument();
+    expect(await screen.findByText("Payment confirmed by gateway")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith("/api/admin/donations/1");
+  });
+
   test("closes route-opened reverse modal without router navigation", async () => {
     const user = userEvent.setup();
     window.history.pushState(null, "", "/donations?reverse=2");
