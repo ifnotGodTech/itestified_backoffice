@@ -72,7 +72,8 @@ describe("settings pages", () => {
     render(<NotificationSettingsPage viewModel={getNotificationSettingsViewModel({})} />);
     expect(screen.getByRole("heading", { name: "Notification settings", level: 1 })).toBeInTheDocument();
     expect(screen.getByText("Allow Email Notifications")).toBeInTheDocument();
-    expect(screen.getAllByRole("switch")).toHaveLength(3);
+    expect(screen.getByText("Allow Push Notifications")).toBeInTheDocument();
+    expect(screen.getAllByRole("switch")).toHaveLength(4);
     cleanup();
     render(<NotificationSettingsPage viewModel={getNotificationSettingsViewModel({ success: "1" })} />);
     expect(screen.getByText("Notification settings saved successfully.")).toBeInTheDocument();

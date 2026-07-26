@@ -5,11 +5,12 @@ export async function POST(req: Request) {
   const formData = await req.formData();
   const payload = {
     allow_email_notifications: formData.has("allow_email_notifications"),
+    allow_push_notifications: formData.has("allow_push_notifications"),
     notify_new_donation_received: formData.has("notify_new_donation_received"),
     send_donation_thank_you_email: formData.has("send_donation_thank_you_email"),
   };
 
-  if (!payload.allow_email_notifications && !payload.notify_new_donation_received && !payload.send_donation_thank_you_email) {
+  if (!Object.values(payload).some(Boolean)) {
     return NextResponse.redirect(new URL("/notification-settings?state=validation", req.url));
   }
 

@@ -25,8 +25,8 @@ export function NotificationSettingsPage({ viewModel }: { viewModel: Notificatio
           {viewModel.phaseState !== "loading" && viewModel.phaseState !== "error" ? (
             <form action="/api/admin/notifications/preferences" method="POST" className="rounded-[14px] bg-[var(--color-surface-elevated)] px-5 py-5 shadow-[0_0_0_1px_rgba(255,255,255,0.05)]">
               <div className="space-y-6">
-                {viewModel.preferences.map((preference, index) => (
-                  <div key={preference.title} className="flex items-start justify-between gap-6 rounded-[12px] border border-white/6 bg-[var(--color-surface-elevated)] px-4 py-4">
+                {viewModel.preferences.map((preference) => (
+                  <div key={preference.name} className="flex items-start justify-between gap-6 rounded-[12px] border border-white/6 bg-[var(--color-surface-elevated)] px-4 py-4">
                     <div>
                       <h2 className="text-[16px] font-semibold text-white">{preference.title}</h2>
                       <p className="mt-2 max-w-[620px] text-[13px] leading-[1.45] text-white/52">{preference.description}</p>
@@ -34,7 +34,7 @@ export function NotificationSettingsPage({ viewModel }: { viewModel: Notificatio
                     <label className="relative inline-flex h-6 w-12 cursor-pointer items-center">
                       <input
                         type="checkbox"
-                        name={index === 0 ? "allow_email_notifications" : index === 1 ? "notify_new_donation_received" : "send_donation_thank_you_email"}
+                        name={preference.name}
                         defaultChecked={preference.enabled}
                         className="peer sr-only"
                         role="switch"

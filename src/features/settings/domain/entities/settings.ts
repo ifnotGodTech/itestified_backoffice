@@ -23,6 +23,7 @@ export type MyProfileViewModel = {
 };
 
 export type NotificationPreference = {
+  name: "allow_email_notifications" | "allow_push_notifications" | "notify_new_donation_received" | "send_donation_thank_you_email";
   title: string;
   description: string;
   enabled: boolean;

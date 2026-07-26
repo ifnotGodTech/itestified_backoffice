@@ -21,16 +21,25 @@ export function getNotificationSettingsViewModel(input: {
     phaseState,
     preferences: [
       {
+        name: "allow_email_notifications",
         title: "Allow Email Notifications",
         description: "When enabled, you receive notifications directly to your Email",
         enabled: true,
       },
       {
+        name: "allow_push_notifications",
+        title: "Allow Push Notifications",
+        description: "When enabled, you receive push notifications on your device (mobile app) for account activity such as testimony approvals and comments.",
+        enabled: true,
+      },
+      {
+        name: "notify_new_donation_received",
         title: "New Donation Received",
         description: "Enable to notify the admin after a user submits a donation for verification",
         enabled: true,
       },
       {
+        name: "send_donation_thank_you_email",
         title: "Thank you Email",
         description: "Send a confirmation email to donors after a donation is successfully processed.",
         enabled: false,
@@ -61,14 +70,15 @@ export async function getNotificationSettingsViewModelFromApi(
     }
     const payload = (await response.json().catch(() => ({}))) as {
       allow_email_notifications?: boolean;
+      allow_push_notifications?: boolean;
       notify_new_donation_received?: boolean;
       send_donation_thank_you_email?: boolean;
     };
     const vm = getNotificationSettingsViewModel(input);
-    const preferences = [...vm.preferences];
-    preferences[0] = { ...preferences[0], enabled: Boolean(payload.allow_email_notifications ?? preferences[0]?.enabled) };
-    preferences[1] = { ...preferences[1], enabled: Boolean(payload.notify_new_donation_received ?? preferences[1]?.enabled) };
-    preferences[2] = { ...preferences[2], enabled: Boolean(payload.send_donation_thank_you_email ?? preferences[2]?.enabled) };
+    const preferences = vm.preferences.map((preference) => ({
+      ...preference,
+      enabled: Boolean(payload[preference.name] ?? preference.enabled),
+    }));
     return {
       ...vm,
       phaseState: input.state === "validation" || input.state === "success" ? vm.phaseState : "populated",
