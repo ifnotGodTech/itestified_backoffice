@@ -8,23 +8,28 @@ import { NotificationsHistoryOverlays } from "@/features/admin/presentation/comp
 import { NotificationsHistoryTable } from "@/features/admin/presentation/components/notifications-history/notifications-history-table";
 import { buildNotificationsHistoryHref } from "@/features/admin/presentation/state/notifications-history-route-state";
 
-function NotificationPanel({ viewModel }: { viewModel: NotificationsHistoryViewModel }) {
+function NotificationPanel({
+  viewModel,
+  selectedIds,
+  onToggleSelection,
+  onToggleAll,
+  onOpenFilter,
+}: {
+  viewModel: NotificationsHistoryViewModel;
+  selectedIds: number[];
+  onToggleSelection: (id: number) => void;
+  onToggleAll: () => void;
+  onOpenFilter: () => void;
+}) {
   return (
     <div className="relative max-w-[1248px] pt-6 md:pt-8">
-      <div className="min-h-[648px] rounded-[20px] bg-[var(--color-surface-panel)] px-6 py-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-        <h1 className="text-[16px] font-normal text-white">Notifications</h1>
-        <div className="flex min-h-[520px] items-center justify-center">
-          <div className="text-center">
-            <div className="mx-auto mb-6 flex h-[108px] w-[108px] rotate-[-16deg] items-center justify-center rounded-[10px] border border-white/10 bg-[var(--color-surface-elevated)] shadow-[0_18px_32px_rgba(0,0,0,0.35)]">
-              <svg viewBox="0 0 64 64" className="h-[54px] w-[54px] text-white/25" fill="none" aria-hidden="true">
-                <path d="M32 16c7.18 0 13 5.82 13 13v9.11c0 2.62.9 5.16 2.54 7.2L50 48H14l2.46-2.69A10.92 10.92 0 0 0 19 38.11V29c0-7.18 5.82-13 13-13Z" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" />
-                <path d="M26 52a6 6 0 0 0 12 0" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-              </svg>
-            </div>
-            <p className="text-[28px] font-semibold text-white">No Data</p>
-          </div>
-        </div>
-      </div>
+      <NotificationsHistoryTable
+        viewModel={viewModel}
+        selectedIds={selectedIds}
+        onToggleSelection={onToggleSelection}
+        onToggleAll={onToggleAll}
+        onOpenFilter={onOpenFilter}
+      />
 
       <div className="absolute right-0 top-[10px] w-full max-w-[422px] rounded-[18px] border border-white/12 bg-[var(--color-surface-elevated)] shadow-[0_24px_64px_rgba(0,0,0,0.4)]">
         <div className="flex items-center justify-between border-b border-white/10 px-[18px] py-[14px]">
@@ -120,7 +125,13 @@ function NotificationsHistoryPageContent({ viewModel }: { viewModel: Notificatio
   return (
     <AdminDashboardShell viewModel={interactiveViewModel.shell}>
       {interactiveViewModel.showPanel ? (
-        <NotificationPanel viewModel={interactiveViewModel} />
+        <NotificationPanel
+          viewModel={interactiveViewModel}
+          selectedIds={selectedIds}
+          onToggleSelection={toggleSelection}
+          onToggleAll={toggleAll}
+          onOpenFilter={() => setShowFilterModal(true)}
+        />
       ) : (
         <NotificationsHistoryTable
           viewModel={interactiveViewModel}

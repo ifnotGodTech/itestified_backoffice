@@ -39,6 +39,20 @@ describe("NotificationsHistoryPage", () => {
     expect(screen.getByText("Mark All as Read")).toBeInTheDocument();
   });
 
+  test("shows the real notifications table behind the panel instead of a hardcoded empty state", () => {
+    render(<NotificationsHistoryPage viewModel={getNotificationsHistoryViewModel({ panel: "1" })} />);
+
+    // The full table underneath the drawer must reflect real data -- not the
+    // static "No Data" placeholder that used to render regardless of content.
+    expect(screen.queryByText("No Data")).not.toBeInTheDocument();
+    expect(screen.getAllByText("New Gift Received").length).toBeGreaterThan(0);
+    const testimonyLinks = screen.getAllByRole("link", { name: "New Text Testimony Submitted" });
+    expect(testimonyLinks.length).toBeGreaterThan(0);
+    for (const link of testimonyLinks) {
+      expect(link).toHaveAttribute("href", "/testimonies?view=1&origin=notification");
+    }
+  });
+
   test("renders empty and error states", () => {
     render(<NotificationsHistoryPage viewModel={getNotificationsHistoryViewModel({ state: "empty" })} />);
     expect(screen.getByText("No Notifications Yet")).toBeInTheDocument();
