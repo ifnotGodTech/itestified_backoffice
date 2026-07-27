@@ -22,11 +22,19 @@ export async function POST(req: Request) {
     return NextResponse.redirect(new URL("/app-version?state=validation", req.url));
   }
 
-  let hadFailure = false;
+  let hadValidationFailure = false;
+  let hadOtherFailure = false;
   const setCookieHeaders: string[] = [];
   for (const entry of submissions) {
-    const body: Record<string, string> = { latest_version: entry.latestVersion };
-    if (entry.minimumVersion) body.minimum_version = entry.minimumVersion;
+    // Always send minimum_version, even when the input is blank -- omitting
+    // it under partial-update semantics silently leaves the previous value
+    // untouched, which looks like "clearing" the field succeeded when it
+    // actually did nothing. Sending it as-is lets the backend's own
+    // required-field validation reject that case explicitly.
+    const body: Record<string, string> = {
+      latest_version: entry.latestVersion,
+      minimum_version: entry.minimumVersion,
+    };
 
     const backendResponse = await fetch(`${backendBaseUrl}/app-versions/admin/requirements/${entry.platform}/`, {
       method: "PUT",
@@ -34,13 +42,16 @@ export async function POST(req: Request) {
       body: JSON.stringify(body),
       cache: "no-store",
     });
-    if (!backendResponse.ok) hadFailure = true;
+    if (backendResponse.status === 400) {
+      hadValidationFailure = true;
+    } else if (!backendResponse.ok) {
+      hadOtherFailure = true;
+    }
     setCookieHeaders.push(...extractSetCookieHeaders(backendResponse));
   }
 
-  const redirect = NextResponse.redirect(
-    new URL(hadFailure ? "/app-version?state=validation" : "/app-version?state=success", req.url),
-  );
+  const targetState = hadValidationFailure ? "validation" : hadOtherFailure ? "error" : "success";
+  const redirect = NextResponse.redirect(new URL(`/app-version?state=${targetState}`, req.url));
   for (const header of setCookieHeaders) {
     redirect.headers.append("set-cookie", header);
   }

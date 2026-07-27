@@ -30,7 +30,7 @@ export function getAppVersionViewModel(input: { state?: string; fullName?: strin
     rows: defaultRows(),
     successMessage: phaseState === "success" ? "Version settings updated successfully." : undefined,
     errorMessage:
-      phaseState === "error" ? "We could not load the current version settings right now. Please try again." : undefined,
+      phaseState === "error" ? "Something went wrong loading or saving version settings. Please try again." : undefined,
     validationMessage:
       phaseState === "validation"
         ? "Enter valid versions in the form MAJOR.MINOR.PATCH, e.g. 1.2.0 — and make sure latest isn't lower than minimum."
@@ -76,7 +76,10 @@ export async function getAppVersionViewModelFromApi(
     return {
       ...vm,
       rows,
-      phaseState: input.state === "success" || input.state === "validation" ? vm.phaseState : "populated",
+      phaseState:
+        input.state === "success" || input.state === "validation" || input.state === "error"
+          ? vm.phaseState
+          : "populated",
     };
   } catch {
     return {
