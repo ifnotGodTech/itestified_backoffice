@@ -209,6 +209,14 @@ export async function getInspirationalPicturesViewModelFromApi(
 ): Promise<InspirationalPicturesViewModel> {
   const page = parsePageParam(input.page);
   try {
+    // The upload screen only needs categories (for the dropdown) -- fetching
+    // the paginated picture list too was pure wasted latency on every
+    // "Upload Pictures" navigation, since UploadScreen never reads `rows`.
+    if (normalizeScreen(input.screen) === "upload") {
+      const categories = await fetchInspirationalPictureCategories(cookieHeader);
+      return { ...getInspirationalPicturesViewModel(input), categories };
+    }
+
     const statusMap: Record<string, string> = {
       Uploaded: "published",
       Scheduled: "scheduled",
@@ -222,11 +230,17 @@ export async function getInspirationalPicturesViewModelFromApi(
     params.set("page", String(page));
     const query = params.toString();
     const url = `${backendBaseUrl}/content/admin/inspirational-pictures/${query ? `?${query}` : ""}`;
-    const response = await fetch(url, {
-      method: "GET",
-      headers: cookieHeader ? { cookie: cookieHeader } : {},
-      cache: "no-store",
-    });
+    // Run independently of each other -- these previously ran sequentially
+    // (list fetch, then categories fetch), roughly doubling load time for
+    // no reason since neither depends on the other's result.
+    const [response, categories] = await Promise.all([
+      fetch(url, {
+        method: "GET",
+        headers: cookieHeader ? { cookie: cookieHeader } : {},
+        cache: "no-store",
+      }),
+      fetchInspirationalPictureCategories(cookieHeader),
+    ]);
     if (!response.ok) {
       return { ...getInspirationalPicturesViewModel({ ...input, state: "error" }), page, hasNextPage: false, hasPreviousPage: page > 1 };
     }
@@ -237,7 +251,6 @@ export async function getInspirationalPicturesViewModelFromApi(
       previous?: string | null;
     };
     const rows = mapBackendRows(payload.results ?? []);
-    const categories = await fetchInspirationalPictureCategories(cookieHeader);
     const vm = getInspirationalPicturesViewModel(input);
     const selectedId = Number(input.menu ?? input.view ?? input.edit ?? input.remove ?? "");
     const total = payload.count ?? rows.length;
