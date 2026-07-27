@@ -457,11 +457,11 @@ function UploadScreen({ categories }: { categories: InspirationalPictureCategory
         <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_398px]">
           <div className="space-y-6">
             <div>
-              <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Picture Source (optional link to original post)</p>
+              <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Picture Source (optional attribution label)</p>
               <input
                 value={source}
                 onChange={(event) => setSource(event.target.value)}
-                placeholder="e.g. https://instagram.com/p/..."
+                placeholder="e.g. Instagram, Southern Living"
                 className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35"
               />
             </div>

@@ -166,7 +166,7 @@ describe("InspirationalPicturesPage", () => {
     expect(screen.queryByRole("option", { name: "Retired" })).not.toBeInTheDocument();
 
     expect(screen.queryByPlaceholderText("https://...")).not.toBeInTheDocument();
-    expect(screen.getByPlaceholderText("e.g. https://instagram.com/p/...")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("e.g. Instagram, Southern Living")).toBeInTheDocument();
   });
 
   test("opens the manage categories modal", async () => {
