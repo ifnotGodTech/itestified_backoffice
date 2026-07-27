@@ -352,14 +352,6 @@ function SuccessModal({ viewModel }: { viewModel: InspirationalPicturesViewModel
   );
 }
 
-function EmptyState() {
-  return (
-    <div className="rounded-[20px] bg-[var(--color-surface-elevated)] px-8 py-16 text-center shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-      <p className="text-[18px] font-medium text-white/90">No Pictures here Yet</p>
-    </div>
-  );
-}
-
 type UploadStatus = "published" | "scheduled" | "draft";
 
 const MAX_IMAGE_FILE_SIZE_BYTES = 20 * 1024 * 1024;
@@ -569,14 +561,50 @@ function UploadScreen({ categories }: { categories: InspirationalPictureCategory
   );
 }
 
-function PicturesGrid({
+function PicturesToolbar({
   viewModel,
   onStatusChange,
+}: {
+  viewModel: InspirationalPicturesViewModel;
+  onStatusChange?: (status: InspirationalPictureStatus) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-6 border-b border-white/10 px-1 pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="space-y-5">
+        <h2 className="text-[16px] font-normal leading-[1.36] text-white">Inspirational Pictures</h2>
+        <div className="flex flex-wrap gap-x-6 gap-y-3 text-[14px]">
+        {viewModel.statusTabs.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => onStatusChange?.(tab.key)}
+            aria-pressed={tab.key === viewModel.activeStatus}
+            className={`border-b pb-1 text-[14px] font-normal leading-[1.36] ${tab.key === viewModel.activeStatus ? "border-[#9B68D5] text-white" : "border-transparent text-white/55"}`}
+          >
+            {tab.label}
+          </button>
+        ))}
+        </div>
+      </div>
+      <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+        <div className="relative w-full sm:w-[289px]">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/45"><AdminSearchIcon /></span>
+          <input readOnly value={viewModel.searchQuery} placeholder="Search by Source" className="h-[36px] w-full rounded-[8px] border border-white/10 bg-white/[0.05] pl-9 pr-4 text-[10px] text-white/80 outline-none placeholder:text-white/45" />
+        </div>
+        <Link href={buildInspirationalPicturesHref({ screen: "upload" })} className="inline-flex h-[40px] min-w-[144px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-5 text-[14px] font-medium text-white">
+          Upload Pictures
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function PicturesGrid({
+  viewModel,
   onOpenMenu,
   onView,
 }: {
   viewModel: InspirationalPicturesViewModel;
-  onStatusChange?: (status: InspirationalPictureStatus) => void;
   onOpenMenu?: (row: InspirationalPictureRow) => void;
   onView?: (row: InspirationalPictureRow) => void;
 }) {
@@ -591,35 +619,7 @@ function PicturesGrid({
       : "grid-cols-[76px_99px_135px_135px_135px_115px_64px]";
 
   return (
-    <div className="rounded-[20px] bg-[var(--color-surface-elevated)] px-5 pb-10 pt-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-      <div className="flex flex-col gap-6 border-b border-white/10 px-1 pb-5 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-5">
-          <h2 className="text-[16px] font-normal leading-[1.36] text-white">Inspirational Pictures</h2>
-          <div className="flex flex-wrap gap-x-6 gap-y-3 text-[14px]">
-          {viewModel.statusTabs.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => onStatusChange?.(tab.key)}
-              aria-pressed={tab.key === viewModel.activeStatus}
-              className={`border-b pb-1 text-[14px] font-normal leading-[1.36] ${tab.key === viewModel.activeStatus ? "border-[#9B68D5] text-white" : "border-transparent text-white/55"}`}
-            >
-              {tab.label}
-            </button>
-          ))}
-          </div>
-        </div>
-        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-          <div className="relative w-full sm:w-[289px]">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/45"><AdminSearchIcon /></span>
-            <input readOnly value={viewModel.searchQuery} placeholder="Search by Source" className="h-[36px] w-full rounded-[8px] border border-white/10 bg-white/[0.05] pl-9 pr-4 text-[10px] text-white/80 outline-none placeholder:text-white/45" />
-          </div>
-          <Link href={buildInspirationalPicturesHref({ screen: "upload" })} className="inline-flex h-[40px] min-w-[144px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-5 text-[14px] font-medium text-white">
-            Upload Pictures
-          </Link>
-        </div>
-      </div>
-
+    <>
       <div className="mt-6 overflow-x-auto">
         <div className={`${viewModel.activeStatus === "Scheduled" ? "min-w-[940px]" : "min-w-[820px]"}`}>
           <div className={`grid ${tableColumns} items-center rounded-[10px] bg-white/[0.03] px-4 py-[10px] text-[10px] font-semibold leading-[1.36] text-white`}>
@@ -678,7 +678,7 @@ function PicturesGrid({
         previousHref={paginationHref(viewModel, viewModel.page - 1)}
         nextHref={paginationHref(viewModel, viewModel.page + 1)}
       />
-    </div>
+    </>
   );
 }
 
@@ -979,24 +979,32 @@ export function InspirationalPicturesPage({ viewModel }: { viewModel: Inspiratio
           </button>
         </div>
       ) : null}
-      {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "empty" ? <EmptyState /> : null}
-      {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "loading" ? <div className="rounded-[20px] bg-[var(--color-surface-elevated)] px-8 py-16 text-center text-white/70">Loading pictures...</div> : null}
-      {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "error" ? (
-        <div className="rounded-[20px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-          <AdminErrorState title="Unable to load inspirational pictures" message={interactiveViewModel.errorMessage} />
-        </div>
-      ) : null}
-      {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "populated" ? (
+      {interactiveViewModel.activeScreen === "list" ? (
         <div className="relative">
-          <PicturesGrid
-            viewModel={interactiveViewModel}
-            onStatusChange={switchStatus}
-            onOpenMenu={(row) => setMenuRow(row)}
-            onView={(row) => {
-              setMenuRow(null);
-              setDetailRow(row);
-            }}
-          />
+          <div className="rounded-[20px] bg-[var(--color-surface-elevated)] px-5 pb-10 pt-5 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+            <PicturesToolbar viewModel={interactiveViewModel} onStatusChange={switchStatus} />
+            {interactiveViewModel.phaseState === "empty" ? (
+              <div className="py-16 text-center">
+                <p className="text-[18px] font-medium text-white/90">No Pictures here Yet</p>
+              </div>
+            ) : null}
+            {interactiveViewModel.phaseState === "loading" ? (
+              <div className="py-16 text-center text-white/70">Loading pictures...</div>
+            ) : null}
+            {interactiveViewModel.phaseState === "error" ? (
+              <AdminErrorState title="Unable to load inspirational pictures" message={interactiveViewModel.errorMessage} />
+            ) : null}
+            {interactiveViewModel.phaseState === "populated" ? (
+              <PicturesGrid
+                viewModel={interactiveViewModel}
+                onOpenMenu={(row) => setMenuRow(row)}
+                onView={(row) => {
+                  setMenuRow(null);
+                  setDetailRow(row);
+                }}
+              />
+            ) : null}
+          </div>
           {showDetachedActionMenu && selectedRow ? (
             <div className="fixed bottom-24 right-8 z-50 sm:right-10">
               <ActionMenu

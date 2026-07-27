@@ -33,6 +33,41 @@ describe("InspirationalPicturesPage", () => {
     expect(screen.getByText("No Pictures here Yet")).toBeInTheDocument();
   });
 
+  test("status tabs, search, and upload button stay visible even when the list is empty", () => {
+    render(<InspirationalPicturesPage viewModel={getInspirationalPicturesViewModel({ state: "empty" })} />);
+
+    expect(screen.getByText("No Pictures here Yet")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Uploaded" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Scheduled" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Drafts" })).toBeInTheDocument();
+    expect(screen.getAllByText("Upload Pictures").length).toBeGreaterThan(0);
+  });
+
+  test("switching to a tab with no results does not strip the toolbar, so you can switch back", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          ...getInspirationalPicturesViewModel({ status: "Drafts" }),
+          phaseState: "empty",
+          rows: [],
+        }),
+      }),
+    );
+    render(<InspirationalPicturesPage viewModel={getInspirationalPicturesViewModel({})} />);
+
+    await user.click(screen.getByRole("button", { name: "Drafts" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("No Pictures here Yet")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Uploaded" })).toBeInTheDocument();
+  });
+
   test("manage categories is reachable even when there are no pictures yet", async () => {
     const user = userEvent.setup();
     render(<InspirationalPicturesPage viewModel={getInspirationalPicturesViewModel({ state: "empty" })} />);
