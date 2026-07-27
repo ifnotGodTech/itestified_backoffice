@@ -47,5 +47,22 @@ describe("AppVersionPage", () => {
 
     render(<AppVersionPage viewModel={getAppVersionViewModel({ state: "error" })} />);
     expect(screen.getByText("Unable to load version settings")).toBeInTheDocument();
+    cleanup();
+
+    render(<AppVersionPage viewModel={getAppVersionViewModel({ state: "notified", count: "3" })} />);
+    expect(screen.getByText("Notified 3 users to update.")).toBeInTheDocument();
+  });
+
+  test("disables the notify button for a platform that has never been configured, enables it otherwise", () => {
+    const viewModel = getAppVersionViewModel({});
+    viewModel.rows = [
+      { platform: "android", minimumVersion: "1.2.0", latestVersion: "1.5.0", updatedAt: "2026-07-27T10:00:00Z" },
+      { platform: "ios", minimumVersion: "", latestVersion: "", updatedAt: null },
+    ];
+
+    render(<AppVersionPage viewModel={viewModel} />);
+
+    expect(screen.getByRole("button", { name: "Notify Android users" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Notify iOS users" })).toBeDisabled();
   });
 });

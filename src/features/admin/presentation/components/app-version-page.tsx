@@ -33,6 +33,11 @@ export function AppVersionPage({ viewModel }: { viewModel: AppVersionViewModel }
               {viewModel.validationMessage}
             </div>
           ) : null}
+          {viewModel.phaseState === "notified" ? (
+            <div className="mb-4 rounded-[12px] border border-[#0CBC32]/25 bg-[#0f2615] px-4 py-3 text-[13px] text-[#8de7a0]">
+              {viewModel.notifiedMessage}
+            </div>
+          ) : null}
 
           <form
             action="/api/admin/app-version"
@@ -84,6 +89,29 @@ export function AppVersionPage({ viewModel }: { viewModel: AppVersionViewModel }
               </button>
             </div>
           </form>
+
+          <div className="mt-6 rounded-[14px] bg-[var(--color-surface-elevated)] px-5 py-5 shadow-[0_0_0_1px_rgba(255,255,255,0.05)]">
+            <h2 className="text-[14px] font-semibold text-white">Notify users</h2>
+            <p className="mt-1 text-[12px] text-white/55">
+              Sends a push and in-app notification to every user with a device on that platform, telling them a new
+              version is available. This never fires automatically when you save above — trigger it explicitly once
+              you&rsquo;re ready to announce the release.
+            </p>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              {viewModel.rows.map((row) => (
+                <form key={row.platform} action="/api/admin/app-version/notify" method="POST">
+                  <input type="hidden" name="platform" value={row.platform} />
+                  <button
+                    type="submit"
+                    disabled={!row.minimumVersion}
+                    className="inline-flex h-10 items-center rounded-[8px] border border-[#9B68D5] px-4 text-[12px] font-semibold text-[#c590ff] disabled:cursor-not-allowed disabled:border-white/10 disabled:text-white/30"
+                  >
+                    Notify {PLATFORM_LABELS[row.platform]} users
+                  </button>
+                </form>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </AdminDashboardShell>

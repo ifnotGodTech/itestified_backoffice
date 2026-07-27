@@ -8,7 +8,7 @@ import type {
 } from "@/features/admin/domain/entities/app-versions";
 
 function normalizeState(state?: string): AppVersionState {
-  if (state === "error" || state === "success" || state === "validation") return state;
+  if (state === "error" || state === "success" || state === "validation" || state === "notified") return state;
   return "populated";
 }
 
@@ -19,8 +19,13 @@ function defaultRows(): AppVersionRow[] {
   ];
 }
 
-export function getAppVersionViewModel(input: { state?: string; fullName?: string }): AppVersionViewModel {
+export function getAppVersionViewModel(input: {
+  state?: string;
+  count?: string;
+  fullName?: string;
+}): AppVersionViewModel {
   const phaseState = normalizeState(input.state);
+  const notifiedCount = Number.parseInt(input.count ?? "", 10);
   return {
     shell: getAdminShellViewModel({ activeHref: "/app-version", fullName: input.fullName }),
     pageTitle: "App version",
@@ -35,11 +40,17 @@ export function getAppVersionViewModel(input: { state?: string; fullName?: strin
       phaseState === "validation"
         ? "Enter valid versions in the form MAJOR.MINOR.PATCH, e.g. 1.2.0 — and make sure latest isn't lower than minimum."
         : undefined,
+    notifiedMessage:
+      phaseState === "notified"
+        ? Number.isFinite(notifiedCount) && notifiedCount > 0
+          ? `Notified ${notifiedCount} user${notifiedCount === 1 ? "" : "s"} to update.`
+          : "No users with a registered device on that platform to notify."
+        : undefined,
   };
 }
 
 export async function getAppVersionViewModelFromApi(
-  input: { state?: string; fullName?: string },
+  input: { state?: string; count?: string; fullName?: string },
   cookieHeader: string,
 ): Promise<AppVersionViewModel> {
   const vm = getAppVersionViewModel(input);
@@ -77,7 +88,10 @@ export async function getAppVersionViewModelFromApi(
       ...vm,
       rows,
       phaseState:
-        input.state === "success" || input.state === "validation" || input.state === "error"
+        input.state === "success" ||
+        input.state === "validation" ||
+        input.state === "error" ||
+        input.state === "notified"
           ? vm.phaseState
           : "populated",
     };

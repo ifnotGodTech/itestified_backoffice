@@ -2,7 +2,7 @@ import type { AdminShellViewModel } from "@/features/admin/domain/entities/shell
 
 export type AppVersionPlatform = "android" | "ios";
 
-export type AppVersionState = "populated" | "error" | "success" | "validation";
+export type AppVersionState = "populated" | "error" | "success" | "validation" | "notified";
 
 export type AppVersionRow = {
   platform: AppVersionPlatform;
@@ -20,4 +20,5 @@ export type AppVersionViewModel = {
   successMessage?: string;
   errorMessage?: string;
   validationMessage?: string;
+  notifiedMessage?: string;
 };

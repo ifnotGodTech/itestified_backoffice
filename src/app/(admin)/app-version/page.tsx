@@ -9,6 +9,7 @@ export default async function AppVersionRoute({
   searchParams: Promise<{
     state?: string;
     success?: string;
+    count?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -22,6 +23,7 @@ export default async function AppVersionRoute({
   const viewModel = await getAppVersionViewModelFromApi(
     {
       state: params.state,
+      count: params.count,
       fullName: session?.fullName ?? session?.email,
     },
     cookieHeader,
