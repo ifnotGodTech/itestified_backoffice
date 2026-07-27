@@ -2,6 +2,7 @@ import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin
 import { backendBaseUrl } from "@/core/auth/backend";
 import { formatShowingLabel, paginateRows, parsePageParam } from "@/features/admin/data/services/pagination";
 import type {
+  InspirationalPictureCategoryOption,
   InspirationalPictureRow,
   InspirationalPictureScreen,
   InspirationalPictureState,
@@ -22,6 +23,7 @@ const pictureRows: InspirationalPictureRow[] = [
     title: "God's Grace",
     status: "Uploaded",
     category: "Faith",
+    categoryId: null,
     uploadedBy: "Elvis/Super Admin",
     dateLabel: "08/08/24",
     source: "Instagram.com",
@@ -34,6 +36,7 @@ const pictureRows: InspirationalPictureRow[] = [
     title: "Morning Mercy",
     status: "Scheduled",
     category: "Hope",
+    categoryId: null,
     uploadedBy: "Content Manager",
     dateLabel: "08/08/24",
     source: "Instagram.com",
@@ -47,6 +50,7 @@ const pictureRows: InspirationalPictureRow[] = [
     title: "Spirit Led",
     status: "Drafts",
     category: "Prayer",
+    categoryId: null,
     uploadedBy: "Elvis/Super Admin",
     dateLabel: "08/08/24",
     source: "Instagram.com",
@@ -112,6 +116,7 @@ export function getInspirationalPicturesViewModel(input: {
     phaseState,
     searchQuery,
     statusTabs,
+    categories: [],
     rows,
     selectedRow,
     totalRows: allRows.length,
@@ -145,6 +150,7 @@ function mapBackendRows(results: Array<Record<string, unknown>>): InspirationalP
       caption: String(item.caption ?? ""),
       status: normalizeBackendStatus(String(item.status ?? "")),
       category: String(item.category ?? ""),
+      categoryId: typeof item.category_id === "number" ? item.category_id : null,
       uploadedBy: "Admin",
       dateLabel:
         createdDate && !Number.isNaN(createdDate.getTime())
@@ -158,6 +164,31 @@ function mapBackendRows(results: Array<Record<string, unknown>>): InspirationalP
       imageSrc: String(item.image_url ?? "/admin-logo.svg"),
     };
   });
+}
+
+function mapBackendCategories(results: Array<Record<string, unknown>>): InspirationalPictureCategoryOption[] {
+  return results.map((item) => ({
+    id: Number(item.id ?? 0),
+    name: String(item.name ?? ""),
+    slug: String(item.slug ?? ""),
+    description: String(item.description ?? ""),
+    isActive: Boolean(item.is_active),
+  }));
+}
+
+async function fetchInspirationalPictureCategories(cookieHeader: string): Promise<InspirationalPictureCategoryOption[]> {
+  try {
+    const response = await fetch(`${backendBaseUrl}/content/admin/inspirational-pictures/categories/`, {
+      method: "GET",
+      headers: cookieHeader ? { cookie: cookieHeader } : {},
+      cache: "no-store",
+    });
+    if (!response.ok) return [];
+    const payload = (await response.json().catch(() => [])) as Array<Record<string, unknown>>;
+    return mapBackendCategories(payload);
+  } catch {
+    return [];
+  }
 }
 
 export async function getInspirationalPicturesViewModelFromApi(
@@ -206,12 +237,14 @@ export async function getInspirationalPicturesViewModelFromApi(
       previous?: string | null;
     };
     const rows = mapBackendRows(payload.results ?? []);
+    const categories = await fetchInspirationalPictureCategories(cookieHeader);
     const vm = getInspirationalPicturesViewModel(input);
     const selectedId = Number(input.menu ?? input.view ?? input.edit ?? input.remove ?? "");
     const total = payload.count ?? rows.length;
     return {
       ...vm,
       phaseState: rows.length === 0 ? "empty" : "populated",
+      categories,
       rows,
       selectedRow: Number.isFinite(selectedId) ? rows.find((row) => row.id === selectedId) ?? null : null,
       totalRows: total,

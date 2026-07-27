@@ -5,12 +5,21 @@ export type InspirationalPictureState = "populated" | "empty" | "loading" | "err
 export type InspirationalPictureStatus = "All" | "Uploaded" | "Scheduled" | "Drafts";
 export type InspirationalPictureScreen = "list" | "upload";
 
+export type InspirationalPictureCategoryOption = {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  isActive: boolean;
+};
+
 export type InspirationalPictureRow = {
   id: number;
   title: string;
   caption?: string;
   status: Exclude<InspirationalPictureStatus, "All">;
   category: string;
+  categoryId: number | null;
   uploadedBy: string;
   dateLabel: string;
   source: string;
@@ -28,6 +37,7 @@ export type InspirationalPicturesViewModel = AdminPaginationFields & {
   phaseState: InspirationalPictureState;
   searchQuery: string;
   statusTabs: Array<{ key: InspirationalPictureStatus; label: string }>;
+  categories: InspirationalPictureCategoryOption[];
   rows: InspirationalPictureRow[];
   selectedRow: InspirationalPictureRow | null;
   totalRows: number;

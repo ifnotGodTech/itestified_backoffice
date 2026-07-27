@@ -116,6 +116,19 @@ describe("InspirationalPicturesPage", () => {
     expect(screen.getByText("Save Changes")).toBeInTheDocument();
   });
 
+  test("edit picture category dropdown pre-selects the picture's current category", () => {
+    const viewModel = getInspirationalPicturesViewModel({ edit: "1" });
+    viewModel.categories = [
+      { id: 5, name: "Faith", slug: "faith", description: "", isActive: true },
+      { id: 6, name: "Hope", slug: "hope", description: "", isActive: true },
+    ];
+    viewModel.selectedRow = { ...viewModel.selectedRow!, categoryId: 6 };
+    render(<InspirationalPicturesPage viewModel={viewModel} />);
+
+    const select = screen.getByDisplayValue("Hope") as HTMLSelectElement;
+    expect(select.tagName).toBe("SELECT");
+  });
+
   test("renders the delete picture state", () => {
     render(<InspirationalPicturesPage viewModel={getInspirationalPicturesViewModel({ remove: "1" })} />);
 
@@ -123,11 +136,41 @@ describe("InspirationalPicturesPage", () => {
     expect(screen.getByText("Are you sure you want to delete this picture? This action cannot be undone.")).toBeInTheDocument();
   });
 
-  test("renders the upload screen", () => {
-    render(<InspirationalPicturesPage viewModel={getInspirationalPicturesViewModel({ screen: "upload" })} />);
+  test("renders the upload screen with a real file input and category dropdown", () => {
+    const viewModel = getInspirationalPicturesViewModel({ screen: "upload" });
+    viewModel.categories = [
+      { id: 1, name: "Faith", slug: "faith", description: "", isActive: true },
+      { id: 2, name: "Retired", slug: "retired", description: "", isActive: false },
+    ];
+    render(<InspirationalPicturesPage viewModel={viewModel} />);
 
     expect(screen.getByRole("heading", { name: "Upload Picture" })).toBeInTheDocument();
     expect(screen.getByText("Upload Status")).toBeInTheDocument();
+
+    const fileInput = document.getElementById("picture-file-input");
+    expect(fileInput).toBeInTheDocument();
+    expect(fileInput).toHaveAttribute("type", "file");
+
+    expect(screen.getByRole("option", { name: "Faith" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Retired" })).not.toBeInTheDocument();
+
+    expect(screen.queryByPlaceholderText("https://...")).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText("e.g. https://instagram.com/p/...")).toBeInTheDocument();
+  });
+
+  test("opens the manage categories modal", async () => {
+    const user = userEvent.setup();
+    const viewModel = getInspirationalPicturesViewModel({});
+    viewModel.categories = [{ id: 1, name: "Faith", slug: "faith", description: "", isActive: true }];
+    render(<InspirationalPicturesPage viewModel={viewModel} />);
+
+    await user.click(screen.getByRole("button", { name: "Manage Categories" }));
+
+    expect(screen.getByRole("heading", { name: "Manage Categories" })).toBeInTheDocument();
+    expect(screen.getByText("Active")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Close manage categories" }));
+    expect(screen.queryByRole("heading", { name: "Manage Categories" })).not.toBeInTheDocument();
   });
 
   test("renders the upload success state", () => {

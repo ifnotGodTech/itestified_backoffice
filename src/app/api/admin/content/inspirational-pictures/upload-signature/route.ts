@@ -2,17 +2,14 @@ import { NextResponse } from "next/server";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
 export async function POST(req: Request) {
-  const payload = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-
-  const backendResponse = await fetch(`${backendBaseUrl}/content/admin/inspirational-pictures/`, {
-    method: "POST",
-    headers: {
-      ...buildBackendSessionHeaders(req),
-      "content-type": "application/json",
+  const backendResponse = await fetch(
+    `${backendBaseUrl}/content/admin/inspirational-pictures/upload-signature/`,
+    {
+      method: "POST",
+      headers: buildBackendSessionHeaders(req),
+      cache: "no-store",
     },
-    body: JSON.stringify(payload),
-    cache: "no-store",
-  });
+  );
 
   const backendContentType = (backendResponse.headers.get("content-type") || "").toLowerCase();
   const data = backendContentType.includes("application/json")

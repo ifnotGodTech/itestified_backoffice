@@ -7,7 +7,7 @@ export async function POST(req: Request, context: { params: Promise<{ pictureId:
   const payload = {
     title: String(formData.get("title") ?? ""),
     caption: String(formData.get("caption") ?? ""),
-    category: String(formData.get("category") ?? ""),
+    category_id: String(formData.get("category_id") ?? "").trim() || null,
     source: String(formData.get("source") ?? ""),
     image_url: String(formData.get("image_url") ?? ""),
     status: String(formData.get("status") ?? "draft"),

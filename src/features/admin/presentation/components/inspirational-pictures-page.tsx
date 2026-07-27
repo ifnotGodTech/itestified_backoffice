@@ -2,8 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import type { InspirationalPictureRow, InspirationalPicturesViewModel, InspirationalPictureStatus } from "@/features/admin/domain/entities/inspirational-pictures";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import type {
+  InspirationalPictureCategoryOption,
+  InspirationalPictureRow,
+  InspirationalPicturesViewModel,
+  InspirationalPictureStatus,
+} from "@/features/admin/domain/entities/inspirational-pictures";
 import { AdminDashboardShell } from "@/features/admin/presentation/components/admin-dashboard-shell";
 import {
   AdminActionMenuBackdrop,
@@ -15,6 +21,75 @@ import {
   AdminStatusBadge,
 } from "@/features/admin/presentation/components/shared/admin-table-primitives";
 import { buildInspirationalPicturesHref } from "@/features/admin/presentation/state/inspirational-pictures-route-state";
+
+type DirectUploadSignature = {
+  cloud_name: string;
+  api_key: string;
+  timestamp: number;
+  folder: string;
+  signature: string;
+  resource_type: "image";
+};
+
+type DirectUploadResult = {
+  secure_url?: string;
+};
+
+function extractApiErrorMessage(data: unknown): string {
+  if (!data || typeof data !== "object") {
+    return "Upload failed. Please review your details and try again.";
+  }
+  const record = data as Record<string, unknown>;
+  if (typeof record.message === "string" && record.message.trim()) return record.message;
+  for (const value of Object.values(record)) {
+    if (typeof value === "string" && value.trim()) return value;
+    if (Array.isArray(value)) {
+      const first = value.find((item) => typeof item === "string" && item.trim());
+      if (typeof first === "string") return first;
+    }
+  }
+  return "Upload failed. Please review your details and try again.";
+}
+
+async function requestPictureUploadSignature(): Promise<DirectUploadSignature> {
+  const response = await fetch("/api/admin/content/inspirational-pictures/upload-signature", { method: "POST" });
+  const data = (await response.json().catch(() => null)) as unknown;
+  if (!response.ok) {
+    throw new Error(extractApiErrorMessage(data));
+  }
+  if (!data || typeof data !== "object") {
+    throw new Error("Upload could not be prepared. Please try again.");
+  }
+  return data as DirectUploadSignature;
+}
+
+async function uploadPictureFileDirectlyToCloudinary(file: File): Promise<string> {
+  const signature = await requestPictureUploadSignature();
+  const uploadFormData = new FormData();
+  uploadFormData.set("file", file);
+  uploadFormData.set("api_key", signature.api_key);
+  uploadFormData.set("timestamp", String(signature.timestamp));
+  uploadFormData.set("folder", signature.folder);
+  uploadFormData.set("signature", signature.signature);
+
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${signature.cloud_name}/image/upload`, {
+    method: "POST",
+    body: uploadFormData,
+  });
+  const data = (await response.json().catch(() => null)) as DirectUploadResult | { error?: { message?: string } } | null;
+  if (!response.ok) {
+    const message =
+      data && "error" in data && typeof data.error?.message === "string"
+        ? data.error.message
+        : `Cloudinary upload failed (${response.status}).`;
+    throw new Error(message);
+  }
+  const secureUrl = data && "secure_url" in data ? String(data.secure_url || "") : "";
+  if (!secureUrl) {
+    throw new Error("Cloudinary did not return an uploaded file URL.");
+  }
+  return secureUrl;
+}
 
 function StatusPill({ status }: { status: InspirationalPictureRow["status"] }) {
   const cls =
@@ -208,7 +283,20 @@ function EditModal({ row, viewModel }: { row: InspirationalPictureRow; viewModel
           </div>
           <div className="mt-6">
             <p className="mb-3 text-[16px] leading-[1.5] text-white/90">Category</p>
-            <input name="category" defaultValue={row.category} className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[15px] leading-[1.5] text-white" />
+            <select
+              name="category_id"
+              defaultValue={row.categoryId ?? ""}
+              className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[15px] leading-[1.5] text-white"
+            >
+              <option value="">No category</option>
+              {viewModel.categories
+                .filter((category) => category.isActive || category.id === row.categoryId)
+                .map((category) => (
+                  <option key={category.id} value={String(category.id)}>
+                    {category.name}
+                  </option>
+                ))}
+            </select>
           </div>
           <div className="mt-6">
             <p className="mb-3 text-[16px] leading-[1.5] text-white/90">Image URL</p>
@@ -272,10 +360,89 @@ function EmptyState() {
   );
 }
 
-function UploadScreen() {
+type UploadStatus = "published" | "scheduled" | "draft";
+
+const MAX_IMAGE_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+const ALLOWED_IMAGE_CONTENT_TYPES = new Set(["image/jpeg", "image/jpg", "image/png"]);
+
+function validateImageFile(file: File | null): string | null {
+  if (!file) return "Picture file is required.";
+  if (!ALLOWED_IMAGE_CONTENT_TYPES.has((file.type || "").toLowerCase())) {
+    return "Only JPG or PNG uploads are allowed.";
+  }
+  if (file.size <= 0) return "Picture file is empty.";
+  if (file.size > MAX_IMAGE_FILE_SIZE_BYTES) return "Picture file exceeds the 20MB limit.";
+  return null;
+}
+
+function UploadScreen({ categories }: { categories: InspirationalPictureCategoryOption[] }) {
+  const router = useRouter();
+  const activeCategories = useMemo(() => categories.filter((item) => item.isActive), [categories]);
+
+  const [source, setSource] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [title, setTitle] = useState("");
+  const [caption, setCaption] = useState("");
+  const [status, setStatus] = useState<UploadStatus>("published");
+  const [publishAt, setPublishAt] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [messageTone, setMessageTone] = useState<"success" | "error">("success");
+
+  async function submitUpload() {
+    if (!title.trim()) {
+      setMessageTone("error");
+      setMessage("Title is required.");
+      return;
+    }
+    const fileError = validateImageFile(imageFile);
+    if (fileError) {
+      setMessageTone("error");
+      setMessage(fileError);
+      return;
+    }
+    if (status === "scheduled" && !publishAt) {
+      setMessageTone("error");
+      setMessage("Scheduled uploads require a publish date and time.");
+      return;
+    }
+
+    setSubmitting(true);
+    setMessage(null);
+    try {
+      const imageUrl = await uploadPictureFileDirectlyToCloudinary(imageFile as File);
+      const payload = {
+        title: title.trim(),
+        caption: caption.trim(),
+        category_id: categoryId || null,
+        source: source.trim(),
+        image_url: imageUrl,
+        status,
+        publish_at: publishAt ? new Date(publishAt).toISOString() : null,
+        expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+      };
+      const response = await fetch("/api/admin/content/inspirational-pictures", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as unknown;
+        throw new Error(extractApiErrorMessage(data));
+      }
+      router.push(buildInspirationalPicturesHref({ success: "upload" }));
+    } catch (error) {
+      setSubmitting(false);
+      setMessageTone("error");
+      setMessage(error instanceof Error ? error.message : "Upload failed.");
+    }
+  }
+
   return (
     <div className="max-w-[1248px] pt-6 md:pt-8">
-      <form action="/api/admin/content/inspirational-pictures" method="POST" className="rounded-[24px] bg-[var(--color-surface-elevated)] px-6 py-8 shadow-[0_20px_60px_rgba(0,0,0,0.35)] md:px-10 md:py-10">
+      <div className="rounded-[24px] bg-[var(--color-surface-elevated)] px-6 py-8 shadow-[0_20px_60px_rgba(0,0,0,0.35)] md:px-10 md:py-10">
         <div className="flex items-start justify-between gap-6">
           <h2 className="text-[32px] font-semibold leading-[1.36] text-white">Upload Picture</h2>
           <Link href={buildInspirationalPicturesHref({})} aria-label="Close upload picture screen" className="inline-flex h-6 w-6 items-center justify-center text-[20px] leading-none text-white/90">
@@ -283,63 +450,121 @@ function UploadScreen() {
           </Link>
         </div>
 
+        {message ? (
+          <p className={`mt-4 text-[14px] ${messageTone === "error" ? "text-[#ef4335]" : "text-[#6BFFB4]"}`}>{message}</p>
+        ) : null}
+
         <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_398px]">
           <div className="space-y-6">
             <div>
-              <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Picture Source</p>
-              <input name="source" placeholder="https://..." className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35" />
+              <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Picture Source (optional link to original post)</p>
+              <input
+                value={source}
+                onChange={(event) => setSource(event.target.value)}
+                placeholder="e.g. https://instagram.com/p/..."
+                className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35"
+              />
             </div>
             <div>
               <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Category</p>
-              <input name="category" placeholder="Faith" className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35" />
+              <select
+                value={categoryId}
+                onChange={(event) => setCategoryId(event.target.value)}
+                className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[14px] leading-[1.36] text-white/85"
+              >
+                <option value="">No category</option>
+                {activeCategories.map((category) => (
+                  <option key={category.id} value={String(category.id)}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Title</p>
-              <input name="title" placeholder="Morning Mercy" className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35" />
+              <input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="Morning Mercy"
+                className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35"
+              />
             </div>
             <div>
               <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Caption</p>
-              <textarea name="caption" placeholder="Type caption..." className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35" />
+              <textarea
+                value={caption}
+                onChange={(event) => setCaption(event.target.value)}
+                placeholder="Type caption..."
+                className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[14px] leading-[1.36] text-white/85 placeholder:text-white/35"
+              />
             </div>
             <div>
               <p className="mb-3 text-[14px] leading-[1.36] text-white/90">Upload Status</p>
               <div className="flex flex-wrap gap-x-7 gap-y-4 text-[14px] leading-[1.36] text-white/90">
                 <label className="inline-flex items-center gap-2">
-                  <input type="radio" name="status" value="published" defaultChecked className="h-[16px] w-[16px] accent-[#9966CC]" />
+                  <input type="radio" name="status" checked={status === "published"} onChange={() => setStatus("published")} className="h-[16px] w-[16px] accent-[#9966CC]" />
                   Upload now
                 </label>
                 <label className="inline-flex items-center gap-2">
-                  <input type="radio" name="status" value="scheduled" className="h-[16px] w-[16px] accent-[#9966CC]" />
+                  <input type="radio" name="status" checked={status === "scheduled"} onChange={() => setStatus("scheduled")} className="h-[16px] w-[16px] accent-[#9966CC]" />
                   Schedule for later
                 </label>
                 <label className="inline-flex items-center gap-2">
-                  <input type="radio" name="status" value="draft" className="h-[16px] w-[16px] accent-[#9966CC]" />
+                  <input type="radio" name="status" checked={status === "draft"} onChange={() => setStatus("draft")} className="h-[16px] w-[16px] accent-[#9966CC]" />
                   Drafts
                 </label>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <input type="datetime-local" name="publish_at" className="rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-3 text-[14px] text-white/85" />
-              <input type="datetime-local" name="expires_at" className="rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-3 text-[14px] text-white/85" />
+              <input
+                type="datetime-local"
+                value={publishAt}
+                onChange={(event) => setPublishAt(event.target.value)}
+                className="rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-3 text-[14px] text-white/85"
+              />
+              <input
+                type="datetime-local"
+                value={expiresAt}
+                onChange={(event) => setExpiresAt(event.target.value)}
+                className="rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-3 text-[14px] text-white/85"
+              />
             </div>
           </div>
           <div className="rounded-[16px] border border-dashed border-white/10 bg-[var(--color-surface-elevated)] p-5">
             <div className="flex h-[250px] items-center justify-center rounded-[12px] border border-dashed border-white/10 bg-[var(--color-surface-muted)] text-center">
               <div className="max-w-[255px]">
-                <p className="text-[14px] leading-[1.5] text-white/90">Drag & drop or choose file here to upload</p>
+                <p className="text-[14px] leading-[1.5] text-white/90">
+                  Drag & drop or{" "}
+                  <label htmlFor="picture-file-input" className="cursor-pointer text-[#c590ff] underline-offset-2 hover:underline">
+                    choose file
+                  </label>{" "}
+                  here to upload
+                </p>
                 <p className="mt-2 text-[12px] leading-[1.4] text-white/40">JPG, PNG, Max size (20mb)</p>
-                <input name="image_url" placeholder="https://images.example.com/pic.jpg" className="mt-3 w-full rounded-[8px] border border-white/10 bg-[var(--color-surface-elevated)] px-3 py-2 text-[12px] text-white/85 placeholder:text-white/35" />
+                <input
+                  id="picture-file-input"
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
+                  className="mt-3 block w-full text-[12px] text-white/85"
+                />
+                <p className="mt-2 text-[12px] text-white/60">{imageFile ? `Selected: ${imageFile.name}` : "No file selected"}</p>
               </div>
             </div>
           </div>
         </div>
 
         <div className="mt-8 flex justify-end">
-          <button type="submit" className="inline-flex h-[40px] min-w-[106px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 text-[14px] font-medium text-white">
-            Upload
+          <button
+            type="button"
+            onClick={submitUpload}
+            disabled={submitting}
+            className="inline-flex h-[40px] min-w-[106px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 text-[14px] font-medium text-white disabled:opacity-60"
+          >
+            {submitting ? "Uploading..." : "Upload"}
           </button>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
@@ -349,11 +574,13 @@ function PicturesGrid({
   onStatusChange,
   onOpenMenu,
   onView,
+  onManageCategories,
 }: {
   viewModel: InspirationalPicturesViewModel;
   onStatusChange?: (status: InspirationalPictureStatus) => void;
   onOpenMenu?: (row: InspirationalPictureRow) => void;
   onView?: (row: InspirationalPictureRow) => void;
+  onManageCategories?: () => void;
 }) {
   const headers =
     viewModel.activeStatus === "Scheduled"
@@ -389,6 +616,13 @@ function PicturesGrid({
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/45"><AdminSearchIcon /></span>
             <input readOnly value={viewModel.searchQuery} placeholder="Search by Source" className="h-[36px] w-full rounded-[8px] border border-white/10 bg-white/[0.05] pl-9 pr-4 text-[10px] text-white/80 outline-none placeholder:text-white/45" />
           </div>
+          <button
+            type="button"
+            onClick={onManageCategories}
+            className="inline-flex h-[40px] min-w-[144px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-5 text-[14px] font-medium text-[#c590ff]"
+          >
+            Manage Categories
+          </button>
           <Link href={buildInspirationalPicturesHref({ screen: "upload" })} className="inline-flex h-[40px] min-w-[144px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-5 text-[14px] font-medium text-white">
             Upload Pictures
           </Link>
@@ -457,10 +691,239 @@ function PicturesGrid({
   );
 }
 
+async function readApiMessage(response: Response, fallback: string): Promise<string> {
+  const payload = (await response.json().catch(() => ({}))) as { message?: string };
+  if (typeof payload.message === "string" && payload.message.trim()) return payload.message;
+  return fallback;
+}
+
+function CategoriesModal({
+  initialCategories,
+  onClose,
+}: {
+  initialCategories: InspirationalPictureCategoryOption[];
+  onClose: () => void;
+}) {
+  const [categories, setCategories] = useState<InspirationalPictureCategoryOption[]>(initialCategories);
+  const [newName, setNewName] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [editingDescription, setEditingDescription] = useState("");
+  const [busyId, setBusyId] = useState<number | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [messageTone, setMessageTone] = useState<"success" | "error">("success");
+
+  const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
+
+  async function createCategory() {
+    const name = newName.trim();
+    if (!name) return;
+    setBusyId(-1);
+    setMessage(null);
+    const response = await fetch("/api/admin/content/inspirational-pictures/categories", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name, description: newDescription.trim() }),
+    });
+    if (!response.ok) {
+      setMessageTone("error");
+      setMessage(await readApiMessage(response, "Unable to create category."));
+      setBusyId(null);
+      return;
+    }
+    const created = (await response.json()) as { id: number; name: string; slug: string; description?: string; is_active: boolean };
+    setCategories((previous) => [
+      ...previous,
+      { id: created.id, name: created.name, slug: created.slug, description: created.description ?? "", isActive: created.is_active },
+    ]);
+    setNewName("");
+    setNewDescription("");
+    setBusyId(null);
+    setMessageTone("success");
+    setMessage("Category created successfully.");
+  }
+
+  async function updateCategory(category: InspirationalPictureCategoryOption, updatedName: string, updatedDescription: string) {
+    const trimmedName = updatedName.trim();
+    if (!trimmedName) return;
+    setBusyId(category.id);
+    setMessage(null);
+    const response = await fetch(`/api/admin/content/inspirational-pictures/categories/${category.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: trimmedName, description: updatedDescription.trim() }),
+    });
+    if (!response.ok) {
+      setMessageTone("error");
+      setMessage(await readApiMessage(response, "Unable to update category."));
+      setBusyId(null);
+      return;
+    }
+    const updated = (await response.json()) as { id: number; name: string; slug: string; description?: string; is_active: boolean };
+    setCategories((previous) =>
+      previous.map((row) =>
+        row.id === updated.id
+          ? { id: updated.id, name: updated.name, slug: updated.slug, description: updated.description ?? "", isActive: updated.is_active }
+          : row,
+      ),
+    );
+    setEditingId(null);
+    setBusyId(null);
+    setMessageTone("success");
+    setMessage("Category updated successfully.");
+  }
+
+  async function toggleCategory(category: InspirationalPictureCategoryOption) {
+    setBusyId(category.id);
+    setMessage(null);
+    const response = await fetch(`/api/admin/content/inspirational-pictures/categories/${category.id}/activation`, {
+      method: category.isActive ? "DELETE" : "POST",
+    });
+    if (!response.ok) {
+      setMessageTone("error");
+      setMessage(await readApiMessage(response, "Unable to update category status."));
+      setBusyId(null);
+      return;
+    }
+    const updated = (await response.json()) as { id: number; name: string; slug: string; description?: string; is_active: boolean };
+    setCategories((previous) =>
+      previous.map((row) =>
+        row.id === updated.id
+          ? { id: updated.id, name: updated.name, slug: updated.slug, description: updated.description ?? "", isActive: updated.is_active }
+          : row,
+      ),
+    );
+    setBusyId(null);
+    setMessageTone("success");
+    setMessage(category.isActive ? "Category deactivated successfully." : "Category reactivated successfully.");
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
+      <button type="button" onClick={onClose} className="absolute inset-0" aria-label="Close manage categories modal" />
+      <div className="relative z-10 w-full max-w-[640px] overflow-hidden rounded-[24px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
+        <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
+          <h2 className="text-[24px] font-semibold text-white">Manage Categories</h2>
+          <button type="button" onClick={onClose} className="text-[28px] leading-none text-white/90" aria-label="Close manage categories">×</button>
+        </div>
+        <div className="max-h-[70vh] overflow-y-auto px-6 py-6">
+          <p className="text-[14px] text-white/65">Create, rename, deactivate, and reactivate inspirational picture categories.</p>
+          {message ? (
+            <p className={`mt-3 text-[13px] ${messageTone === "error" ? "text-[#ef4335]" : "text-[#6BFFB4]"}`}>{message}</p>
+          ) : null}
+          <div className="mt-5 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+            <input
+              value={newName}
+              onChange={(event) => setNewName(event.target.value)}
+              placeholder="Category name"
+              className="h-[44px] rounded-[10px] bg-[var(--color-surface-muted)] px-3 text-[14px] text-white outline-none"
+            />
+            <input
+              value={newDescription}
+              onChange={(event) => setNewDescription(event.target.value)}
+              placeholder="Description (optional)"
+              className="h-[44px] rounded-[10px] bg-[var(--color-surface-muted)] px-3 text-[14px] text-white outline-none"
+            />
+            <button
+              type="button"
+              onClick={createCategory}
+              disabled={busyId === -1 || !newName.trim()}
+              className="inline-flex h-[44px] min-w-[120px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-4 text-[14px] text-white disabled:opacity-60"
+            >
+              {busyId === -1 ? "Creating..." : "Add"}
+            </button>
+          </div>
+          <div className="mt-5 space-y-2">
+            {sortedCategories.map((category) => (
+              <div key={category.id} className="flex items-center justify-between rounded-[12px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-3">
+                <div>
+                  {editingId === category.id ? (
+                    <div className="space-y-2">
+                      <input
+                        value={editingName}
+                        onChange={(event) => setEditingName(event.target.value)}
+                        className="h-[36px] w-[220px] rounded-[8px] bg-[var(--color-surface-elevated)] px-3 text-[13px] text-white outline-none"
+                        placeholder="Category name"
+                      />
+                      <input
+                        value={editingDescription}
+                        onChange={(event) => setEditingDescription(event.target.value)}
+                        className="h-[36px] w-[280px] rounded-[8px] bg-[var(--color-surface-elevated)] px-3 text-[13px] text-white outline-none"
+                        placeholder="Description"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-[14px] text-white">{category.name}</p>
+                      <p className="text-[12px] text-white/60">
+                        {category.isActive ? "Active" : "Inactive"}
+                        {category.description ? ` • ${category.description}` : ""}
+                      </p>
+                    </>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  {editingId === category.id ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => updateCategory(category, editingName, editingDescription)}
+                        disabled={busyId === category.id || !editingName.trim()}
+                        className="rounded-[8px] border border-white/20 px-3 py-1 text-[12px] text-white/85 disabled:opacity-50"
+                      >
+                        {busyId === category.id ? "Saving..." : "Save"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingId(null)}
+                        disabled={busyId === category.id}
+                        className="rounded-[8px] border border-white/20 px-3 py-1 text-[12px] text-white/70 disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingId(category.id);
+                        setEditingName(category.name);
+                        setEditingDescription(category.description ?? "");
+                      }}
+                      disabled={busyId === category.id}
+                      className="rounded-[8px] border border-white/20 px-3 py-1 text-[12px] text-white/85 disabled:opacity-50"
+                    >
+                      Edit
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => toggleCategory(category)}
+                    disabled={busyId === category.id || editingId === category.id}
+                    className="rounded-[8px] border border-[#9B68D5] px-3 py-1 text-[12px] text-[#cba7ff] disabled:opacity-50"
+                  >
+                    {busyId === category.id ? "Saving..." : category.isActive ? "Deactivate" : "Reactivate"}
+                  </button>
+                </div>
+              </div>
+            ))}
+            {sortedCategories.length === 0 ? <p className="text-[13px] text-white/55">No categories yet.</p> : null}
+          </div>
+        </div>
+        <div className="flex justify-end gap-4 px-6 pb-6">
+          <button type="button" onClick={onClose} className="inline-flex min-w-[120px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-6 py-3 text-[14px] text-white">Done</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function InspirationalPicturesPage({ viewModel }: { viewModel: InspirationalPicturesViewModel }) {
   const [currentViewModel, setCurrentViewModel] = useState(viewModel);
   const [menuRow, setMenuRow] = useState<InspirationalPictureRow | null>(null);
   const [detailRow, setDetailRow] = useState<InspirationalPictureRow | null>(null);
+  const [showCategoriesModal, setShowCategoriesModal] = useState(false);
   const [statusCache, setStatusCache] = useState<Partial<Record<InspirationalPictureStatus, InspirationalPicturesViewModel>>>({
     [viewModel.activeStatus]: viewModel,
   });
@@ -513,7 +976,7 @@ export function InspirationalPicturesPage({ viewModel }: { viewModel: Inspiratio
 
   return (
     <AdminDashboardShell viewModel={interactiveViewModel.shell} pageTitle={interactiveViewModel.activeScreen === "upload" ? undefined : "Inspirational Pictures"}>
-      {interactiveViewModel.activeScreen === "upload" ? <UploadScreen /> : null}
+      {interactiveViewModel.activeScreen === "upload" ? <UploadScreen categories={interactiveViewModel.categories} /> : null}
       {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "empty" ? <EmptyState /> : null}
       {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "loading" ? <div className="rounded-[20px] bg-[var(--color-surface-elevated)] px-8 py-16 text-center text-white/70">Loading pictures...</div> : null}
       {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "error" ? (
@@ -531,6 +994,7 @@ export function InspirationalPicturesPage({ viewModel }: { viewModel: Inspiratio
               setMenuRow(null);
               setDetailRow(row);
             }}
+            onManageCategories={() => setShowCategoriesModal(true)}
           />
           {showDetachedActionMenu && selectedRow ? (
             <div className="fixed bottom-24 right-8 z-50 sm:right-10">
@@ -551,6 +1015,9 @@ export function InspirationalPicturesPage({ viewModel }: { viewModel: Inspiratio
       {interactiveViewModel.showEditModal && selectedRow ? <EditModal row={selectedRow} viewModel={interactiveViewModel} /> : null}
       {interactiveViewModel.showDeleteModal ? <DeleteModal viewModel={interactiveViewModel} /> : null}
       {interactiveViewModel.showSuccess && interactiveViewModel.successMessage ? <SuccessModal viewModel={interactiveViewModel} /> : null}
+      {showCategoriesModal ? (
+        <CategoriesModal initialCategories={interactiveViewModel.categories} onClose={() => setShowCategoriesModal(false)} />
+      ) : null}
       {interactiveViewModel.showActionMenu ? (
         menuRow ? (
           <button type="button" onClick={() => setMenuRow(null)} className="fixed inset-0 z-40" aria-label="Close inspirational pictures action menu" />
