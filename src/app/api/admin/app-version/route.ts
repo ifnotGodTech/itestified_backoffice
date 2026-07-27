@@ -18,8 +18,10 @@ export async function POST(req: Request) {
       (entry.minimumVersion.length > 0 && !VERSION_PATTERN.test(entry.minimumVersion)) ||
       (entry.latestVersion.length > 0 && !VERSION_PATTERN.test(entry.latestVersion)),
   );
+  // status 303 forces the browser to follow up with GET; the default 307 preserves
+  // POST, which Next.js's App Router then rejects as an invalid server-action request.
   if (hasInvalidFormat) {
-    return NextResponse.redirect(new URL("/app-version?state=validation", req.url));
+    return NextResponse.redirect(new URL("/app-version?state=validation", req.url), 303);
   }
 
   let hadValidationFailure = false;
@@ -51,7 +53,7 @@ export async function POST(req: Request) {
   }
 
   const targetState = hadValidationFailure ? "validation" : hadOtherFailure ? "error" : "success";
-  const redirect = NextResponse.redirect(new URL(`/app-version?state=${targetState}`, req.url));
+  const redirect = NextResponse.redirect(new URL(`/app-version?state=${targetState}`, req.url), 303);
   for (const header of setCookieHeaders) {
     redirect.headers.append("set-cookie", header);
   }

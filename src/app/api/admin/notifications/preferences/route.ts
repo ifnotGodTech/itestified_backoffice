@@ -10,8 +10,10 @@ export async function POST(req: Request) {
     send_donation_thank_you_email: formData.has("send_donation_thank_you_email"),
   };
 
+  // status 303 forces the browser to follow up with GET; the default 307 preserves
+  // POST, which Next.js's App Router then rejects as an invalid server-action request.
   if (!Object.values(payload).some(Boolean)) {
-    return NextResponse.redirect(new URL("/notification-settings?state=validation", req.url));
+    return NextResponse.redirect(new URL("/notification-settings?state=validation", req.url), 303);
   }
 
   const backendResponse = await fetch(`${backendBaseUrl}/notifications/preferences/me/`, {
@@ -23,6 +25,7 @@ export async function POST(req: Request) {
 
   const redirect = NextResponse.redirect(
     new URL(backendResponse.ok ? "/notification-settings?success=1" : "/notification-settings?state=error", req.url),
+    303,
   );
   for (const header of extractSetCookieHeaders(backendResponse)) {
     redirect.headers.append("set-cookie", header);
