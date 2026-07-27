@@ -47,15 +47,30 @@ export function AppVersionPage({ viewModel }: { viewModel: AppVersionViewModel }
                 >
                   <h2 className="text-[16px] font-semibold text-white">{PLATFORM_LABELS[row.platform]}</h2>
                   <p className="mt-1 text-[12px] text-white/48">
-                    {row.updatedAt ? `Last updated ${new Date(row.updatedAt).toLocaleString()}` : "Not set yet — no users are being blocked on this platform."}
+                    {row.updatedAt ? `Last updated ${new Date(row.updatedAt).toLocaleString()}` : "Not set yet — no users are being blocked or reminded on this platform."}
                   </p>
-                  <input
-                    type="text"
-                    name={`minimum_version_${row.platform}`}
-                    defaultValue={row.minimumVersion}
-                    placeholder="e.g. 1.2.0"
-                    className="mt-3 h-10 w-full rounded-[8px] border border-white/10 bg-[var(--color-surface-muted)] px-3 text-[13px] text-white outline-none focus:border-[#9B68D5]"
-                  />
+                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="text-[11px] text-white/60">Minimum version (blocks below this)</span>
+                      <input
+                        type="text"
+                        name={`minimum_version_${row.platform}`}
+                        defaultValue={row.minimumVersion}
+                        placeholder="e.g. 1.2.0"
+                        className="mt-1 h-10 w-full rounded-[8px] border border-white/10 bg-[var(--color-surface-muted)] px-3 text-[13px] text-white outline-none focus:border-[#9B68D5]"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-[11px] text-white/60">Latest version (reminds below this)</span>
+                      <input
+                        type="text"
+                        name={`latest_version_${row.platform}`}
+                        defaultValue={row.latestVersion}
+                        placeholder="e.g. 1.5.0"
+                        className="mt-1 h-10 w-full rounded-[8px] border border-white/10 bg-[var(--color-surface-muted)] px-3 text-[13px] text-white outline-none focus:border-[#9B68D5]"
+                      />
+                    </label>
+                  </div>
                 </div>
               ))}
             </div>

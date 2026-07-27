@@ -7,6 +7,7 @@ export type AppVersionState = "populated" | "error" | "success" | "validation";
 export type AppVersionRow = {
   platform: AppVersionPlatform;
   minimumVersion: string;
+  latestVersion: string;
   updatedAt: string | null;
 };
 

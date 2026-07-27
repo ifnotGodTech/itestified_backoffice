@@ -26,8 +26,8 @@ describe("AppVersionPage", () => {
   test("pre-fills inputs with the current configured value", () => {
     const viewModel = getAppVersionViewModel({});
     viewModel.rows = [
-      { platform: "android", minimumVersion: "1.2.0", updatedAt: "2026-07-27T10:00:00Z" },
-      { platform: "ios", minimumVersion: "", updatedAt: null },
+      { platform: "android", minimumVersion: "1.2.0", latestVersion: "1.5.0", updatedAt: "2026-07-27T10:00:00Z" },
+      { platform: "ios", minimumVersion: "", latestVersion: "", updatedAt: null },
     ];
 
     render(<AppVersionPage viewModel={viewModel} />);
@@ -38,11 +38,11 @@ describe("AppVersionPage", () => {
 
   test("renders success, error, and validation states", () => {
     render(<AppVersionPage viewModel={getAppVersionViewModel({ state: "success" })} />);
-    expect(screen.getByText("Minimum version updated successfully.")).toBeInTheDocument();
+    expect(screen.getByText("Version settings updated successfully.")).toBeInTheDocument();
     cleanup();
 
     render(<AppVersionPage viewModel={getAppVersionViewModel({ state: "validation" })} />);
-    expect(screen.getByText(/Enter a valid version/)).toBeInTheDocument();
+    expect(screen.getByText(/Enter valid versions in the form MAJOR\.MINOR\.PATCH/)).toBeInTheDocument();
     cleanup();
 
     render(<AppVersionPage viewModel={getAppVersionViewModel({ state: "error" })} />);

@@ -14,8 +14,8 @@ function normalizeState(state?: string): AppVersionState {
 
 function defaultRows(): AppVersionRow[] {
   return [
-    { platform: "android", minimumVersion: "", updatedAt: null },
-    { platform: "ios", minimumVersion: "", updatedAt: null },
+    { platform: "android", minimumVersion: "", latestVersion: "", updatedAt: null },
+    { platform: "ios", minimumVersion: "", latestVersion: "", updatedAt: null },
   ];
 }
 
@@ -25,14 +25,16 @@ export function getAppVersionViewModel(input: { state?: string; fullName?: strin
     shell: getAdminShellViewModel({ activeHref: "/app-version", fullName: input.fullName }),
     pageTitle: "App version",
     pageDescription:
-      "Set the minimum app version required to use iTestified. Users on an older version are blocked from using the app until they update.",
+      "Set the minimum and latest app version, per platform. Users below the minimum are blocked from using the app; users below latest (but at or above minimum) just see a dismissible update reminder.",
     phaseState,
     rows: defaultRows(),
-    successMessage: phaseState === "success" ? "Minimum version updated successfully." : undefined,
+    successMessage: phaseState === "success" ? "Version settings updated successfully." : undefined,
     errorMessage:
       phaseState === "error" ? "We could not load the current version settings right now. Please try again." : undefined,
     validationMessage:
-      phaseState === "validation" ? "Enter a valid version in the form MAJOR.MINOR.PATCH, e.g. 1.2.0." : undefined,
+      phaseState === "validation"
+        ? "Enter valid versions in the form MAJOR.MINOR.PATCH, e.g. 1.2.0 — and make sure latest isn't lower than minimum."
+        : undefined,
   };
 }
 
@@ -57,11 +59,19 @@ export async function getAppVersionViewModelFromApi(
     const payload = (await response.json().catch(() => [])) as Array<{
       platform: AppVersionPlatform;
       minimum_version: string;
+      latest_version: string;
       updated_at: string | null;
     }>;
     const rows = defaultRows().map((row) => {
       const match = payload.find((item) => item.platform === row.platform);
-      return match ? { platform: row.platform, minimumVersion: match.minimum_version, updatedAt: match.updated_at } : row;
+      return match
+        ? {
+            platform: row.platform,
+            minimumVersion: match.minimum_version,
+            latestVersion: match.latest_version,
+            updatedAt: match.updated_at,
+          }
+        : row;
     });
     return {
       ...vm,
