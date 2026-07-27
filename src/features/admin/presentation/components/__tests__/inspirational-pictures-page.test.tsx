@@ -33,6 +33,17 @@ describe("InspirationalPicturesPage", () => {
     expect(screen.getByText("No Pictures here Yet")).toBeInTheDocument();
   });
 
+  test("manage categories is reachable even when there are no pictures yet", async () => {
+    const user = userEvent.setup();
+    render(<InspirationalPicturesPage viewModel={getInspirationalPicturesViewModel({ state: "empty" })} />);
+
+    const manageButton = screen.getByRole("button", { name: "Manage Categories" });
+    expect(manageButton).toBeInTheDocument();
+
+    await user.click(manageButton);
+    expect(screen.getByRole("heading", { name: "Manage Categories" })).toBeInTheDocument();
+  });
+
   test("renders the picture details state", () => {
     render(<InspirationalPicturesPage viewModel={getInspirationalPicturesViewModel({ view: "1" })} />);
 

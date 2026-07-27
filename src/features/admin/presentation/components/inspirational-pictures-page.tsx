@@ -574,13 +574,11 @@ function PicturesGrid({
   onStatusChange,
   onOpenMenu,
   onView,
-  onManageCategories,
 }: {
   viewModel: InspirationalPicturesViewModel;
   onStatusChange?: (status: InspirationalPictureStatus) => void;
   onOpenMenu?: (row: InspirationalPictureRow) => void;
   onView?: (row: InspirationalPictureRow) => void;
-  onManageCategories?: () => void;
 }) {
   const headers =
     viewModel.activeStatus === "Scheduled"
@@ -616,13 +614,6 @@ function PicturesGrid({
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/45"><AdminSearchIcon /></span>
             <input readOnly value={viewModel.searchQuery} placeholder="Search by Source" className="h-[36px] w-full rounded-[8px] border border-white/10 bg-white/[0.05] pl-9 pr-4 text-[10px] text-white/80 outline-none placeholder:text-white/45" />
           </div>
-          <button
-            type="button"
-            onClick={onManageCategories}
-            className="inline-flex h-[40px] min-w-[144px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-5 text-[14px] font-medium text-[#c590ff]"
-          >
-            Manage Categories
-          </button>
           <Link href={buildInspirationalPicturesHref({ screen: "upload" })} className="inline-flex h-[40px] min-w-[144px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-5 text-[14px] font-medium text-white">
             Upload Pictures
           </Link>
@@ -977,6 +968,17 @@ export function InspirationalPicturesPage({ viewModel }: { viewModel: Inspiratio
   return (
     <AdminDashboardShell viewModel={interactiveViewModel.shell} pageTitle={interactiveViewModel.activeScreen === "upload" ? undefined : "Inspirational Pictures"}>
       {interactiveViewModel.activeScreen === "upload" ? <UploadScreen categories={interactiveViewModel.categories} /> : null}
+      {interactiveViewModel.activeScreen === "list" ? (
+        <div className="mb-4 flex justify-end">
+          <button
+            type="button"
+            onClick={() => setShowCategoriesModal(true)}
+            className="inline-flex h-[40px] min-w-[144px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-5 text-[14px] font-medium text-[#c590ff]"
+          >
+            Manage Categories
+          </button>
+        </div>
+      ) : null}
       {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "empty" ? <EmptyState /> : null}
       {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "loading" ? <div className="rounded-[20px] bg-[var(--color-surface-elevated)] px-8 py-16 text-center text-white/70">Loading pictures...</div> : null}
       {interactiveViewModel.activeScreen === "list" && interactiveViewModel.phaseState === "error" ? (
@@ -994,7 +996,6 @@ export function InspirationalPicturesPage({ viewModel }: { viewModel: Inspiratio
               setMenuRow(null);
               setDetailRow(row);
             }}
-            onManageCategories={() => setShowCategoriesModal(true)}
           />
           {showDetachedActionMenu && selectedRow ? (
             <div className="fixed bottom-24 right-8 z-50 sm:right-10">
