@@ -47,3 +47,16 @@ export function extractSetCookieHeaders(response: Response): string[] {
   const single = response.headers.get("set-cookie");
   return single ? [single] : [];
 }
+
+// DRF validation errors come back as { "<field>": ["message", ...] } or
+// { "non_field_errors": ["message"] }. Surface the first message found so
+// forms can show the admin what actually went wrong instead of a generic
+// "something failed" state.
+export async function extractBackendErrorMessage(response: Response, fallback: string): Promise<string> {
+  const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+  for (const value of Object.values(data)) {
+    if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+    if (typeof value === "string") return value;
+  }
+  return fallback;
+}

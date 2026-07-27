@@ -22,6 +22,7 @@ export type ScriptureDraft = {
   prayer: string;
   bibleText: string;
   bibleVersion: string;
+  date: string;
 };
 
 export type ScriptureFilterDraft = {
@@ -36,6 +37,7 @@ export type ScriptureOfTheDayViewModel = AdminPaginationFields & {
   tabs: Array<{ key: ScriptureTab; label: string }>;
   phaseState: ScriptureState;
   errorMessage?: string;
+  formError?: string;
   searchQuery: string;
   rows: ScriptureRow[];
   totalRows: number;

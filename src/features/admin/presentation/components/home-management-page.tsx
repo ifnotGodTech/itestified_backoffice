@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { HomeManagementRow, HomeManagementTab, HomeManagementViewModel } from "@/features/admin/domain/entities/home-management";
+import type { HomeManagementRow, HomeManagementSectionKey, HomeManagementTab, HomeManagementViewModel } from "@/features/admin/domain/entities/home-management";
 import { AdminDashboardShell } from "@/features/admin/presentation/components/admin-dashboard-shell";
 import { HomeManagementContentTable } from "@/features/admin/presentation/components/home-management/home-management-table";
 import { HomeManagementOverlays } from "@/features/admin/presentation/components/home-management/home-management-overlays";
+import { HomeManagementSectionOrderCard } from "@/features/admin/presentation/components/home-management/home-management-section-order";
+import { HomeManagementAddTestimonyModal } from "@/features/admin/presentation/components/home-management/home-management-add-testimony-modal";
 import { buildHomeManagementHref } from "@/features/admin/presentation/state/home-management-route-state";
 
 function countLabelForTab(activeTab: HomeManagementViewModel["activeTab"]) {
@@ -48,11 +50,77 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
   });
   const [menuRow, setMenuRow] = useState<HomeManagementRow | null>(null);
   const [detailRow, setDetailRow] = useState<HomeManagementRow | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addPendingId, setAddPendingId] = useState<number | null>(null);
+  const [curationBusy, setCurationBusy] = useState(false);
+  const [curationError, setCurationError] = useState<string | null>(null);
 
   useEffect(() => {
     setCurrentViewModel(viewModel);
     setTabCache({ [viewModel.activeTab]: viewModel });
   }, [viewModel]);
+
+  async function submitCuration(featuredTestimonyIds: number[], sectionOrder: HomeManagementSectionKey[]) {
+    setCurationBusy(true);
+    setCurationError(null);
+    try {
+      const response = await fetch("/api/admin/content/home-curation", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          featuredTestimonyIds,
+          sectionOrder,
+          tab: currentViewModel.activeTab,
+          rule: currentViewModel.displayRule,
+          count: currentViewModel.testimonyCount,
+        }),
+      });
+      if (!response.ok) throw new Error("Unable to update home page curation.");
+      const nextViewModel = (await response.json()) as HomeManagementViewModel;
+      setTabCache((current) => ({ ...current, [nextViewModel.activeTab]: nextViewModel }));
+      setCurrentViewModel(nextViewModel);
+      setShowAddModal(false);
+    } catch {
+      setCurationError("We could not update the home page right now. Please try again.");
+    } finally {
+      setCurationBusy(false);
+      setAddPendingId(null);
+    }
+  }
+
+  function moveFeatured(id: number, direction: "up" | "down") {
+    const order = currentViewModel.featuredOrder;
+    const index = order.findIndex((item) => item.id === id);
+    const swapWith = direction === "up" ? index - 1 : index + 1;
+    if (index === -1 || swapWith < 0 || swapWith >= order.length) return;
+    const reordered = [...order];
+    [reordered[index], reordered[swapWith]] = [reordered[swapWith], reordered[index]];
+    submitCuration(
+      reordered.map((item) => item.id),
+      currentViewModel.sectionOrder.map((section) => section.key),
+    );
+  }
+
+  function moveSection(key: HomeManagementSectionKey, direction: "up" | "down") {
+    const order = currentViewModel.sectionOrder;
+    const index = order.findIndex((item) => item.key === key);
+    const swapWith = direction === "up" ? index - 1 : index + 1;
+    if (index === -1 || swapWith < 0 || swapWith >= order.length) return;
+    const reordered = [...order];
+    [reordered[index], reordered[swapWith]] = [reordered[swapWith], reordered[index]];
+    submitCuration(
+      currentViewModel.featuredOrder.map((item) => item.id),
+      reordered.map((section) => section.key),
+    );
+  }
+
+  function addTestimony(id: number) {
+    setAddPendingId(id);
+    submitCuration(
+      [...currentViewModel.featuredOrder.map((item) => item.id), id],
+      currentViewModel.sectionOrder.map((section) => section.key),
+    );
+  }
 
   async function switchTab(tab: HomeManagementTab) {
     if (tab === currentViewModel.activeTab) return;
@@ -90,24 +158,39 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
   return (
     <AdminDashboardShell viewModel={interactiveViewModel.shell} pageTitle="Home Page Management">
       <div className="space-y-5">
-        <div className="flex gap-2">
-          {interactiveViewModel.tabs.map((tab) => {
-            const active = tab.key === interactiveViewModel.activeTab;
+        <HomeManagementSectionOrderCard sectionOrder={interactiveViewModel.sectionOrder} onMove={moveSection} disabled={curationBusy} />
 
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => switchTab(tab.key)}
-                aria-pressed={active}
-                className={`rounded-[7px] px-4 py-2 text-[13px] ${
-                  active ? "bg-[#9B68D5] text-white" : "bg-[var(--color-surface-elevated)] text-white/45"
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+        {curationError ? <p className="text-[13px] text-[#ef4335]">{curationError}</p> : null}
+
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex gap-2">
+            {interactiveViewModel.tabs.map((tab) => {
+              const active = tab.key === interactiveViewModel.activeTab;
+
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => switchTab(tab.key)}
+                  aria-pressed={active}
+                  className={`rounded-[7px] px-4 py-2 text-[13px] ${
+                    active ? "bg-[#9B68D5] text-white" : "bg-[var(--color-surface-elevated)] text-white/45"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+          {interactiveViewModel.activeTab !== "pictures" ? (
+            <button
+              type="button"
+              onClick={() => setShowAddModal(true)}
+              className="inline-flex h-[38px] items-center justify-center gap-1 rounded-[8px] bg-[#9B68D5] px-4 text-[13px] text-white"
+            >
+              + Add Testimony
+            </button>
+          ) : null}
         </div>
 
         <form
@@ -158,8 +241,22 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
           </div>
         </form>
 
-        <HomeManagementContentTable viewModel={interactiveViewModel} onOpenMenu={(row) => setMenuRow((current) => (current?.id === row.id ? null : row))} />
+        <HomeManagementContentTable
+          viewModel={interactiveViewModel}
+          onOpenMenu={(row) => setMenuRow((current) => (current?.id === row.id ? null : row))}
+          onMoveFeatured={moveFeatured}
+        />
       </div>
+
+      {showAddModal ? (
+        <HomeManagementAddTestimonyModal
+          activeTab={interactiveViewModel.activeTab}
+          availableTestimonies={interactiveViewModel.availableTestimonies}
+          onAdd={addTestimony}
+          onClose={() => setShowAddModal(false)}
+          pendingId={addPendingId}
+        />
+      ) : null}
 
       <HomeManagementOverlays
         viewModel={interactiveViewModel}

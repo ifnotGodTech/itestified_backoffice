@@ -25,6 +25,26 @@ export type HomeManagementRow = {
   status: "Uploaded";
 };
 
+export type HomeManagementSectionKey = "featured_testimonies" | "inspirational_picture" | "scripture";
+
+export type HomeManagementFeaturedTestimony = {
+  id: number;
+  title: string;
+  testimonyType: "video" | "text";
+};
+
+export type HomeManagementAvailableTestimony = {
+  id: number;
+  title: string;
+  category: string;
+  testimonyType: "video" | "text";
+};
+
+export type HomeManagementSectionOrderItem = {
+  key: HomeManagementSectionKey;
+  label: string;
+};
+
 export type HomeManagementViewModel = {
   shell: AdminShellViewModel;
   activeTab: HomeManagementTab;
@@ -41,4 +61,7 @@ export type HomeManagementViewModel = {
   showDetails: boolean;
   showRemoveConfirm: boolean;
   showSuccess: boolean;
+  featuredOrder: HomeManagementFeaturedTestimony[];
+  availableTestimonies: HomeManagementAvailableTestimony[];
+  sectionOrder: HomeManagementSectionOrderItem[];
 };

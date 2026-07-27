@@ -24,7 +24,9 @@ export default async function ScriptureOfTheDayRoute({
     prayer?: string;
     bibleText?: string;
     bibleVersion?: string;
+    date?: string;
     page?: string;
+    error?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -55,7 +57,9 @@ export default async function ScriptureOfTheDayRoute({
       prayer: params.prayer,
       bibleText: params.bibleText,
       bibleVersion: params.bibleVersion,
+      date: params.date,
       page: params.page,
+      error: params.error,
     },
     cookieHeader,
   );

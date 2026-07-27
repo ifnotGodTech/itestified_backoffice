@@ -214,10 +214,9 @@ function HomeManagementPictureModal({
 function HomeManagementRemoveModal({ viewModel, onClose }: { viewModel: HomeManagementViewModel; onClose: () => void }) {
   const selected = viewModel.selectedRow;
   const href = buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount });
-  const removeHref =
-    selected && selected.kind !== "picture"
-      ? `/api/admin/content/home-curation/featured-testimonies/${selected.id}/remove`
-      : buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount, success: "remove" });
+  // Picture rows never reach this modal (no "Remove" action offered for them --
+  // there is no backend concept of removing the single auto-selected home picture).
+  const removeHref = `/api/admin/content/home-curation/featured-testimonies/${selected?.id}/remove`;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
       <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close remove from home page modal">
@@ -242,23 +241,14 @@ function HomeManagementRemoveModal({ viewModel, onClose }: { viewModel: HomeMana
           >
             Cancel
           </CloseControl>
-          {selected && selected.kind !== "picture" ? (
-            <form action={removeHref} method="POST">
-              <button
-                type="submit"
-                className="inline-flex min-w-[180px] items-center justify-center rounded-[10px] bg-[#ef4335] px-6 py-4 text-[18px] text-white"
-              >
-                Yes, remove
-              </button>
-            </form>
-          ) : (
-            <Link
-              href={removeHref}
+          <form action={removeHref} method="POST">
+            <button
+              type="submit"
               className="inline-flex min-w-[180px] items-center justify-center rounded-[10px] bg-[#ef4335] px-6 py-4 text-[18px] text-white"
             >
               Yes, remove
-            </Link>
-          )}
+            </button>
+          </form>
         </div>
       </div>
     </div>
@@ -302,16 +292,18 @@ function HomeManagementActionMenu({
         <button
           type="button"
           onClick={() => onView?.(row)}
-          className="block w-full border-b border-white/10 px-5 py-2 text-left text-[14px] text-white/90 hover:bg-white/[0.04]"
+          className={`block w-full px-5 py-2 text-left text-[14px] text-white/90 hover:bg-white/[0.04] ${row.kind === "picture" ? "" : "border-b border-white/10"}`}
         >
           View
         </button>
-        <Link
-          href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount, removeId: row.id })}
-          className="block px-5 py-2 text-[14px] text-[#ef4335] hover:bg-white/[0.04]"
-        >
-          Remove
-        </Link>
+        {row.kind === "picture" ? null : (
+          <Link
+            href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount, removeId: row.id })}
+            className="block px-5 py-2 text-[14px] text-[#ef4335] hover:bg-white/[0.04]"
+          >
+            Remove
+          </Link>
+        )}
       </div>
     </div>
   );

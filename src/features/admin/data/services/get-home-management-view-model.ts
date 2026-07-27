@@ -1,14 +1,30 @@
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
 import { backendBaseUrl } from "@/core/auth/backend";
 import type {
+  HomeManagementAvailableTestimony,
   HomeManagementDisplayRule,
+  HomeManagementFeaturedTestimony,
   HomeManagementPhaseState,
   HomeManagementRow,
+  HomeManagementSectionKey,
+  HomeManagementSectionOrderItem,
   HomeManagementTab,
   HomeManagementViewModel,
 } from "@/features/admin/domain/entities/home-management";
 
 const DISPLAY_RULE_OPTIONS: HomeManagementDisplayRule[] = ["Trending", "Most Recent", "Most Shared"];
+
+const SECTION_LABELS: Record<HomeManagementSectionKey, string> = {
+  featured_testimonies: "Featured Testimonies",
+  inspirational_picture: "Inspirational Picture",
+  scripture: "Scripture of the Day",
+};
+
+const DEFAULT_SECTION_ORDER: HomeManagementSectionOrderItem[] = [
+  { key: "featured_testimonies", label: SECTION_LABELS.featured_testimonies },
+  { key: "inspirational_picture", label: SECTION_LABELS.inspirational_picture },
+  { key: "scripture", label: SECTION_LABELS.scripture },
+];
 
 const baseRows: HomeManagementRow[] = [
   {
@@ -257,6 +273,13 @@ export function getHomeManagementViewModel(input: {
     showDetails: Boolean(input.viewId),
     showRemoveConfirm: Boolean(input.removeId),
     showSuccess: input.success === "remove",
+    featuredOrder: [...baseRows, ...textRows].map((row) => ({
+      id: row.id,
+      title: row.title,
+      testimonyType: row.kind as "video" | "text",
+    })),
+    availableTestimonies: [],
+    sectionOrder: DEFAULT_SECTION_ORDER,
   };
 }
 
@@ -359,6 +382,29 @@ export async function getHomeManagementViewModelFromApi(
     const activeRows = vm.activeTab === "video" ? videoRows : vm.activeTab === "text" ? textRows : pictureRowsMapped;
     const selectedId = Number(input.menuId ?? input.viewId ?? input.removeId ?? "");
     const selectedRow = Number.isFinite(selectedId) ? activeRows.find((row) => row.id === selectedId) ?? null : null;
+
+    const featuredOrder: HomeManagementFeaturedTestimony[] = featured.map((item) => ({
+      id: Number(item.testimony_id ?? 0),
+      title: String(item.title ?? ""),
+      testimonyType: String(item.testimony_type ?? "") === "video" ? "video" : "text",
+    }));
+    const availableTestimonies: HomeManagementAvailableTestimony[] = (
+      (curationPayload.available_testimonies as Array<Record<string, unknown>> | undefined) ?? []
+    ).map((item) => ({
+      id: Number(item.id ?? 0),
+      title: String(item.title ?? ""),
+      category: String(item.category ?? ""),
+      testimonyType: String(item.testimony_type ?? "") === "video" ? "video" : "text",
+    }));
+    const sectionOrderRaw = (curationPayload.section_order as Array<Record<string, unknown>> | undefined) ?? [];
+    const sectionOrder: HomeManagementSectionOrderItem[] = sectionOrderRaw
+      .slice()
+      .sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0))
+      .map((item) => {
+        const key = String(item.section ?? "") as HomeManagementSectionKey;
+        return { key, label: SECTION_LABELS[key] ?? key };
+      });
+
     return {
       ...vm,
       phaseState: activeRows.length ? "populated" : "empty",
@@ -366,6 +412,9 @@ export async function getHomeManagementViewModelFromApi(
       testimonyCount: Math.min(vm.testimonyCount, Math.max(activeRows.length, 1)),
       rows: activeRows,
       selectedRow,
+      featuredOrder,
+      availableTestimonies,
+      sectionOrder: sectionOrder.length ? sectionOrder : DEFAULT_SECTION_ORDER,
     };
   } catch {
     return getHomeManagementViewModel({ ...input, state: "error" });

@@ -112,13 +112,15 @@ function HomeManagementPictureTable({
 function HomeManagementTestimonyTable({
   viewModel,
   onOpenMenu,
+  onMoveFeatured,
 }: {
   viewModel: HomeManagementViewModel;
   onOpenMenu?: (row: HomeManagementRow) => void;
+  onMoveFeatured?: (id: number, direction: "up" | "down") => void;
 }) {
   return (
     <>
-      <div className="grid grid-cols-[64px_72px_1.1fr_0.85fr_0.8fr_0.95fr_1fr_0.6fr_0.6fr_0.9fr_0.7fr_54px] bg-[var(--color-surface-muted)] px-3 py-[9px] text-[10px] font-medium text-white/70">
+      <div className="grid grid-cols-[64px_72px_1.1fr_0.85fr_0.8fr_0.95fr_1fr_0.6fr_0.6fr_0.9fr_0.7fr_74px_54px] bg-[var(--color-surface-muted)] px-3 py-[9px] text-[10px] font-medium text-white/70">
         <span>S/N</span>
         <span>Thumbnail</span>
         <span>Title</span>
@@ -130,31 +132,55 @@ function HomeManagementTestimonyTable({
         <span>Likes</span>
         <span>Comments</span>
         <span>Shares</span>
+        <span>Order</span>
         <span>Action</span>
       </div>
-      {viewModel.rows.map((row) => (
-        <div
-          key={row.id}
-          className="grid grid-cols-[64px_72px_1.1fr_0.85fr_0.8fr_0.95fr_1fr_0.6fr_0.6fr_0.9fr_0.7fr_54px] items-center border-t border-white/10 px-3 py-[9px] text-[12px] text-white/85"
-        >
-          <span>{row.id}</span>
-          <ThumbnailCell row={row} />
-          <span>{row.title}</span>
-          <span>{row.category}</span>
-          <span>{row.source}</span>
-          <span>{row.dateUploaded}</span>
-          <span>{row.uploadedBy}</span>
-          <span>{row.views}</span>
-          <span>{row.likes}</span>
-          <span>{row.comments}</span>
-          <span>{row.shares}</span>
-          <div className="text-right text-[18px]">
-            <button type="button" onClick={() => onOpenMenu?.(row)} aria-label={`Open home content actions ${row.id}`}>
-              ⋯
-            </button>
+      {viewModel.rows.map((row) => {
+        const featuredIndex = viewModel.featuredOrder.findIndex((item) => item.id === row.id);
+        return (
+          <div
+            key={row.id}
+            className="grid grid-cols-[64px_72px_1.1fr_0.85fr_0.8fr_0.95fr_1fr_0.6fr_0.6fr_0.9fr_0.7fr_74px_54px] items-center border-t border-white/10 px-3 py-[9px] text-[12px] text-white/85"
+          >
+            <span>{row.id}</span>
+            <ThumbnailCell row={row} />
+            <span>{row.title}</span>
+            <span>{row.category}</span>
+            <span>{row.source}</span>
+            <span>{row.dateUploaded}</span>
+            <span>{row.uploadedBy}</span>
+            <span>{row.views}</span>
+            <span>{row.likes}</span>
+            <span>{row.comments}</span>
+            <span>{row.shares}</span>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                disabled={featuredIndex <= 0}
+                onClick={() => onMoveFeatured?.(row.id, "up")}
+                aria-label={`Move ${row.title} up in featured order`}
+                className="flex h-6 w-6 items-center justify-center rounded-[6px] border border-white/15 text-[11px] text-white/80 disabled:opacity-30"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                disabled={featuredIndex === -1 || featuredIndex >= viewModel.featuredOrder.length - 1}
+                onClick={() => onMoveFeatured?.(row.id, "down")}
+                aria-label={`Move ${row.title} down in featured order`}
+                className="flex h-6 w-6 items-center justify-center rounded-[6px] border border-white/15 text-[11px] text-white/80 disabled:opacity-30"
+              >
+                ↓
+              </button>
+            </div>
+            <div className="text-right text-[18px]">
+              <button type="button" onClick={() => onOpenMenu?.(row)} aria-label={`Open home content actions ${row.id}`}>
+                ⋯
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </>
   );
 }
@@ -162,9 +188,11 @@ function HomeManagementTestimonyTable({
 export function HomeManagementContentTable({
   viewModel,
   onOpenMenu,
+  onMoveFeatured,
 }: {
   viewModel: HomeManagementViewModel;
   onOpenMenu?: (row: HomeManagementRow) => void;
+  onMoveFeatured?: (id: number, direction: "up" | "down") => void;
 }) {
   const pictureMode = viewModel.activeTab === "pictures";
   const showTableData = viewModel.phaseState === "populated";
@@ -177,7 +205,7 @@ export function HomeManagementContentTable({
         {viewModel.phaseState === "empty" ? <HomeManagementTableEmpty activeTab={viewModel.activeTab} /> : null}
         {viewModel.phaseState === "error" ? <HomeManagementTableError message={viewModel.errorMessage} /> : null}
         {showTableData && pictureMode ? <HomeManagementPictureTable viewModel={viewModel} onOpenMenu={onOpenMenu} /> : null}
-        {showTableData && !pictureMode ? <HomeManagementTestimonyTable viewModel={viewModel} onOpenMenu={onOpenMenu} /> : null}
+        {showTableData && !pictureMode ? <HomeManagementTestimonyTable viewModel={viewModel} onOpenMenu={onOpenMenu} onMoveFeatured={onMoveFeatured} /> : null}
       </div>
     </div>
   );

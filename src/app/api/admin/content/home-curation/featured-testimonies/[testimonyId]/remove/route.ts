@@ -9,6 +9,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ testimo
     body: JSON.stringify({}),
     cache: "no-store",
   });
+  // status 303 forces the browser to follow up with GET; the default 307 preserves
+  // POST, which Next.js's App Router then rejects as an invalid server-action request.
   const redirect = NextResponse.redirect(
     new URL(
       backendResponse.ok
@@ -16,6 +18,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ testimo
         : "/home-management?state=error",
       req.url,
     ),
+    303,
   );
   for (const header of extractSetCookieHeaders(backendResponse)) {
     redirect.headers.append("set-cookie", header);

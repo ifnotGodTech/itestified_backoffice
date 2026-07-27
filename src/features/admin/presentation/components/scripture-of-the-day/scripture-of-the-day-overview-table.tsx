@@ -202,15 +202,9 @@ export function ScriptureOfTheDayOverviewTable({
                         bibleText: row.bibleText,
                         bibleVersion: row.bibleVersion,
                       })}
-                      className="block border-b border-white/10 px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]"
+                      className="block px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]"
                     >
                       Edit
-                    </Link>
-                    <Link
-                      href={buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, remove: row.id })}
-                      className="block w-full px-4 py-2 text-left text-[14px] text-[#ef4335] hover:bg-white/[0.04]"
-                    >
-                      Delete
                     </Link>
                   </div>
                 ) : null}

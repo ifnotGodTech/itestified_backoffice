@@ -103,6 +103,7 @@ function EditModal({ viewModel }: { viewModel: ScriptureOfTheDayViewModel }) {
           </Link>
         </div>
         <div className="space-y-6 overflow-y-auto px-6 py-6">
+          {viewModel.formError ? <p className="text-[13px] text-[#ef4335]">{viewModel.formError}</p> : null}
           <label className="block space-y-2">
             <span className="text-[15px] font-semibold text-white">Scripture</span>
             <textarea name="scripture" defaultValue={draft.scripture} rows={3} className="min-h-[88px] w-full resize-none rounded-[10px] bg-[var(--color-surface-muted)] px-4 py-3 text-[15px] leading-6 text-white outline-none" />
@@ -136,50 +137,6 @@ function EditModal({ viewModel }: { viewModel: ScriptureOfTheDayViewModel }) {
           </button>
         </div>
       </form>
-    </div>
-  );
-}
-
-function DeleteConfirmModal({ viewModel, row }: { viewModel: ScriptureOfTheDayViewModel; row: ScriptureRow }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
-      <div className="relative w-full max-w-[560px] rounded-[22px] bg-[var(--color-surface-elevated)] px-8 pb-8 pt-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-        <Link href={buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} className="absolute right-6 top-6 text-[34px] leading-none text-white/90">
-          ×
-        </Link>
-        <h2 className="text-[24px] font-semibold text-white">Delete Scripture?</h2>
-        <p className="mx-auto mt-6 max-w-[430px] text-[17px] leading-8 text-white/75">
-          This will remove <span className="text-white">{row.bibleText}</span> from the scripture listing.
-          <br />
-          Are you sure you want to proceed?
-        </p>
-        <div className="mt-10 flex justify-center gap-6">
-          <Link
-            href={buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })}
-            className="inline-flex min-w-[160px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[18px] text-[#9B68D5]"
-          >
-            Cancel
-          </Link>
-          <Link
-            href={buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, deleted: true })}
-            className="inline-flex min-w-[160px] items-center justify-center rounded-[10px] bg-[#ef4335] px-6 py-4 text-[18px] text-white"
-          >
-            Yes, delete
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DeleteSuccessModal({ viewModel }: { viewModel: ScriptureOfTheDayViewModel }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
-      <Link href={buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery })} className="absolute inset-0" aria-label="Close scripture deleted success modal" />
-      <div className="relative z-10 w-full max-w-[420px] rounded-[24px] bg-[var(--color-surface-elevated)] px-8 py-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-        <div className="mx-auto flex h-[132px] w-[132px] items-center justify-center rounded-full bg-[#9B68D5] text-[78px] text-white">✓</div>
-        <p className="mt-12 text-[30px] font-semibold leading-[1.3] text-white">Scripture Deleted Successfully!</p>
-      </div>
     </div>
   );
 }
@@ -279,8 +236,6 @@ export function ScriptureOfTheDayOverlays({
     <>
       {showDetails && selectedRow ? <DetailModal viewModel={viewModel} row={selectedRow} onClose={detailRow ? onCloseDetails : undefined} /> : null}
       {viewModel.showEdit && !viewModel.showScheduleBuilder ? <EditModal viewModel={viewModel} /> : null}
-      {viewModel.showDeleteConfirm && viewModel.selectedRow ? <DeleteConfirmModal viewModel={viewModel} row={viewModel.selectedRow} /> : null}
-      {viewModel.deleteSuccess ? <DeleteSuccessModal viewModel={viewModel} /> : null}
       {showFilter ? <FilterModal viewModel={viewModel} onClose={showFilterModal ? onCloseFilter : undefined} /> : null}
     </>
   );

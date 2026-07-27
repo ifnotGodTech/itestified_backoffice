@@ -16,6 +16,7 @@ const DEFAULT_DRAFT: ScriptureDraft = {
   prayer: "God give me wisdom lord",
   bibleText: "Jeremiah 29:11",
   bibleVersion: "KJV",
+  date: "",
 };
 
 const SCRIPTURE_ROWS: ScriptureRow[] = [
@@ -80,6 +81,7 @@ function buildScriptureHref(params: {
   prayer?: string;
   bibleText?: string;
   bibleVersion?: string;
+  date?: string;
 }) {
   const search = new URLSearchParams();
   if (params.tab && params.tab !== "all") search.set("tab", params.tab);
@@ -99,6 +101,7 @@ function buildScriptureHref(params: {
   if (params.prayer) search.set("prayer", params.prayer);
   if (params.bibleText) search.set("bibleText", params.bibleText);
   if (params.bibleVersion) search.set("bibleVersion", params.bibleVersion);
+  if (params.date) search.set("date", params.date);
   const query = search.toString();
   return query ? `/scripture-of-the-day?${query}` : "/scripture-of-the-day";
 }
@@ -109,12 +112,14 @@ function getBaseDraft(input: {
   prayer?: string;
   bibleText?: string;
   bibleVersion?: string;
+  date?: string;
 }): ScriptureDraft {
   return {
     scripture: input.scripture ?? input.row?.scripture ?? DEFAULT_DRAFT.scripture,
     prayer: input.prayer ?? input.row?.prayer ?? DEFAULT_DRAFT.prayer,
     bibleText: input.bibleText ?? input.row?.bibleText ?? DEFAULT_DRAFT.bibleText,
     bibleVersion: input.bibleVersion ?? input.row?.bibleVersion ?? DEFAULT_DRAFT.bibleVersion,
+    date: input.date ?? DEFAULT_DRAFT.date,
   };
 }
 
@@ -137,8 +142,10 @@ export function getScriptureOfTheDayViewModel(input: {
   prayer?: string;
   bibleText?: string;
   bibleVersion?: string;
+  date?: string;
   page?: string;
   state?: string;
+  error?: string;
 }): ScriptureOfTheDayViewModel {
   const activeTab = normalizeTab(input.tab);
   const phaseState = normalizeState(input.state);
@@ -174,6 +181,7 @@ export function getScriptureOfTheDayViewModel(input: {
     prayer: input.prayer,
     bibleText: input.bibleText,
     bibleVersion: input.bibleVersion,
+    date: input.date,
   });
 
   return {
@@ -190,6 +198,7 @@ export function getScriptureOfTheDayViewModel(input: {
     ],
     phaseState,
     errorMessage: phaseState === "error" ? "We could not load scriptures right now. Please try again." : undefined,
+    formError: input.error,
     searchQuery,
     rows,
     totalRows: allRows.length,
@@ -267,7 +276,9 @@ export async function getScriptureOfTheDayViewModelFromApi(
     prayer?: string;
     bibleText?: string;
     bibleVersion?: string;
+    date?: string;
     page?: string;
+    error?: string;
   },
   cookieHeader: string,
 ): Promise<ScriptureOfTheDayViewModel> {

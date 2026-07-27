@@ -33,7 +33,9 @@ describe("ScriptureOfTheDayPage", () => {
 
     expect(screen.getByRole("button", { name: "View" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Edit" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Delete" })).toBeInTheDocument();
+    // There is no backend delete endpoint for scriptures, and no delete slice in the
+    // Phase 7 spec -- the row menu must not offer an action that can't actually happen.
+    expect(screen.queryByRole("link", { name: "Delete" })).not.toBeInTheDocument();
   });
 
   test("opens and closes the scripture action menu without fetching", async () => {
@@ -127,15 +129,33 @@ describe("ScriptureOfTheDayPage", () => {
 
     expect(screen.getAllByRole("heading", { name: "Schedule Scriptures" }).length).toBeGreaterThan(0);
     expect(screen.getByText("Schedule Settings")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "+ Add New" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "+ Add New" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute("type", "submit");
+
+    const dateInput = document.querySelector('input[name="date"]');
+    expect(dateInput).toHaveAttribute("type", "date");
+    expect(document.querySelector('input[name="to"]')).not.toBeInTheDocument();
+    expect(document.querySelector('input[name="time"]')).not.toBeInTheDocument();
   });
 
-  test("renders the delete confirmation flow", () => {
-    render(<ScriptureOfTheDayPage viewModel={getScriptureOfTheDayViewModel({ remove: "1" })} />);
+  test("shows the backend validation message and preserves typed values after a failed schedule submission", () => {
+    render(
+      <ScriptureOfTheDayPage
+        viewModel={getScriptureOfTheDayViewModel({
+          edit: "new",
+          error: "A scripture entry already exists for this date.",
+          date: "2026-08-01",
+          bibleText: "Psalm 23:1",
+          scripture: "The Lord is my shepherd.",
+        })}
+      />,
+    );
 
-    expect(screen.getByText("Delete Scripture?")).toBeInTheDocument();
-    expect(screen.getByText("Yes, delete")).toBeInTheDocument();
+    expect(screen.getByText("A scripture entry already exists for this date.")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Psalm 23:1")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("The Lord is my shepherd.")).toBeInTheDocument();
+    const dateInput = document.querySelector('input[name="date"]') as HTMLInputElement;
+    expect(dateInput.value).toBe("2026-08-01");
   });
 
   test("renders the filter modal", () => {
