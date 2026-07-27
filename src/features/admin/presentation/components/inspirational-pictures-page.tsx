@@ -264,6 +264,8 @@ function DetailModal({ row, viewModel, onClose }: { row: InspirationalPictureRow
 }
 
 function EditModal({ row, viewModel }: { row: InspirationalPictureRow; viewModel: InspirationalPicturesViewModel }) {
+  const [status, setStatus] = useState<UploadStatus>(rowStatusToUploadStatus(row.status));
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
       <Link href={closeHref(viewModel)} className="absolute inset-0" aria-label="Close edit picture modal" />
@@ -306,7 +308,43 @@ function EditModal({ row, viewModel }: { row: InspirationalPictureRow; viewModel
             <p className="mb-3 text-[16px] leading-[1.5] text-white/90">Source</p>
             <input name="source" defaultValue={row.source} className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-4 text-[15px] leading-[1.5] text-white" />
           </div>
-          <input type="hidden" name="status" value={row.status === "Scheduled" ? "scheduled" : row.status === "Uploaded" ? "published" : "draft"} />
+          <div className="mt-6">
+            <p className="mb-3 text-[16px] leading-[1.5] text-white/90">Status</p>
+            <div className="flex flex-wrap gap-x-6 gap-y-3 text-[14px] text-white/90">
+              <label className="inline-flex items-center gap-2">
+                <input type="radio" name="status" value="published" checked={status === "published"} onChange={() => setStatus("published")} className="h-[16px] w-[16px] accent-[#9966CC]" />
+                Uploaded
+              </label>
+              <label className="inline-flex items-center gap-2">
+                <input type="radio" name="status" value="scheduled" checked={status === "scheduled"} onChange={() => setStatus("scheduled")} className="h-[16px] w-[16px] accent-[#9966CC]" />
+                Scheduled
+              </label>
+              <label className="inline-flex items-center gap-2">
+                <input type="radio" name="status" value="draft" checked={status === "draft"} onChange={() => setStatus("draft")} className="h-[16px] w-[16px] accent-[#9966CC]" />
+                Draft
+              </label>
+            </div>
+          </div>
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-2 block text-[13px] text-white/70">Publish at{status === "scheduled" ? " (required)" : ""}</span>
+              <input
+                type="datetime-local"
+                name="publish_at"
+                defaultValue={toDatetimeLocalValue(row.publishAt)}
+                className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-3 text-[14px] text-white/85"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-[13px] text-white/70">Expires at (optional)</span>
+              <input
+                type="datetime-local"
+                name="expires_at"
+                defaultValue={toDatetimeLocalValue(row.expiresAt)}
+                className="w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-4 py-3 text-[14px] text-white/85"
+              />
+            </label>
+          </div>
         </div>
         <div className="flex justify-end gap-4 px-6 pb-6 pt-2">
           <Link href={closeHref(viewModel)} className="inline-flex min-w-[136px] items-center justify-center rounded-[10px] border border-[#9B68D5] px-6 py-4 text-[16px] font-medium text-[#9B68D5]">Cancel</Link>
@@ -353,6 +391,20 @@ function SuccessModal({ viewModel }: { viewModel: InspirationalPicturesViewModel
 }
 
 type UploadStatus = "published" | "scheduled" | "draft";
+
+function toDatetimeLocalValue(iso: string | undefined): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function rowStatusToUploadStatus(status: InspirationalPictureRow["status"]): UploadStatus {
+  if (status === "Uploaded") return "published";
+  if (status === "Scheduled") return "scheduled";
+  return "draft";
+}
 
 const MAX_IMAGE_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 const ALLOWED_IMAGE_CONTENT_TYPES = new Set(["image/jpeg", "image/jpg", "image/png"]);

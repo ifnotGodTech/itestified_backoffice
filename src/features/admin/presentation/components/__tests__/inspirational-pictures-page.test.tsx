@@ -162,6 +162,22 @@ describe("InspirationalPicturesPage", () => {
     expect(screen.getByText("Save Changes")).toBeInTheDocument();
   });
 
+  test("editing a draft picture can move it to Uploaded via the status field", async () => {
+    const user = userEvent.setup();
+    const viewModel = getInspirationalPicturesViewModel({ edit: "3" });
+    render(<InspirationalPicturesPage viewModel={viewModel} />);
+
+    const draftRadio = screen.getByRole("radio", { name: "Draft" }) as HTMLInputElement;
+    const uploadedRadio = screen.getByRole("radio", { name: "Uploaded" }) as HTMLInputElement;
+    expect(draftRadio.checked).toBe(true);
+    expect(uploadedRadio.checked).toBe(false);
+
+    await user.click(uploadedRadio);
+
+    expect(uploadedRadio.checked).toBe(true);
+    expect(draftRadio.checked).toBe(false);
+  });
+
   test("edit picture category dropdown pre-selects the picture's current category", () => {
     const viewModel = getInspirationalPicturesViewModel({ edit: "1" });
     viewModel.categories = [

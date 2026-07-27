@@ -25,6 +25,8 @@ export type InspirationalPictureRow = {
   source: string;
   imageUrl?: string;
   scheduledTime?: string;
+  publishAt: string;
+  expiresAt: string;
   downloadCount: number;
   shareCount: number;
   imageSrc: string;
