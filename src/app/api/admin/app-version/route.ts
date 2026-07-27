@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
-const VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
+const VERSION_PATTERN = /^\d+\.\d+\.\d+(\+\d+)?$/;
 const PLATFORMS = ["android", "ios"] as const;
 
 export async function POST(req: Request) {

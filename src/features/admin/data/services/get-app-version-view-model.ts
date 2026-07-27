@@ -30,7 +30,7 @@ export function getAppVersionViewModel(input: {
     shell: getAdminShellViewModel({ activeHref: "/app-version", fullName: input.fullName }),
     pageTitle: "App version",
     pageDescription:
-      "Set the minimum and latest app version, per platform. Users below the minimum are blocked from using the app; users below latest (but at or above minimum) just see a dismissible update reminder.",
+      "Set the minimum and latest app version, per platform. Users below the minimum are blocked from using the app; users below latest (but at or above minimum) just see a dismissible update reminder. Add a build number (e.g. 1.2.0+40) to gate a specific build within the same version — otherwise any build of that version is treated as current.",
     phaseState,
     rows: defaultRows(),
     successMessage: phaseState === "success" ? "Version settings updated successfully." : undefined,
@@ -38,7 +38,7 @@ export function getAppVersionViewModel(input: {
       phaseState === "error" ? "Something went wrong loading or saving version settings. Please try again." : undefined,
     validationMessage:
       phaseState === "validation"
-        ? "Enter valid versions in the form MAJOR.MINOR.PATCH, e.g. 1.2.0 — and make sure latest isn't lower than minimum."
+        ? "Enter valid versions in the form MAJOR.MINOR.PATCH, e.g. 1.2.0 or 1.2.0+40 — and make sure latest isn't lower than minimum."
         : undefined,
     notifiedMessage:
       phaseState === "notified"

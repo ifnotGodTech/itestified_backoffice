@@ -61,7 +61,7 @@ export function AppVersionPage({ viewModel }: { viewModel: AppVersionViewModel }
                         type="text"
                         name={`minimum_version_${row.platform}`}
                         defaultValue={row.minimumVersion}
-                        placeholder="e.g. 1.2.0"
+                        placeholder="e.g. 1.2.0 or 1.2.0+40"
                         className="mt-1 h-10 w-full rounded-[8px] border border-white/10 bg-[var(--color-surface-muted)] px-3 text-[13px] text-white outline-none focus:border-[#9B68D5]"
                       />
                     </label>
@@ -71,7 +71,7 @@ export function AppVersionPage({ viewModel }: { viewModel: AppVersionViewModel }
                         type="text"
                         name={`latest_version_${row.platform}`}
                         defaultValue={row.latestVersion}
-                        placeholder="e.g. 1.5.0"
+                        placeholder="e.g. 1.5.0 or 1.5.0+40"
                         className="mt-1 h-10 w-full rounded-[8px] border border-white/10 bg-[var(--color-surface-muted)] px-3 text-[13px] text-white outline-none focus:border-[#9B68D5]"
                       />
                     </label>
