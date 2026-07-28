@@ -1,6 +1,11 @@
 import type { AdminShellViewModel } from "@/features/admin/domain/entities/shell";
 
-export type ProfileContentKey = "about_us" | "terms_of_use" | "privacy_policy";
+export type ProfileContentKey =
+  | "about_us"
+  | "terms_of_use"
+  | "privacy_policy"
+  | "support_email"
+  | "support_phone";
 
 export type ProfileContentState = "populated" | "error" | "success" | "validation";
 

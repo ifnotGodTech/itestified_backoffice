@@ -7,7 +7,13 @@ import type {
   ProfileContentViewModel,
 } from "@/features/admin/domain/entities/profile-content";
 
-export const PROFILE_CONTENT_KEYS: ProfileContentKey[] = ["about_us", "terms_of_use", "privacy_policy"];
+export const PROFILE_CONTENT_KEYS: ProfileContentKey[] = [
+  "about_us",
+  "terms_of_use",
+  "privacy_policy",
+  "support_email",
+  "support_phone",
+];
 
 function normalizeState(state?: string): ProfileContentState {
   if (state === "error" || state === "success" || state === "validation") return state;
@@ -24,7 +30,7 @@ export function getProfileContentViewModel(input: { state?: string; fullName?: s
     shell: getAdminShellViewModel({ activeHref: "/profile-content", fullName: input.fullName }),
     pageTitle: "About & policies",
     pageDescription:
-      "Edit the About Us, Terms of Use, and Privacy Policy copy shown in the app. Changes apply immediately -- no app release needed.",
+      "Edit the About Us, Terms of Use, and Privacy Policy copy and the Help screen's support contact info shown in the app. Changes apply immediately -- no app release needed.",
     state,
     rows: defaultRows(),
     successMessage: state === "success" ? "Content updated successfully." : undefined,

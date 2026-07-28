@@ -21,6 +21,23 @@ describe("ProfileContentPage", () => {
     expect(screen.getByText("About Us")).toBeInTheDocument();
     expect(screen.getByText("Terms of Use")).toBeInTheDocument();
     expect(screen.getByText("Privacy Policy")).toBeInTheDocument();
+    expect(screen.getByText("Support Email")).toBeInTheDocument();
+    expect(screen.getByText("Support Phone")).toBeInTheDocument();
+  });
+
+  test("renders support email/phone as single-line inputs, not text areas", () => {
+    const viewModel = getProfileContentViewModel({});
+    viewModel.rows = viewModel.rows.map((row) =>
+      row.key === "support_email"
+        ? { key: "support_email", body: "help@itestified.app", updatedAt: null }
+        : row,
+    );
+
+    render(<ProfileContentPage viewModel={viewModel} />);
+
+    const emailInput = screen.getByDisplayValue("help@itestified.app");
+    expect(emailInput.tagName).toBe("INPUT");
+    expect(emailInput).toHaveAttribute("type", "email");
   });
 
   test("pre-fills the body for a configured key", () => {
