@@ -5,7 +5,7 @@ export function ScriptureScheduleBuilder({ viewModel }: { viewModel: ScriptureOf
   return (
     <form action="/api/admin/content/scriptures" method="POST" className="max-w-[980px] space-y-4">
       <div className="flex items-center justify-end">
-        <button type="submit" className="rounded-[8px] bg-white/40 px-6 py-2 text-[14px] text-white/80">
+        <button type="submit" className="rounded-[8px] bg-[#9B68D5] px-6 py-2 text-[14px] font-medium text-white">
           Save
         </button>
       </div>
@@ -80,7 +80,9 @@ export function ScriptureScheduleBuilder({ viewModel }: { viewModel: ScriptureOf
               required
               className="h-[44px] w-full rounded-[8px] bg-[var(--color-surface-muted)] px-4 text-[13px] text-white/85 outline-none [color-scheme:dark]"
             />
-            <p className="text-[11px] text-white/35">No two scriptures can share the same date.</p>
+            <p className="text-[11px] text-white/35">
+              Pick today to publish it right away, or a future date to schedule it. No two scriptures can share the same date.
+            </p>
           </label>
         </div>
       </div>
