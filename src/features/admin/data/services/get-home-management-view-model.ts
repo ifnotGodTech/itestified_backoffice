@@ -1,8 +1,10 @@
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
 import { backendBaseUrl } from "@/core/auth/backend";
 import type {
+  HomeManagementAvailablePicture,
   HomeManagementAvailableTestimony,
   HomeManagementDisplayRule,
+  HomeManagementFeaturedPicture,
   HomeManagementFeaturedTestimony,
   HomeManagementPhaseState,
   HomeManagementRow,
@@ -12,7 +14,11 @@ import type {
   HomeManagementViewModel,
 } from "@/features/admin/domain/entities/home-management";
 
-const DISPLAY_RULE_OPTIONS: HomeManagementDisplayRule[] = ["Trending", "Most Recent", "Most Shared"];
+// Pictures track no engagement metric at all in the backend, so "Trending"
+// (view_count + comment_count) is only meaningful for testimonies.
+function displayRuleOptionsForTab(tab: HomeManagementTab): HomeManagementDisplayRule[] {
+  return tab === "pictures" ? ["Most Recent"] : ["Trending", "Most Recent"];
+}
 
 const SECTION_LABELS: Record<HomeManagementSectionKey, string> = {
   featured_testimonies: "Featured Testimonies",
@@ -197,7 +203,7 @@ function normalizeTab(tab?: string): HomeManagementTab {
 }
 
 function normalizeDisplayRule(rule?: string): HomeManagementDisplayRule {
-  if (rule === "Most Recent" || rule === "Most Shared") return rule;
+  if (rule === "Most Recent") return rule;
   return "Trending";
 }
 
@@ -224,14 +230,24 @@ function sortRows(rows: HomeManagementRow[], rule: HomeManagementDisplayRule) {
     return clonedRows.sort((a, b) => toSortableDateValue(b.dateUploaded) - toSortableDateValue(a.dateUploaded));
   }
 
-  if (rule === "Most Shared") {
-    return clonedRows.sort((a, b) => b.shares - a.shares);
-  }
+  return clonedRows.sort((a, b) => b.views + b.comments - (a.views + a.comments));
+}
 
-  return clonedRows.sort(
-    (a, b) =>
-      b.views + b.likes + b.comments + b.shares - (a.views + a.likes + a.comments + a.shares),
-  );
+// Real Display Rule / Count semantics: sort the currently-featured set of
+// the active tab's type by the chosen rule, then keep only the top N --
+// items beyond N are dropped from the featured list. Operates in-place on
+// combined position order so untouched items (the other testimony type, on
+// video/text tabs) keep their relative slots.
+export function sortFeaturedTestimoniesByRule(items: HomeManagementFeaturedTestimony[], rule: HomeManagementDisplayRule) {
+  const cloned = [...items];
+  if (rule === "Most Recent") {
+    return cloned.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+  return cloned.sort((a, b) => b.viewCount + b.commentCount - (a.viewCount + a.commentCount));
+}
+
+export function sortFeaturedPicturesByRule(items: HomeManagementFeaturedPicture[]) {
+  return [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export function getHomeManagementViewModel(input: {
@@ -262,7 +278,7 @@ export function getHomeManagementViewModel(input: {
     activeTab,
     phaseState,
     displayRule,
-    displayRuleOptions: DISPLAY_RULE_OPTIONS,
+    displayRuleOptions: displayRuleOptionsForTab(activeTab),
     testimonyCount,
     availableCount: sortedRows.length,
     errorMessage: phaseState === "error" ? "We could not load homepage content right now. Please try again." : undefined,
@@ -277,8 +293,17 @@ export function getHomeManagementViewModel(input: {
       id: row.id,
       title: row.title,
       testimonyType: row.kind as "video" | "text",
+      createdAt: new Date().toISOString(),
+      viewCount: row.views,
+      commentCount: row.comments,
     })),
     availableTestimonies: [],
+    featuredPictureOrder: pictureRows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      createdAt: new Date().toISOString(),
+    })),
+    availablePictures: [],
     sectionOrder: DEFAULT_SECTION_ORDER,
   };
 }
@@ -305,25 +330,18 @@ export async function getHomeManagementViewModelFromApi(
   cookieHeader: string,
 ): Promise<HomeManagementViewModel> {
   try {
-    const [curationResponse, picturesResponse] = await Promise.all([
-      fetch(`${backendBaseUrl}/content/admin/home-curation/`, {
-        headers: { cookie: cookieHeader },
-        cache: "no-store",
-      }),
-      fetch(`${backendBaseUrl}/content/admin/inspirational-pictures/?status=published&page_size=50`, {
-        headers: { cookie: cookieHeader },
-        cache: "no-store",
-      }),
-    ]);
-    if (!curationResponse.ok || !picturesResponse.ok) {
+    const curationResponse = await fetch(`${backendBaseUrl}/content/admin/home-curation/`, {
+      headers: { cookie: cookieHeader },
+      cache: "no-store",
+    });
+    if (!curationResponse.ok) {
       return getHomeManagementViewModel({ ...input, state: "error" });
     }
 
     const curationPayload = (await curationResponse.json()) as Record<string, unknown>;
-    const picturesPayload = (await picturesResponse.json()) as Record<string, unknown>;
     const vm = getHomeManagementViewModel(input);
     const featured = (curationPayload.featured_testimonies as Array<Record<string, unknown>> | undefined) ?? [];
-    const pictures = (picturesPayload.results as Array<Record<string, unknown>> | undefined) ?? [];
+    const featuredPictures = (curationPayload.featured_pictures as Array<Record<string, unknown>> | undefined) ?? [];
 
     const videoRows: HomeManagementRow[] = featured
       .filter((item) => String(item.testimony_type ?? "") === "video")
@@ -335,9 +353,9 @@ export async function getHomeManagementViewModelFromApi(
         source: "App submission",
         dateUploaded: formatIsoDate(String(item.created_at ?? "")),
         uploadedBy: "Content Admin",
-        views: 0,
+        views: Number(item.view_count ?? 0),
         likes: 0,
-        comments: 0,
+        comments: Number(item.comment_count ?? 0),
         shares: 0,
         thumbnailLabel: String(item.title ?? ""),
         thumbnailSrc: String(item.thumbnail_url ?? "") || undefined,
@@ -354,15 +372,15 @@ export async function getHomeManagementViewModelFromApi(
         dateUploaded: formatIsoDate(String(item.created_at ?? "")),
         uploadedBy: "Content Admin",
         body: String(item.body ?? ""),
-        views: 0,
+        views: Number(item.view_count ?? 0),
         likes: 0,
-        comments: 0,
+        comments: Number(item.comment_count ?? 0),
         shares: 0,
         thumbnailLabel: "Written Testimony",
         status: "Uploaded",
       }));
-    const pictureRowsMapped: HomeManagementRow[] = pictures.map((item, index) => ({
-      id: Number(item.id ?? index + 1),
+    const pictureRowsMapped: HomeManagementRow[] = featuredPictures.map((item, index) => ({
+      id: Number(item.picture_id ?? index + 1),
       kind: "picture",
       title: String(item.title ?? ""),
       category: String(item.category ?? ""),
@@ -387,6 +405,9 @@ export async function getHomeManagementViewModelFromApi(
       id: Number(item.testimony_id ?? 0),
       title: String(item.title ?? ""),
       testimonyType: String(item.testimony_type ?? "") === "video" ? "video" : "text",
+      createdAt: String(item.created_at ?? ""),
+      viewCount: Number(item.view_count ?? 0),
+      commentCount: Number(item.comment_count ?? 0),
     }));
     const availableTestimonies: HomeManagementAvailableTestimony[] = (
       (curationPayload.available_testimonies as Array<Record<string, unknown>> | undefined) ?? []
@@ -395,6 +416,18 @@ export async function getHomeManagementViewModelFromApi(
       title: String(item.title ?? ""),
       category: String(item.category ?? ""),
       testimonyType: String(item.testimony_type ?? "") === "video" ? "video" : "text",
+    }));
+    const featuredPictureOrder: HomeManagementFeaturedPicture[] = featuredPictures.map((item) => ({
+      id: Number(item.picture_id ?? 0),
+      title: String(item.title ?? ""),
+      createdAt: String(item.created_at ?? ""),
+    }));
+    const availablePictures: HomeManagementAvailablePicture[] = (
+      (curationPayload.available_pictures as Array<Record<string, unknown>> | undefined) ?? []
+    ).map((item) => ({
+      id: Number(item.id ?? 0),
+      title: String(item.title ?? ""),
+      category: String(item.category ?? ""),
     }));
     const sectionOrderRaw = (curationPayload.section_order as Array<Record<string, unknown>> | undefined) ?? [];
     const sectionOrder: HomeManagementSectionOrderItem[] = sectionOrderRaw
@@ -407,6 +440,7 @@ export async function getHomeManagementViewModelFromApi(
 
     return {
       ...vm,
+      displayRuleOptions: displayRuleOptionsForTab(vm.activeTab),
       phaseState: activeRows.length ? "populated" : "empty",
       availableCount: activeRows.length,
       testimonyCount: Math.min(vm.testimonyCount, Math.max(activeRows.length, 1)),
@@ -414,6 +448,8 @@ export async function getHomeManagementViewModelFromApi(
       selectedRow,
       featuredOrder,
       availableTestimonies,
+      featuredPictureOrder,
+      availablePictures,
       sectionOrder: sectionOrder.length ? sectionOrder : DEFAULT_SECTION_ORDER,
     };
   } catch {

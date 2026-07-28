@@ -3,17 +3,6 @@ import type { HomeManagementRow, HomeManagementViewModel } from "@/features/admi
 import { AdminErrorState } from "@/features/admin/presentation/components/shared/admin-table-primitives";
 
 function ThumbnailCell({ row }: { row: HomeManagementRow }) {
-  if (row.kind === "picture") {
-    return (
-      <div className="flex items-center gap-2">
-        <span className="flex h-10 w-14 flex-col items-center justify-center overflow-hidden rounded-[8px] bg-[#e4d0b8] px-1 text-center leading-none shadow-[inset_0_0_0_1px_rgba(154,103,71,0.15)]">
-          <span className="text-[10px] font-black tracking-[-0.04em] text-[#9a6747]">Deeply</span>
-          <span className="mt-[1px] text-[8px] font-black text-white">Loved</span>
-        </span>
-      </div>
-    );
-  }
-
   return (
     <div className="flex items-center gap-2">
       <span className="relative h-8 w-8 overflow-hidden rounded bg-[var(--color-surface-muted)]">
@@ -24,14 +13,14 @@ function ThumbnailCell({ row }: { row: HomeManagementRow }) {
 }
 
 function tableTitleForTab(activeTab: HomeManagementViewModel["activeTab"]) {
-  return activeTab === "pictures" ? "Available Pictures" : "Available Testimonies";
+  return activeTab === "pictures" ? "Featured Pictures" : "Featured Testimonies";
 }
 
 function HomeManagementTableLoading({ pictureMode }: { pictureMode: boolean }) {
   const gridClass = pictureMode
-    ? "grid grid-cols-[64px_72px_1.3fr_1fr_1fr_1.2fr_0.9fr_0.8fr_54px]"
-    : "grid grid-cols-[64px_72px_1.1fr_0.85fr_0.8fr_0.95fr_1fr_0.6fr_0.6fr_0.9fr_0.7fr_54px]";
-  const cellCount = pictureMode ? 9 : 12;
+    ? "grid grid-cols-[64px_72px_1.3fr_1fr_1fr_1.2fr_0.9fr_0.8fr_74px_54px]"
+    : "grid grid-cols-[64px_72px_1.1fr_0.85fr_0.8fr_0.95fr_1fr_0.6fr_0.6fr_0.9fr_0.7fr_74px_54px]";
+  const cellCount = pictureMode ? 10 : 13;
 
   return (
     <div className="space-y-3 px-3 py-4">
@@ -68,13 +57,15 @@ function HomeManagementTableError({ message }: { message?: string }) {
 function HomeManagementPictureTable({
   viewModel,
   onOpenMenu,
+  onMoveFeaturedPicture,
 }: {
   viewModel: HomeManagementViewModel;
   onOpenMenu?: (row: HomeManagementRow) => void;
+  onMoveFeaturedPicture?: (id: number, direction: "up" | "down") => void;
 }) {
   return (
     <>
-      <div className="grid grid-cols-[64px_72px_1.3fr_1fr_1fr_1.2fr_0.9fr_0.8fr_54px] bg-[var(--color-surface-muted)] px-3 py-[9px] text-[10px] font-medium text-white/70">
+      <div className="grid grid-cols-[64px_72px_1.3fr_1fr_1fr_1.2fr_0.9fr_0.8fr_74px_54px] bg-[var(--color-surface-muted)] px-3 py-[9px] text-[10px] font-medium text-white/70">
         <span>S/N</span>
         <span>Thumbnail</span>
         <span>Title</span>
@@ -83,28 +74,52 @@ function HomeManagementPictureTable({
         <span>Uploaded By</span>
         <span>Downloads</span>
         <span>Shares</span>
+        <span>Order</span>
         <span>Action</span>
       </div>
-      {viewModel.rows.map((row) => (
-        <div
-          key={row.id}
-          className="grid grid-cols-[64px_72px_1.3fr_1fr_1fr_1.2fr_0.9fr_0.8fr_54px] items-center border-t border-white/10 px-3 py-[9px] text-[12px] text-white/85"
-        >
-          <span>{row.id}</span>
-          <ThumbnailCell row={row} />
-          <span>{row.title}</span>
-          <span>{row.source}</span>
-          <span>{row.dateUploaded}</span>
-          <span>{row.uploadedBy}</span>
-          <span>{row.downloads ?? 0}</span>
-          <span>{row.shares}</span>
-          <div className="text-right text-[18px]">
-            <button type="button" onClick={() => onOpenMenu?.(row)} aria-label={`Open home content actions ${row.id}`}>
-              ⋯
-            </button>
+      {viewModel.rows.map((row) => {
+        const featuredIndex = viewModel.featuredPictureOrder.findIndex((item) => item.id === row.id);
+        return (
+          <div
+            key={row.id}
+            className="grid grid-cols-[64px_72px_1.3fr_1fr_1fr_1.2fr_0.9fr_0.8fr_74px_54px] items-center border-t border-white/10 px-3 py-[9px] text-[12px] text-white/85"
+          >
+            <span>{row.id}</span>
+            <ThumbnailCell row={row} />
+            <span>{row.title}</span>
+            <span>{row.source}</span>
+            <span>{row.dateUploaded}</span>
+            <span>{row.uploadedBy}</span>
+            <span>{row.downloads ?? 0}</span>
+            <span>{row.shares}</span>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                disabled={featuredIndex <= 0}
+                onClick={() => onMoveFeaturedPicture?.(row.id, "up")}
+                aria-label={`Move ${row.title} up in featured order`}
+                className="flex h-6 w-6 items-center justify-center rounded-[6px] border border-white/15 text-[11px] text-white/80 disabled:opacity-30"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                disabled={featuredIndex === -1 || featuredIndex >= viewModel.featuredPictureOrder.length - 1}
+                onClick={() => onMoveFeaturedPicture?.(row.id, "down")}
+                aria-label={`Move ${row.title} down in featured order`}
+                className="flex h-6 w-6 items-center justify-center rounded-[6px] border border-white/15 text-[11px] text-white/80 disabled:opacity-30"
+              >
+                ↓
+              </button>
+            </div>
+            <div className="text-right text-[18px]">
+              <button type="button" onClick={() => onOpenMenu?.(row)} aria-label={`Open home content actions ${row.id}`}>
+                ⋯
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </>
   );
 }
@@ -189,10 +204,12 @@ export function HomeManagementContentTable({
   viewModel,
   onOpenMenu,
   onMoveFeatured,
+  onMoveFeaturedPicture,
 }: {
   viewModel: HomeManagementViewModel;
   onOpenMenu?: (row: HomeManagementRow) => void;
   onMoveFeatured?: (id: number, direction: "up" | "down") => void;
+  onMoveFeaturedPicture?: (id: number, direction: "up" | "down") => void;
 }) {
   const pictureMode = viewModel.activeTab === "pictures";
   const showTableData = viewModel.phaseState === "populated";
@@ -204,7 +221,9 @@ export function HomeManagementContentTable({
         {viewModel.phaseState === "loading" ? <HomeManagementTableLoading pictureMode={pictureMode} /> : null}
         {viewModel.phaseState === "empty" ? <HomeManagementTableEmpty activeTab={viewModel.activeTab} /> : null}
         {viewModel.phaseState === "error" ? <HomeManagementTableError message={viewModel.errorMessage} /> : null}
-        {showTableData && pictureMode ? <HomeManagementPictureTable viewModel={viewModel} onOpenMenu={onOpenMenu} /> : null}
+        {showTableData && pictureMode ? (
+          <HomeManagementPictureTable viewModel={viewModel} onOpenMenu={onOpenMenu} onMoveFeaturedPicture={onMoveFeaturedPicture} />
+        ) : null}
         {showTableData && !pictureMode ? <HomeManagementTestimonyTable viewModel={viewModel} onOpenMenu={onOpenMenu} onMoveFeatured={onMoveFeatured} /> : null}
       </div>
     </div>

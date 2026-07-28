@@ -6,6 +6,7 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as {
     sectionOrder?: string[];
     featuredTestimonyIds?: number[];
+    featuredPictureIds?: number[];
     tab?: string;
     rule?: string;
     count?: string;
@@ -17,6 +18,7 @@ export async function POST(req: Request) {
     body: JSON.stringify({
       section_order: body.sectionOrder ?? [],
       featured_testimony_ids: body.featuredTestimonyIds ?? [],
+      featured_picture_ids: body.featuredPictureIds ?? [],
     }),
     cache: "no-store",
   });

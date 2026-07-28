@@ -1,12 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { HomeManagementRow, HomeManagementSectionKey, HomeManagementTab, HomeManagementViewModel } from "@/features/admin/domain/entities/home-management";
+import type {
+  HomeManagementDisplayRule,
+  HomeManagementFeaturedTestimony,
+  HomeManagementRow,
+  HomeManagementSectionKey,
+  HomeManagementTab,
+  HomeManagementViewModel,
+} from "@/features/admin/domain/entities/home-management";
 import { AdminDashboardShell } from "@/features/admin/presentation/components/admin-dashboard-shell";
 import { HomeManagementContentTable } from "@/features/admin/presentation/components/home-management/home-management-table";
 import { HomeManagementOverlays } from "@/features/admin/presentation/components/home-management/home-management-overlays";
 import { HomeManagementSectionOrderCard } from "@/features/admin/presentation/components/home-management/home-management-section-order";
 import { HomeManagementAddTestimonyModal } from "@/features/admin/presentation/components/home-management/home-management-add-testimony-modal";
+import { HomeManagementAddPictureModal } from "@/features/admin/presentation/components/home-management/home-management-add-picture-modal";
+import { sortFeaturedPicturesByRule, sortFeaturedTestimoniesByRule } from "@/features/admin/data/services/get-home-management-view-model";
 import { buildHomeManagementHref } from "@/features/admin/presentation/state/home-management-route-state";
 
 function countLabelForTab(activeTab: HomeManagementViewModel["activeTab"]) {
@@ -60,7 +69,11 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
     setTabCache({ [viewModel.activeTab]: viewModel });
   }, [viewModel]);
 
-  async function submitCuration(featuredTestimonyIds: number[], sectionOrder: HomeManagementSectionKey[]) {
+  async function submitCuration(
+    featuredTestimonyIds: number[],
+    featuredPictureIds: number[],
+    sectionOrder: HomeManagementSectionKey[],
+  ) {
     setCurationBusy(true);
     setCurationError(null);
     try {
@@ -69,6 +82,7 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           featuredTestimonyIds,
+          featuredPictureIds,
           sectionOrder,
           tab: currentViewModel.activeTab,
           rule: currentViewModel.displayRule,
@@ -97,6 +111,21 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
     [reordered[index], reordered[swapWith]] = [reordered[swapWith], reordered[index]];
     submitCuration(
       reordered.map((item) => item.id),
+      currentViewModel.featuredPictureOrder.map((item) => item.id),
+      currentViewModel.sectionOrder.map((section) => section.key),
+    );
+  }
+
+  function moveFeaturedPicture(id: number, direction: "up" | "down") {
+    const order = currentViewModel.featuredPictureOrder;
+    const index = order.findIndex((item) => item.id === id);
+    const swapWith = direction === "up" ? index - 1 : index + 1;
+    if (index === -1 || swapWith < 0 || swapWith >= order.length) return;
+    const reordered = [...order];
+    [reordered[index], reordered[swapWith]] = [reordered[swapWith], reordered[index]];
+    submitCuration(
+      currentViewModel.featuredOrder.map((item) => item.id),
+      reordered.map((item) => item.id),
       currentViewModel.sectionOrder.map((section) => section.key),
     );
   }
@@ -110,6 +139,7 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
     [reordered[index], reordered[swapWith]] = [reordered[swapWith], reordered[index]];
     submitCuration(
       currentViewModel.featuredOrder.map((item) => item.id),
+      currentViewModel.featuredPictureOrder.map((item) => item.id),
       reordered.map((section) => section.key),
     );
   }
@@ -118,6 +148,50 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
     setAddPendingId(id);
     submitCuration(
       [...currentViewModel.featuredOrder.map((item) => item.id), id],
+      currentViewModel.featuredPictureOrder.map((item) => item.id),
+      currentViewModel.sectionOrder.map((section) => section.key),
+    );
+  }
+
+  function addPicture(id: number) {
+    setAddPendingId(id);
+    submitCuration(
+      currentViewModel.featuredOrder.map((item) => item.id),
+      [...currentViewModel.featuredPictureOrder.map((item) => item.id), id],
+      currentViewModel.sectionOrder.map((section) => section.key),
+    );
+  }
+
+  // "Apply" sorts + caps the currently-featured set for the active tab's
+  // type by the chosen rule, rather than only filtering the admin's own
+  // table view -- items beyond the count are dropped from what mobile sees.
+  function applyDisplayRule(rule: HomeManagementDisplayRule, count: number) {
+    if (currentViewModel.activeTab === "pictures") {
+      const kept = sortFeaturedPicturesByRule(currentViewModel.featuredPictureOrder).slice(0, count);
+      submitCuration(
+        currentViewModel.featuredOrder.map((item) => item.id),
+        kept.map((item) => item.id),
+        currentViewModel.sectionOrder.map((section) => section.key),
+      );
+      return;
+    }
+    const targetType = currentViewModel.activeTab;
+    const kept = sortFeaturedTestimoniesByRule(
+      currentViewModel.featuredOrder.filter((item) => item.testimonyType === targetType),
+      rule,
+    ).slice(0, count);
+    let keptIndex = 0;
+    const merged = currentViewModel.featuredOrder
+      .map((item): HomeManagementFeaturedTestimony | null => {
+        if (item.testimonyType !== targetType) return item;
+        const replacement = kept[keptIndex] ?? null;
+        keptIndex += 1;
+        return replacement;
+      })
+      .filter((item): item is HomeManagementFeaturedTestimony => item !== null);
+    submitCuration(
+      merged.map((item) => item.id),
+      currentViewModel.featuredPictureOrder.map((item) => item.id),
       currentViewModel.sectionOrder.map((section) => section.key),
     );
   }
@@ -182,26 +256,28 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
               );
             })}
           </div>
-          {interactiveViewModel.activeTab !== "pictures" ? (
-            <button
-              type="button"
-              onClick={() => setShowAddModal(true)}
-              className="inline-flex h-[38px] items-center justify-center gap-1 rounded-[8px] bg-[#9B68D5] px-4 text-[13px] text-white"
-            >
-              + Add Testimony
-            </button>
-          ) : null}
+          <button
+            type="button"
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex h-[38px] items-center justify-center gap-1 rounded-[8px] bg-[#9B68D5] px-4 text-[13px] text-white"
+          >
+            {interactiveViewModel.activeTab === "pictures" ? "+ Add Picture" : "+ Add Testimony"}
+          </button>
         </div>
 
         <form
           key={`${interactiveViewModel.activeTab}-${interactiveViewModel.displayRule}-${interactiveViewModel.testimonyCount}`}
-          action="/home-management"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const formData = new FormData(event.currentTarget);
+            const rule = String(formData.get("rule") ?? interactiveViewModel.displayRule) as HomeManagementDisplayRule;
+            const count = Number(formData.get("count") ?? interactiveViewModel.testimonyCount) || interactiveViewModel.testimonyCount;
+            applyDisplayRule(rule, count);
+          }}
           className={`rounded-[18px] bg-[var(--color-surface-elevated)] px-4 py-4 ${
-            interactiveViewModel.phaseState === "loading" ? "pointer-events-none opacity-40" : ""
+            interactiveViewModel.phaseState === "loading" || curationBusy ? "pointer-events-none opacity-40" : ""
           }`}
         >
-          <input type="hidden" name="tab" value={interactiveViewModel.activeTab} />
-          {interactiveViewModel.phaseState !== "populated" ? <input type="hidden" name="state" value={interactiveViewModel.phaseState} /> : null}
           <div className="grid grid-cols-[1.25fr_1.6fr_160px] gap-4">
             <label className="space-y-2">
               <span className="text-[16px] font-medium text-white/90">Display Rule</span>
@@ -245,10 +321,20 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
           viewModel={interactiveViewModel}
           onOpenMenu={(row) => setMenuRow((current) => (current?.id === row.id ? null : row))}
           onMoveFeatured={moveFeatured}
+          onMoveFeaturedPicture={moveFeaturedPicture}
         />
       </div>
 
-      {showAddModal ? (
+      {showAddModal && interactiveViewModel.activeTab === "pictures" ? (
+        <HomeManagementAddPictureModal
+          availablePictures={interactiveViewModel.availablePictures}
+          onAdd={addPicture}
+          onClose={() => setShowAddModal(false)}
+          pendingId={addPendingId}
+        />
+      ) : null}
+
+      {showAddModal && interactiveViewModel.activeTab !== "pictures" ? (
         <HomeManagementAddTestimonyModal
           activeTab={interactiveViewModel.activeTab}
           availableTestimonies={interactiveViewModel.availableTestimonies}

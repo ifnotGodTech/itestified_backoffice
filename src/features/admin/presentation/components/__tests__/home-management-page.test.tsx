@@ -29,15 +29,15 @@ describe("HomeManagementPage", () => {
 
     expect(screen.getByRole("heading", { name: "Home Page Management" })).toBeInTheDocument();
     expect(screen.getByText("Video Testimonies")).toBeInTheDocument();
-    expect(screen.getByText("Available Testimonies")).toBeInTheDocument();
+    expect(screen.getByText("Featured Testimonies")).toBeInTheDocument();
     expect(screen.getByText("Display Rule")).toBeInTheDocument();
     expect(screen.getAllByText("God healed...")).toHaveLength(5);
   });
 
   test("renders the selected display rule in the filter control", () => {
-    render(<HomeManagementPage viewModel={getHomeManagementViewModel({ rule: "Most Shared" })} />);
+    render(<HomeManagementPage viewModel={getHomeManagementViewModel({ rule: "Most Recent" })} />);
 
-    expect(screen.getByRole("combobox", { name: "Display Rule" })).toHaveValue("Most Shared");
+    expect(screen.getByRole("combobox", { name: "Display Rule" })).toHaveValue("Most Recent");
   });
 
   test("switches home management tabs on the client", async () => {
@@ -57,7 +57,7 @@ describe("HomeManagementPage", () => {
     await user.click(screen.getByRole("button", { name: "Inspirational Pictures" }));
 
     await waitFor(() => {
-      expect(screen.getByText("Available Pictures")).toBeInTheDocument();
+      expect(screen.getByText("Featured Pictures")).toBeInTheDocument();
     });
     expect(screen.getByRole("button", { name: "Inspirational Pictures" })).toHaveAttribute("aria-pressed", "true");
   });
@@ -73,7 +73,7 @@ describe("HomeManagementPage", () => {
       vi.fn().mockImplementation(() => {
         return Promise.resolve({
           ok: true,
-          json: async () => getHomeManagementViewModel({ tab: "pictures", rule: "Most Shared", count: "2" }),
+          json: async () => getHomeManagementViewModel({ tab: "pictures", rule: "Most Recent", count: "2" }),
         });
       }),
     );
@@ -84,7 +84,7 @@ describe("HomeManagementPage", () => {
     await user.click(screen.getByRole("button", { name: "Inspirational Pictures" }));
 
     await waitFor(() => {
-      expect(screen.getByRole("combobox", { name: "Display Rule" })).toHaveValue("Most Shared");
+      expect(screen.getByRole("combobox", { name: "Display Rule" })).toHaveValue("Most Recent");
     });
     expect(screen.getByRole("spinbutton", { name: "Number of Pictures" })).toHaveValue(2);
   });
@@ -126,7 +126,7 @@ describe("HomeManagementPage", () => {
   test("renders the loading state", () => {
     render(<HomeManagementPage viewModel={getHomeManagementViewModel({ state: "loading" })} />);
 
-    expect(screen.getByText("Available Testimonies")).toBeInTheDocument();
+    expect(screen.getByText("Featured Testimonies")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Apply" })).toBeInTheDocument();
   });
 
@@ -147,7 +147,7 @@ describe("HomeManagementPage", () => {
     render(<HomeManagementPage viewModel={getHomeManagementViewModel({ tab: "pictures", viewId: "1" })} />);
 
     expect(screen.getByText("Picture Details")).toBeInTheDocument();
-    expect(screen.getByText("Number of downloads")).toBeInTheDocument();
+    expect(screen.getAllByText("Deeply Loved")).toHaveLength(2);
     expect(screen.getAllByText("Instagram.com")).toHaveLength(3);
   });
 
@@ -159,5 +159,72 @@ describe("HomeManagementPage", () => {
     expect(screen.getByText("Success")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Miraculous Healing After Prayer" })).toBeInTheDocument();
     expect(screen.queryByText("Text Details")).not.toBeInTheDocument();
+  });
+
+  // Regression coverage: pictures used to have no add/reorder curation at all --
+  // the "Inspirational Pictures" tab only ever showed the full published list
+  // with a decorative Remove action. These assert the real add/reorder/apply
+  // flows actually POST to the curation endpoint.
+  test("opens the add picture modal and adding one posts the new featured list", async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => getHomeManagementViewModel({ tab: "pictures" }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const viewModel = {
+      ...getHomeManagementViewModel({ tab: "pictures" }),
+      availablePictures: [{ id: 9, title: "New Grace", category: "Hope" }],
+    };
+    render(<HomeManagementPage viewModel={viewModel} />);
+
+    await user.click(screen.getByRole("button", { name: "+ Add Picture" }));
+    expect(screen.getByRole("heading", { name: "Add to Featured Pictures" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Add" }));
+
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledWith(
+      "/api/admin/content/home-curation",
+      expect.objectContaining({ method: "POST" }),
+    ));
+    const [, requestInit] = fetchSpy.mock.calls[0];
+    const body = JSON.parse((requestInit as RequestInit).body as string);
+    expect(body.featuredPictureIds).toContain(9);
+  });
+
+  test("reordering a featured picture posts the swapped order", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => getHomeManagementViewModel({ tab: "pictures" }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    render(<HomeManagementPage viewModel={getHomeManagementViewModel({ tab: "pictures" })} />);
+
+    await userEvent.setup().click(screen.getByRole("button", { name: "Move Grace Note up in featured order" }));
+
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    const [, requestInit] = fetchSpy.mock.calls[0];
+    const body = JSON.parse((requestInit as RequestInit).body as string);
+    expect(body.featuredPictureIds).toEqual([2, 1]);
+  });
+
+  test("applying Display Rule + Count on the picture tab posts a trimmed, sorted list", async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => getHomeManagementViewModel({ tab: "pictures" }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    render(<HomeManagementPage viewModel={getHomeManagementViewModel({ tab: "pictures", count: "1" })} />);
+
+    await user.click(screen.getByRole("button", { name: "Apply" }));
+
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledWith(
+      "/api/admin/content/home-curation",
+      expect.objectContaining({ method: "POST" }),
+    ));
+    const [, requestInit] = fetchSpy.mock.calls[0];
+    const body = JSON.parse((requestInit as RequestInit).body as string);
+    expect(body.featuredPictureIds).toHaveLength(1);
   });
 });

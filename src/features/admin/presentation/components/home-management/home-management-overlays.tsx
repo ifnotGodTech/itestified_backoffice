@@ -157,14 +157,10 @@ function HomeManagementTextModal({
   );
 }
 
-function PictureDetailArt() {
+function PictureDetailArt({ row }: { row: HomeManagementRow }) {
   return (
-    <div className="flex aspect-[1.74] w-full items-center justify-center rounded-[18px] bg-[#e4d0b8] text-center">
-      <div className="space-y-1 text-[#9a6747]">
-        <div className="text-[64px] font-black leading-none tracking-[-0.04em]">Deeply</div>
-        <div className="text-[46px] font-black leading-none text-white">Loved</div>
-        <div className="pl-36 text-[30px] font-black leading-none">by Jesus</div>
-      </div>
+    <div className="relative aspect-[1.74] w-full overflow-hidden rounded-[18px] bg-[var(--color-surface-muted)]">
+      {row.thumbnailSrc ? <Image src={row.thumbnailSrc} alt={row.thumbnailLabel} fill sizes="560px" className="object-cover" /> : null}
     </div>
   );
 }
@@ -192,18 +188,16 @@ function HomeManagementPictureModal({
           </CloseControl>
         </div>
         <div className="overflow-y-auto px-6 pb-8 pt-5">
-          <PictureDetailArt />
+          <PictureDetailArt row={row} />
           <dl className="mt-8 grid grid-cols-[1fr_auto] gap-x-8 gap-y-4 text-[16px] text-white/90">
+            <dt className="text-white/75">Title</dt>
+            <dd className="font-semibold text-right">{row.title}</dd>
             <dt className="text-white/75">Uploaded By</dt>
             <dd className="font-semibold text-right">{row.uploadedBy}</dd>
             <dt className="text-white/75">Upload Date</dt>
-            <dd className="font-semibold text-right">08/08/24</dd>
+            <dd className="font-semibold text-right">{row.dateUploaded}</dd>
             <dt className="text-white/75">Source</dt>
             <dd className="font-semibold text-right">{row.source}</dd>
-            <dt className="text-white/75">Number of downloads</dt>
-            <dd className="font-semibold text-right">{row.downloads ?? 0}</dd>
-            <dt className="text-white/75">Number of shares</dt>
-            <dd className="font-semibold text-right">{row.shares}</dd>
           </dl>
         </div>
       </div>
@@ -213,10 +207,12 @@ function HomeManagementPictureModal({
 
 function HomeManagementRemoveModal({ viewModel, onClose }: { viewModel: HomeManagementViewModel; onClose: () => void }) {
   const selected = viewModel.selectedRow;
+  const isPicture = selected?.kind === "picture";
   const href = buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount });
-  // Picture rows never reach this modal (no "Remove" action offered for them --
-  // there is no backend concept of removing the single auto-selected home picture).
-  const removeHref = `/api/admin/content/home-curation/featured-testimonies/${selected?.id}/remove`;
+  const removeHref = isPicture
+    ? `/api/admin/content/home-curation/featured-pictures/${selected?.id}/remove`
+    : `/api/admin/content/home-curation/featured-testimonies/${selected?.id}/remove`;
+  const noun = isPicture ? "picture" : "testimony";
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
       <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close remove from home page modal">
@@ -228,7 +224,7 @@ function HomeManagementRemoveModal({ viewModel, onClose }: { viewModel: HomeMana
         </CloseControl>
         <h2 className="text-[24px] font-semibold text-white">Remove from Home Page?</h2>
         <p className="mx-auto mt-6 max-w-[470px] text-[18px] leading-9 text-white/75">
-          This will remove the testimony from the homepage lineup. It will still be available in the testimonies section and users can view it.
+          This will remove the {noun} from the homepage lineup. It will still be available elsewhere and users can view it.
           <br />
           Are you sure you want to proceed?
         </p>
@@ -257,6 +253,7 @@ function HomeManagementRemoveModal({ viewModel, onClose }: { viewModel: HomeMana
 
 function HomeManagementSuccessModal({ viewModel, onClose }: { viewModel: HomeManagementViewModel; onClose: () => void }) {
   const href = buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount });
+  const noun = viewModel.activeTab === "pictures" ? "Picture" : "Testimony";
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6 py-10">
       <CloseControl href={href} onClose={onClose} className="absolute inset-0" label="Close success modal">
@@ -264,7 +261,7 @@ function HomeManagementSuccessModal({ viewModel, onClose }: { viewModel: HomeMan
       </CloseControl>
       <div className="relative z-10 w-full max-w-[420px] rounded-[24px] bg-[var(--color-surface-elevated)] px-8 py-12 text-center shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
         <div className="mx-auto flex h-[132px] w-[132px] items-center justify-center rounded-full bg-[#9B68D5] text-[78px] text-white">✓</div>
-        <p className="mt-12 text-[30px] font-semibold leading-[1.3] text-white">Testimony Removed Successfully!</p>
+        <p className="mt-12 text-[30px] font-semibold leading-[1.3] text-white">{noun} Removed Successfully!</p>
       </div>
     </div>
   );
@@ -292,18 +289,16 @@ function HomeManagementActionMenu({
         <button
           type="button"
           onClick={() => onView?.(row)}
-          className={`block w-full px-5 py-2 text-left text-[14px] text-white/90 hover:bg-white/[0.04] ${row.kind === "picture" ? "" : "border-b border-white/10"}`}
+          className="block w-full border-b border-white/10 px-5 py-2 text-left text-[14px] text-white/90 hover:bg-white/[0.04]"
         >
           View
         </button>
-        {row.kind === "picture" ? null : (
-          <Link
-            href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount, removeId: row.id })}
-            className="block px-5 py-2 text-[14px] text-[#ef4335] hover:bg-white/[0.04]"
-          >
-            Remove
-          </Link>
-        )}
+        <Link
+          href={buildHomeManagementHref({ tab: viewModel.activeTab, rule: viewModel.displayRule, count: viewModel.testimonyCount, removeId: row.id })}
+          className="block px-5 py-2 text-[14px] text-[#ef4335] hover:bg-white/[0.04]"
+        >
+          Remove
+        </Link>
       </div>
     </div>
   );

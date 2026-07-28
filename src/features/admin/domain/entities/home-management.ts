@@ -1,7 +1,11 @@
 import type { AdminShellViewModel } from "@/features/admin/domain/entities/shell";
 
 export type HomeManagementTab = "video" | "text" | "pictures";
-export type HomeManagementDisplayRule = "Trending" | "Most Recent" | "Most Shared";
+// "Most Shared" was dropped: no share metric exists anywhere in the backend
+// (testimonies only track view_count/comment_count, pictures track neither),
+// so it never had real data behind it. "Trending" now genuinely means
+// "most viewed + commented", and is only offered where that data exists.
+export type HomeManagementDisplayRule = "Trending" | "Most Recent";
 export type HomeManagementPhaseState = "populated" | "loading" | "empty" | "error";
 
 export type HomeManagementRow = {
@@ -31,6 +35,9 @@ export type HomeManagementFeaturedTestimony = {
   id: number;
   title: string;
   testimonyType: "video" | "text";
+  createdAt: string;
+  viewCount: number;
+  commentCount: number;
 };
 
 export type HomeManagementAvailableTestimony = {
@@ -38,6 +45,18 @@ export type HomeManagementAvailableTestimony = {
   title: string;
   category: string;
   testimonyType: "video" | "text";
+};
+
+export type HomeManagementFeaturedPicture = {
+  id: number;
+  title: string;
+  createdAt: string;
+};
+
+export type HomeManagementAvailablePicture = {
+  id: number;
+  title: string;
+  category: string;
 };
 
 export type HomeManagementSectionOrderItem = {
@@ -63,5 +82,7 @@ export type HomeManagementViewModel = {
   showSuccess: boolean;
   featuredOrder: HomeManagementFeaturedTestimony[];
   availableTestimonies: HomeManagementAvailableTestimony[];
+  featuredPictureOrder: HomeManagementFeaturedPicture[];
+  availablePictures: HomeManagementAvailablePicture[];
   sectionOrder: HomeManagementSectionOrderItem[];
 };
