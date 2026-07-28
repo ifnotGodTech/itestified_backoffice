@@ -15,6 +15,7 @@ import { HomeManagementOverlays } from "@/features/admin/presentation/components
 import { HomeManagementSectionOrderCard } from "@/features/admin/presentation/components/home-management/home-management-section-order";
 import { HomeManagementAddTestimonyModal } from "@/features/admin/presentation/components/home-management/home-management-add-testimony-modal";
 import { HomeManagementAddPictureModal } from "@/features/admin/presentation/components/home-management/home-management-add-picture-modal";
+import { HomeManagementApplyConfirmModal } from "@/features/admin/presentation/components/home-management/home-management-apply-confirm-modal";
 import { sortFeaturedPicturesByRule, sortFeaturedTestimoniesByRule } from "@/features/admin/data/services/get-home-management-view-model";
 import { buildHomeManagementHref } from "@/features/admin/presentation/state/home-management-route-state";
 
@@ -63,6 +64,12 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
   const [addPendingId, setAddPendingId] = useState<number | null>(null);
   const [curationBusy, setCurationBusy] = useState(false);
   const [curationError, setCurationError] = useState<string | null>(null);
+  const [pendingApply, setPendingApply] = useState<{
+    testimonyIds: number[];
+    pictureIds: number[];
+    removedTitles: string[];
+    keptCount: number;
+  } | null>(null);
 
   useEffect(() => {
     setCurrentViewModel(viewModel);
@@ -173,21 +180,31 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
   // "Apply" sorts + caps the currently-featured set for the active tab's
   // type by the chosen rule, rather than only filtering the admin's own
   // table view -- items beyond the count are dropped from what mobile sees.
-  function applyDisplayRule(rule: HomeManagementDisplayRule, count: number) {
+  // Because that's a real, hard-to-reverse deletion (not a display filter),
+  // this only computes the plan; nothing is submitted until the admin
+  // confirms exactly what's about to be removed (see pendingApply below).
+  function planApplyDisplayRule(rule: HomeManagementDisplayRule, count: number) {
     if (currentViewModel.activeTab === "pictures") {
-      const kept = sortFeaturedPicturesByRule(currentViewModel.featuredPictureOrder).slice(0, count);
-      submitCuration(
-        currentViewModel.featuredOrder.map((item) => item.id),
-        kept.map((item) => item.id),
-        currentViewModel.sectionOrder.map((section) => section.key),
-      );
-      return;
+      const all = currentViewModel.featuredPictureOrder;
+      const kept = sortFeaturedPicturesByRule(all).slice(0, count);
+      const keptIds = new Set(kept.map((item) => item.id));
+      const removedTitles = all.filter((item) => !keptIds.has(item.id)).map((item) => item.title);
+      return {
+        testimonyIds: currentViewModel.featuredOrder.map((item) => item.id),
+        pictureIds: kept.map((item) => item.id),
+        removedTitles,
+        keptCount: kept.length,
+      };
     }
     const targetType = currentViewModel.activeTab;
     const kept = sortFeaturedTestimoniesByRule(
       currentViewModel.featuredOrder.filter((item) => item.testimonyType === targetType),
       rule,
     ).slice(0, count);
+    const keptIds = new Set(kept.map((item) => item.id));
+    const removedTitles = currentViewModel.featuredOrder
+      .filter((item) => item.testimonyType === targetType && !keptIds.has(item.id))
+      .map((item) => item.title);
     let keptIndex = 0;
     const merged = currentViewModel.featuredOrder
       .map((item): HomeManagementFeaturedTestimony | null => {
@@ -197,11 +214,34 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
         return replacement;
       })
       .filter((item): item is HomeManagementFeaturedTestimony => item !== null);
+    return {
+      testimonyIds: merged.map((item) => item.id),
+      pictureIds: currentViewModel.featuredPictureOrder.map((item) => item.id),
+      removedTitles,
+      keptCount: kept.length,
+    };
+  }
+
+  function requestApplyDisplayRule(rule: HomeManagementDisplayRule, count: number) {
+    const plan = planApplyDisplayRule(rule, count);
+    if (plan.removedTitles.length === 0) {
+      // Nothing would actually be removed (e.g. reordering within the same
+      // set, or a count that doesn't cut anything) -- no need to interrupt
+      // with a confirmation for a change that can't lose anything.
+      submitCuration(plan.testimonyIds, plan.pictureIds, currentViewModel.sectionOrder.map((section) => section.key));
+      return;
+    }
+    setPendingApply(plan);
+  }
+
+  function confirmApplyDisplayRule() {
+    if (!pendingApply) return;
     submitCuration(
-      merged.map((item) => item.id),
-      currentViewModel.featuredPictureOrder.map((item) => item.id),
+      pendingApply.testimonyIds,
+      pendingApply.pictureIds,
       currentViewModel.sectionOrder.map((section) => section.key),
     );
+    setPendingApply(null);
   }
 
   async function switchTab(tab: HomeManagementTab) {
@@ -280,7 +320,7 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
             const formData = new FormData(event.currentTarget);
             const rule = String(formData.get("rule") ?? interactiveViewModel.displayRule) as HomeManagementDisplayRule;
             const count = Number(formData.get("count") ?? interactiveViewModel.testimonyCount) || interactiveViewModel.testimonyCount;
-            applyDisplayRule(rule, count);
+            requestApplyDisplayRule(rule, count);
           }}
           className={`rounded-[18px] bg-[var(--color-surface-elevated)] px-4 py-4 ${
             interactiveViewModel.phaseState === "loading" || curationBusy ? "pointer-events-none opacity-40" : ""
@@ -349,6 +389,16 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
           onAdd={addTestimony}
           onClose={() => setShowAddModal(false)}
           pendingId={addPendingId}
+        />
+      ) : null}
+
+      {pendingApply ? (
+        <HomeManagementApplyConfirmModal
+          removedTitles={pendingApply.removedTitles}
+          keptCount={pendingApply.keptCount}
+          busy={curationBusy}
+          onConfirm={confirmApplyDisplayRule}
+          onCancel={() => setPendingApply(null)}
         />
       ) : null}
 

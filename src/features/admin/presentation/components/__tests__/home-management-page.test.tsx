@@ -250,7 +250,10 @@ describe("HomeManagementPage", () => {
     await waitFor(() => expect(picturesFetchCount).toBe(2));
   });
 
-  test("applying Display Rule + Count on the picture tab posts a trimmed, sorted list", async () => {
+  // Regression coverage: Apply used to submit the trim immediately with no
+  // confirmation, silently deleting whatever fell outside the count -- with
+  // no way to see what was about to be removed or back out.
+  test("applying Display Rule + Count shows a confirmation before removing anything", async () => {
     const user = userEvent.setup();
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
@@ -261,6 +264,39 @@ describe("HomeManagementPage", () => {
 
     await user.click(screen.getByRole("button", { name: "Apply" }));
 
+    expect(screen.getByRole("heading", { name: "Remove 1 from Featured?" })).toBeInTheDocument();
+    expect(screen.getByText("• Grace Note")).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  test("canceling the apply confirmation submits nothing", async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => getHomeManagementViewModel({ tab: "pictures" }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    render(<HomeManagementPage viewModel={getHomeManagementViewModel({ tab: "pictures", count: "1" })} />);
+
+    await user.click(screen.getByRole("button", { name: "Apply" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(screen.queryByRole("heading", { name: "Remove 1 from Featured?" })).not.toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  test("confirming the apply confirmation posts the trimmed, sorted list", async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => getHomeManagementViewModel({ tab: "pictures" }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    render(<HomeManagementPage viewModel={getHomeManagementViewModel({ tab: "pictures", count: "1" })} />);
+
+    await user.click(screen.getByRole("button", { name: "Apply" }));
+    await user.click(screen.getByRole("button", { name: "Yes, apply" }));
+
     await waitFor(() => expect(fetchSpy).toHaveBeenCalledWith(
       "/api/admin/content/home-curation",
       expect.objectContaining({ method: "POST" }),
@@ -268,5 +304,24 @@ describe("HomeManagementPage", () => {
     const [, requestInit] = fetchSpy.mock.calls[0];
     const body = JSON.parse((requestInit as RequestInit).body as string);
     expect(body.featuredPictureIds).toHaveLength(1);
+  });
+
+  test("applying with no items to remove skips the confirmation entirely", async () => {
+    const user = userEvent.setup();
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => getHomeManagementViewModel({ tab: "pictures" }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    // count === the number already featured -- reordering only, nothing removed.
+    render(<HomeManagementPage viewModel={getHomeManagementViewModel({ tab: "pictures", count: "2" })} />);
+
+    await user.click(screen.getByRole("button", { name: "Apply" }));
+
+    expect(screen.queryByRole("heading", { name: /Remove .* from Featured/ })).not.toBeInTheDocument();
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalledWith(
+      "/api/admin/content/home-curation",
+      expect.objectContaining({ method: "POST" }),
+    ));
   });
 });
