@@ -91,7 +91,15 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
       });
       if (!response.ok) throw new Error("Unable to update home page curation.");
       const nextViewModel = (await response.json()) as HomeManagementViewModel;
-      setTabCache((current) => ({ ...current, [nextViewModel.activeTab]: nextViewModel }));
+      // featuredOrder/featuredPictureOrder/sectionOrder are global curation
+      // state shared by every tab's view model, not tab-scoped -- a curation
+      // change here makes every OTHER cached tab stale. Drop them instead of
+      // patching just the active one, or switching to a stale tab and
+      // curating from there would silently resubmit pre-change data and
+      // wipe out what changed here (e.g. adding a picture from a Pictures
+      // tab cached before testimonies were added would blow away those
+      // testimonies).
+      setTabCache({ [nextViewModel.activeTab]: nextViewModel });
       setCurrentViewModel(nextViewModel);
       setShowAddModal(false);
     } catch {

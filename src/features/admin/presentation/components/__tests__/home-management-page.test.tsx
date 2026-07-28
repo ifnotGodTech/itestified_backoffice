@@ -208,6 +208,48 @@ describe("HomeManagementPage", () => {
     expect(body.featuredPictureIds).toEqual([2, 1]);
   });
 
+  // Regression coverage: featuredOrder/featuredPictureOrder/sectionOrder are
+  // global curation state shared by every tab's view model, not tab-scoped.
+  // A curation change used to only refresh the cache entry for the tab you
+  // were on -- any OTHER tab visited earlier kept its stale snapshot, so
+  // curating from that stale tab would resubmit pre-change data and wipe out
+  // whatever had changed elsewhere (reported live: adding testimonies, then
+  // switching to an earlier-cached Pictures tab and adding a picture there,
+  // silently deleted all the just-added testimonies).
+  test("a curation change invalidates other tabs' cache instead of leaving them stale", async () => {
+    const user = userEvent.setup();
+    let picturesFetchCount = 0;
+    const fetchSpy = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+      if (url === "/api/admin/content/home-curation" && init?.method === "POST") {
+        return Promise.resolve({
+          ok: true,
+          json: async () => getHomeManagementViewModel({ tab: "video" }),
+        });
+      }
+      const tab = new URL(url, "http://localhost").searchParams.get("tab") ?? "video";
+      if (tab === "pictures") picturesFetchCount += 1;
+      return Promise.resolve({
+        ok: true,
+        json: async () => getHomeManagementViewModel({ tab }),
+      });
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    render(<HomeManagementPage viewModel={getHomeManagementViewModel({ tab: "video" })} />);
+
+    // Visit Pictures first, caching a snapshot, then return to Video.
+    await user.click(screen.getByRole("button", { name: "Inspirational Pictures" }));
+    await waitFor(() => expect(picturesFetchCount).toBe(1));
+    await user.click(screen.getByRole("button", { name: "Video Testimonies" }));
+
+    // Curate from Video (reorder) -- this changes global featured-testimony state.
+    const moveButtons = screen.getAllByRole("button", { name: /down in featured order/ });
+    await user.click(moveButtons[0]);
+
+    // Returning to Pictures must re-fetch rather than reuse the now-stale cache.
+    await user.click(screen.getByRole("button", { name: "Inspirational Pictures" }));
+    await waitFor(() => expect(picturesFetchCount).toBe(2));
+  });
+
   test("applying Display Rule + Count on the picture tab posts a trimmed, sorted list", async () => {
     const user = userEvent.setup();
     const fetchSpy = vi.fn().mockResolvedValue({
