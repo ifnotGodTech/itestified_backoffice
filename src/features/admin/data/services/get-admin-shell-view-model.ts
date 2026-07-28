@@ -17,6 +17,7 @@ const settingsItems: AdminNavItem[] = [
   { label: "My profile", href: "/my-profile", icon: "profile" },
   { label: "Notification settings", href: "/notification-settings", icon: "bell" },
   { label: "App version", href: "/app-version", icon: "settings" },
+  { label: "Follow links", href: "/social-links", icon: "settings" },
   { label: "Admin Management", href: "/admin", icon: "settings" },
 ];
 
