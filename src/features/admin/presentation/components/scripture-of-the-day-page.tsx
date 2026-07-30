@@ -7,6 +7,7 @@ import { AdminDashboardShell } from "@/features/admin/presentation/components/ad
 import { ScriptureOfTheDayOverviewTable } from "@/features/admin/presentation/components/scripture-of-the-day/scripture-of-the-day-overview-table";
 import { ScriptureOfTheDayOverlays } from "@/features/admin/presentation/components/scripture-of-the-day/scripture-of-the-day-overlays";
 import { ScriptureScheduleBuilder } from "@/features/admin/presentation/components/scripture-of-the-day/scripture-of-the-day-schedule-builder";
+import { ScriptureStreakStatsCard } from "@/features/admin/presentation/components/scripture-of-the-day/scripture-streak-stats-card";
 import { buildScriptureOfTheDayHref } from "@/features/admin/presentation/state/scripture-of-the-day-route-state";
 
 function scriptureTabHref(viewModel: ScriptureOfTheDayViewModel, tab: ScriptureTab) {
@@ -103,6 +104,11 @@ export function ScriptureOfTheDayPage({ viewModel }: { viewModel: ScriptureOfThe
       {interactiveViewModel.saved ? (
         <div className="mb-5 max-w-[1080px] rounded-[14px] border border-[#0cbc32]/20 bg-[#0d3215] px-4 py-3 text-[14px] text-[#d2ffd9]">
           {interactiveViewModel.isCreatingNew ? "Scripture uploaded successfully." : "Scripture updated successfully."}
+        </div>
+      ) : null}
+      {!interactiveViewModel.showScheduleBuilder && interactiveViewModel.streakStats ? (
+        <div className="max-w-[1080px]">
+          <ScriptureStreakStatsCard stats={interactiveViewModel.streakStats} />
         </div>
       ) : null}
       {!interactiveViewModel.showScheduleBuilder ? (

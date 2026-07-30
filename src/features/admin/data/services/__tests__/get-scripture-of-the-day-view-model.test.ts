@@ -72,4 +72,71 @@ describe("getScriptureOfTheDayViewModelFromApi", () => {
     expect(viewModel.selectedRow).toBeNull();
     expect(viewModel.showEdit).toBe(false);
   });
+
+  // Phase 17 Slice 4: the streak stats strip is fetched alongside the scripture list.
+  test("maps streak engagement stats from their own endpoint", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("streak-stats")) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                active_streak_user_count: 4,
+                streak_length_distribution: {
+                  "1_to_3_days": 1,
+                  "4_to_7_days": 1,
+                  "8_to_30_days": 1,
+                  "31_plus_days": 1,
+                },
+              }),
+              { status: 200, headers: { "content-type": "application/json" } },
+            ),
+          );
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify({ count: 0, results: [] }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }),
+        );
+      }),
+    );
+
+    const viewModel = await getScriptureOfTheDayViewModelFromApi({}, "sessionid=ok");
+
+    expect(viewModel.streakStats).toEqual({
+      activeStreakUserCount: 4,
+      streakLengthDistribution: {
+        oneToThreeDays: 1,
+        fourToSevenDays: 1,
+        eightToThirtyDays: 1,
+        thirtyOnePlusDays: 1,
+      },
+    });
+  });
+
+  test("keeps the scripture list populated even if the streak stats endpoint fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("streak-stats")) {
+          return Promise.resolve(new Response("", { status: 500 }));
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify({ count: 0, results: [] }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }),
+        );
+      }),
+    );
+
+    const viewModel = await getScriptureOfTheDayViewModelFromApi({}, "sessionid=ok");
+
+    expect(viewModel.phaseState).toBe("populated");
+    expect(viewModel.streakStats).toBeNull();
+  });
 });

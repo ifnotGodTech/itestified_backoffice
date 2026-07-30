@@ -7,6 +7,7 @@ import type {
   ScriptureOfTheDayViewModel,
   ScriptureRow,
   ScriptureState,
+  ScriptureStreakStats,
   ScriptureTab,
 } from "@/features/admin/domain/entities/scripture-of-the-day";
 
@@ -219,6 +220,7 @@ export function getScriptureOfTheDayViewModel(input: {
     deleteSuccess: input.deleted === "1",
     scheduleEntryCount,
     filterDraft,
+    streakStats: null,
     actionItems: [
       {
         label: "Upload New Scripture",
@@ -254,6 +256,36 @@ function mapScriptureRows(results: Array<Record<string, unknown>>): ScriptureRow
       scheduledTime: status === "Scheduled" ? "00:00" : undefined,
     };
   });
+}
+
+function mapStreakStats(payload: Record<string, unknown>): ScriptureStreakStats {
+  const distribution = (payload.streak_length_distribution ?? {}) as Record<string, unknown>;
+  return {
+    activeStreakUserCount: Number(payload.active_streak_user_count ?? 0),
+    streakLengthDistribution: {
+      oneToThreeDays: Number(distribution["1_to_3_days"] ?? 0),
+      fourToSevenDays: Number(distribution["4_to_7_days"] ?? 0),
+      eightToThirtyDays: Number(distribution["8_to_30_days"] ?? 0),
+      thirtyOnePlusDays: Number(distribution["31_plus_days"] ?? 0),
+    },
+  };
+}
+
+// Fetched independently of the scripture list -- a failure here shouldn't
+// put the whole page into an error state over a secondary stats strip.
+async function fetchStreakStats(cookieHeader: string): Promise<ScriptureStreakStats | null> {
+  try {
+    const response = await fetch(`${backendBaseUrl}/content/admin/scriptures/streak-stats/`, {
+      method: "GET",
+      headers: cookieHeader ? { cookie: cookieHeader } : {},
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    return mapStreakStats(payload);
+  } catch {
+    return null;
+  }
 }
 
 export async function getScriptureOfTheDayViewModelFromApi(
@@ -327,12 +359,14 @@ export async function getScriptureOfTheDayViewModelFromApi(
     };
     const rows = mapScriptureRows(payload.results ?? []);
     const vm = getScriptureOfTheDayViewModel(input);
+    const streakStats = await fetchStreakStats(cookieHeader);
     const selectedId = Number(input.menu ?? input.view ?? input.edit ?? input.remove ?? "");
     const total = payload.count ?? rows.length;
     return {
       ...vm,
       rows,
       totalRows: total,
+      streakStats,
       showingLabel: formatShowingLabel(page, rows.length, total),
       page,
       hasNextPage: Boolean(payload.next),

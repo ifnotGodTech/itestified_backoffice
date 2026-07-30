@@ -31,6 +31,20 @@ export type ScriptureFilterDraft = {
   status: "" | "Uploaded" | "Scheduled";
 };
 
+// Phase 17 Slice 4: lets an admin see whether the streak feature is
+// actually being used. "Active" means read today or yesterday -- see the
+// backend's scripture_streak_engagement_stats() for why a stale streak
+// isn't counted even though its streak_count hasn't reset to 0 yet.
+export type ScriptureStreakStats = {
+  activeStreakUserCount: number;
+  streakLengthDistribution: {
+    oneToThreeDays: number;
+    fourToSevenDays: number;
+    eightToThirtyDays: number;
+    thirtyOnePlusDays: number;
+  };
+};
+
 export type ScriptureOfTheDayViewModel = AdminPaginationFields & {
   shell: AdminShellViewModel;
   activeTab: ScriptureTab;
@@ -55,6 +69,7 @@ export type ScriptureOfTheDayViewModel = AdminPaginationFields & {
   deleteSuccess: boolean;
   scheduleEntryCount: number;
   filterDraft: ScriptureFilterDraft;
+  streakStats: ScriptureStreakStats | null;
   actionItems: Array<{
     label: string;
     href: string;
