@@ -231,6 +231,39 @@ describe("TestimoniesPage", () => {
     expect(screen.getByText("Approved By")).toBeInTheDocument();
   });
 
+  test("saves a pull-quote from the approved testimony detail modal", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ pull_quote: "God turned my mourning into dancing." }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<TestimoniesPage viewModel={getTestimoniesViewModel({ view: "2" })} />);
+
+    const saveButton = screen.getByRole("button", { name: "Save Quote" });
+    expect(saveButton).toBeDisabled();
+
+    const textarea = screen.getByPlaceholderText("Add a short quote to highlight from this testimony...");
+    await user.type(textarea, "God turned my mourning into dancing.");
+    expect(saveButton).toBeEnabled();
+
+    await user.click(saveButton);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/admin/testimonies/2/pull-quote",
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({ pull_quote: "God turned my mourning into dancing." }),
+        }),
+      );
+    });
+    await waitFor(() => {
+      expect(screen.getByText("Saved")).toBeInTheDocument();
+    });
+    expect(saveButton).toBeDisabled();
+  });
+
   test("renders testimony detail opened from notifications", () => {
     render(<TestimoniesPage viewModel={getTestimoniesViewModel({ view: "1", origin: "notification" })} />);
 

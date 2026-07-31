@@ -302,6 +302,72 @@ function PendingDetailModal({
   );
 }
 
+function PullQuoteEditor({ row }: { row: TextTestimonyRow }) {
+  const [pullQuote, setPullQuote] = useState(row.pullQuote ?? "");
+  const [lastSavedQuote, setLastSavedQuote] = useState(row.pullQuote ?? "");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const isDirty = pullQuote.trim() !== lastSavedQuote;
+
+  async function savePullQuote() {
+    setSubmitting(true);
+    setError(null);
+    const trimmed = pullQuote.trim();
+    const response = await fetch(`/api/admin/testimonies/${row.id}/pull-quote`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pull_quote: trimmed }),
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { message?: string; pull_quote?: string[] };
+      setError(payload.message || payload.pull_quote?.[0] || "Unable to save pull-quote.");
+      setSubmitting(false);
+      return;
+    }
+    setSubmitting(false);
+    setLastSavedQuote(trimmed);
+    setSaved(true);
+  }
+
+  return (
+    <div className="mt-6 rounded-[20px] border border-white/10 px-4 py-4">
+      <h3 className="text-[16px] font-semibold text-white">Pull-Quote</h3>
+      <p className="mt-1 text-[13px] text-white/60">
+        A short highlighted quote shown on the testimony card and detail screen, curated separately from the moderation decision.
+      </p>
+      <textarea
+        value={pullQuote}
+        onChange={(event) => {
+          setPullQuote(event.target.value);
+          setSaved(false);
+        }}
+        maxLength={280}
+        placeholder="Add a short quote to highlight from this testimony..."
+        className="mt-3 min-h-[90px] w-full resize-none rounded-[14px] border border-transparent bg-[var(--color-surface-muted)] px-4 py-3 text-[14px] leading-6 text-white outline-none placeholder:text-white/35"
+      />
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <p className="text-[12px] text-white/40">{pullQuote.length}/280</p>
+        <div className="flex items-center gap-3">
+          {error ? (
+            <p className="text-[13px] text-[#ef4335]">{error}</p>
+          ) : saved && !isDirty ? (
+            <p className="text-[13px] text-[#0cbc32]">Saved</p>
+          ) : null}
+          <button
+            type="button"
+            disabled={submitting || !isDirty}
+            onClick={savePullQuote}
+            className="inline-flex min-w-[100px] items-center justify-center rounded-[10px] bg-[#9B68D5] px-4 py-2 text-[14px] text-white disabled:opacity-60"
+          >
+            {submitting ? "Saving..." : "Save Quote"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ApprovedDetailModal({
   row,
   viewModel,
@@ -361,6 +427,7 @@ function ApprovedDetailModal({
             <h3 className="text-[18px] font-semibold text-white">{row.title}</h3>
             <p className="mt-4 text-[17px] leading-[1.55] text-white/82">{row.body}</p>
           </div>
+          <PullQuoteEditor row={row} />
           <ModerationHistoryPanel row={row} />
           {(row.status === "Approved" || row.status === "Scheduled") ? (
             <div className="mt-6 flex justify-end">

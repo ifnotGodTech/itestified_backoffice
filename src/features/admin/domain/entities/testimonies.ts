@@ -38,6 +38,7 @@ export type TextTestimonyRow = {
   status: WrittenTestimonyStatus;
   avatarSrc?: string;
   body: string;
+  pullQuote?: string;
   approvedBy?: string;
   moderationHistory?: ModerationHistoryItem[];
 };

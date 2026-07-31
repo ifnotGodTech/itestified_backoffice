@@ -45,6 +45,7 @@ type BackendTestimony = {
     actor_name?: string | null;
   }>;
   body?: string;
+  pull_quote?: string;
   video_url?: string;
   thumbnail_url?: string;
 };
@@ -266,6 +267,7 @@ export async function getTestimoniesViewModelFromBackend(
             ? {
                 ...selectedRow,
                 body: detailPayload.body || selectedRow.body,
+                pullQuote: detailPayload.pull_quote ?? selectedRow.pullQuote ?? "",
                 moderationHistory,
               }
             : {
