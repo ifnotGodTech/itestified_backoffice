@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "com.itestified.ifnotgod",
       "sha256_cert_fingerprints": [
-        "A6:E2:14:F8:54:60:1B:A2:A8:2F:19:59:CB:B0:AD:CB:57:79:28:B8:DE:9E:22:56:FD:30:0B:DF:06:86:AD:1C"
+        "A6:E2:14:F8:54:60:1B:A2:A8:2F:19:59:CB:B0:AD:CB:57:79:28:B8:DE:9E:22:56:FD:30:0B:DF:06:86:AD:1C",
+        "D0:7A:77:F4:D0:1F:1E:1F:E6:FB:8B:43:94:20:1D:FF:14:3A:1E:94:76:C3:56:8D:A9:DF:7B:86:A1:B3:94:E3"
       ]
     }
   }
