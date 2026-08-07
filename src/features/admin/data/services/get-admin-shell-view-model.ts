@@ -8,6 +8,7 @@ const primaryItems: AdminNavItem[] = [
   { label: "Testimonies", href: "/testimonies", hasCaret: true, icon: "chat" },
   { label: "Inspirational Pictures", href: "/inspirational-pictures", hasCaret: true, icon: "image" },
   { label: "Donations", href: "/donations", icon: "money" },
+  { label: "Subscriptions", href: "/subscriptions", icon: "money" },
   { label: "Notifications history", href: "/notifications-history", icon: "bell" },
   { label: "Reviews", href: "/reviews", icon: "star" },
   { label: "Analytics", href: "/analytics", hasCaret: true, icon: "chart" },
