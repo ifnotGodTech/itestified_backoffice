@@ -3,6 +3,7 @@ import type { AdminNavItem, AdminShellViewModel } from "@/features/admin/domain/
 const primaryItems: AdminNavItem[] = [
   { label: "Overview", href: "/overview", icon: "grid" },
   { label: "Home page Management", href: "/home-management", icon: "home" },
+  { label: "Home Promos", href: "/home-promos", icon: "home" },
   { label: "Scripture of the day", href: "/scripture-of-the-day", hasCaret: true, icon: "book" },
   { label: "Users", href: "/users", icon: "users" },
   { label: "Testimonies", href: "/testimonies", hasCaret: true, icon: "chat" },
