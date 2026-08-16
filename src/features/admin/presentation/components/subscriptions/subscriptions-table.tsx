@@ -117,10 +117,16 @@ export function SubscriptionsTable({
           <h1 className="text-[30px] font-semibold leading-[1.2] text-[var(--color-text-primary)]">{viewModel.pageTitle}</h1>
           <p className="mt-2 text-[15px] text-white/50">{viewModel.pageDescription}</p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {viewModel.topStats.map((stat) => (
             <TopStatPill key={stat.label} label={stat.label} tone={stat.tone} />
           ))}
+          <Link
+            href="/subscriptions/pricing"
+            className="inline-flex h-9 items-center rounded-[8px] border border-[#9B68D5] px-4 text-[12px] font-semibold text-[#c590ff]"
+          >
+            Manage Pricing
+          </Link>
         </div>
       </div>
 
