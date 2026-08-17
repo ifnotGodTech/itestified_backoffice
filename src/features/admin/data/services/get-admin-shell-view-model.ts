@@ -10,6 +10,7 @@ const primaryItems: AdminNavItem[] = [
   { label: "Inspirational Pictures", href: "/inspirational-pictures", hasCaret: true, icon: "image" },
   { label: "Donations", href: "/donations", icon: "money" },
   { label: "Subscriptions", href: "/subscriptions", icon: "money" },
+  { label: "AI Jobs", href: "/ai-jobs", icon: "settings" },
   { label: "Notifications history", href: "/notifications-history", icon: "bell" },
   { label: "Reviews", href: "/reviews", icon: "star" },
   { label: "Analytics", href: "/analytics", hasCaret: true, icon: "chart" },
