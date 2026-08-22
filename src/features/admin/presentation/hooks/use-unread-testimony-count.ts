@@ -30,9 +30,14 @@ function writeCachedUnreadCount(count: number) {
 }
 
 export function useUnreadTestimonyCount() {
-  const [count, setCount] = useState(readCachedUnreadCount);
+  // Starts at 0 unconditionally so the client's first render matches the
+  // server's (which has no window/sessionStorage to read from at all) --
+  // reading the real cached count has to wait for this effect, which only
+  // ever runs after hydration, not the lazy useState initializer above.
+  const [count, setCount] = useState(0);
 
   useEffect(() => {
+    setCount(readCachedUnreadCount());
     let cancelled = false;
 
     async function poll() {
