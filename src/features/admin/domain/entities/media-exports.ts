@@ -5,6 +5,7 @@ export type MediaExportStatus = "pending" | "processing" | "done" | "failed";
 export type MediaExportBranding = {
   id: number;
   logoUrl: string;
+  defaultLogoUrl: string;
   watermarkText: string;
   callToAction: string;
   endCardUrl: string;

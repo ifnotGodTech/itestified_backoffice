@@ -10,6 +10,7 @@ import type {
 const emptyBranding: MediaExportBranding = {
   id: 1,
   logoUrl: "",
+  defaultLogoUrl: "",
   watermarkText: "From iTestified",
   callToAction: "Get the iTestified app for more inspiring testimonies.",
   endCardUrl: "",
@@ -23,6 +24,7 @@ function mapBranding(raw: Record<string, unknown>): MediaExportBranding {
   return {
     id: Number(raw.id ?? 1),
     logoUrl: String(raw.logo_url ?? ""),
+    defaultLogoUrl: String(raw.default_logo_url ?? ""),
     watermarkText: String(raw.watermark_text ?? emptyBranding.watermarkText),
     callToAction: String(raw.call_to_action ?? emptyBranding.callToAction),
     endCardUrl: String(raw.end_card_url ?? ""),

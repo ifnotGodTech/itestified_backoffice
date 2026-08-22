@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRef, useState } from "react";
 import type { MediaExportStatus, MediaExportViewModel } from "@/features/admin/domain/entities/media-exports";
 import { AdminDashboardShell } from "./admin-dashboard-shell";
 import { AdminErrorState } from "./shared/admin-table-primitives";
@@ -17,8 +18,85 @@ function formatDate(value: string | null) {
   return new Date(value).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
+function extractApiErrorMessage(data: unknown): string {
+  if (!data || typeof data !== "object") return "Something went wrong. Please try again.";
+  const record = data as Record<string, unknown>;
+  if (typeof record.message === "string" && record.message.trim()) return record.message;
+  for (const value of Object.values(record)) {
+    if (typeof value === "string" && value.trim()) return value;
+    if (Array.isArray(value)) {
+      const first = value.find((item) => typeof item === "string" && item.trim());
+      if (typeof first === "string") return first;
+    }
+  }
+  return "Something went wrong. Please try again.";
+}
+
+type LogoUploadSignature = {
+  cloud_name: string;
+  api_key: string;
+  timestamp: number;
+  public_id: string;
+  overwrite: boolean;
+  signature: string;
+};
+
+async function requestLogoUploadSignature(): Promise<LogoUploadSignature> {
+  const response = await fetch("/api/admin/media-exports/logo-upload-signature", { method: "POST" });
+  const data = (await response.json().catch(() => null)) as unknown;
+  if (!response.ok) throw new Error(extractApiErrorMessage(data));
+  return data as LogoUploadSignature;
+}
+
+async function uploadLogoToCloudinary(file: File): Promise<string> {
+  const signature = await requestLogoUploadSignature();
+  const uploadFormData = new FormData();
+  uploadFormData.set("file", file);
+  uploadFormData.set("api_key", signature.api_key);
+  uploadFormData.set("timestamp", String(signature.timestamp));
+  uploadFormData.set("public_id", signature.public_id);
+  uploadFormData.set("overwrite", "true");
+  uploadFormData.set("signature", signature.signature);
+
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${signature.cloud_name}/image/upload`, {
+    method: "POST",
+    body: uploadFormData,
+  });
+  const data = (await response.json().catch(() => null)) as { secure_url?: string; error?: { message?: string } } | null;
+  if (!response.ok) {
+    throw new Error(data?.error?.message || `Cloudinary upload failed (${response.status}).`);
+  }
+  if (!data?.secure_url) throw new Error("Cloudinary did not return an uploaded file URL.");
+  return data.secure_url;
+}
+
 export function MediaExportsPage({ viewModel }: { viewModel: MediaExportViewModel }) {
   const { branding } = viewModel;
+  const [logoMode, setLogoMode] = useState<"default" | "custom">(branding.logoUrl ? "custom" : "default");
+  const [customLogoUrl, setCustomLogoUrl] = useState(branding.logoUrl);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [logoUploadError, setLogoUploadError] = useState<string | null>(null);
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleLogoFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setIsUploadingLogo(true);
+    setLogoUploadError(null);
+    try {
+      const uploadedUrl = await uploadLogoToCloudinary(file);
+      setCustomLogoUrl(uploadedUrl);
+      setLogoMode("custom");
+    } catch (error) {
+      setLogoUploadError(error instanceof Error ? error.message : "Upload failed. Please try again.");
+    } finally {
+      setIsUploadingLogo(false);
+      if (logoFileInputRef.current) logoFileInputRef.current.value = "";
+    }
+  }
+
+  const activeLogoPreviewUrl = logoMode === "custom" ? customLogoUrl : branding.defaultLogoUrl;
+
   return (
     <AdminDashboardShell viewModel={viewModel.shell}>
       <div className="max-w-[1180px] space-y-5 pt-2">
@@ -58,11 +136,62 @@ export function MediaExportsPage({ viewModel }: { viewModel: MediaExportViewMode
             </div>
 
             <div className="mt-5 grid gap-5 md:grid-cols-2">
-              <label className="block md:col-span-2">
-                <span className="text-[12px] font-semibold text-white/75">Logo asset URL</span>
-                <input name="logo_url" defaultValue={branding.logoUrl} placeholder="https://res.cloudinary.com/.../logo.png" className="mt-2 h-11 w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-3 text-[13px] text-white outline-none transition focus:border-[#b98aff]" />
+              <div className="block md:col-span-2">
+                <span className="text-[12px] font-semibold text-white/75">Logo</span>
+                <input type="hidden" name="logo_url" value={logoMode === "custom" ? customLogoUrl : ""} />
+                <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setLogoMode("default")}
+                    className={`rounded-[10px] border p-3 text-left transition ${logoMode === "default" ? "border-[#b98aff] bg-[#241733]" : "border-white/10 bg-[var(--color-surface-muted)] hover:border-white/20"}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {branding.defaultLogoUrl ? (
+                        // Cloudinary's own delivery URL for our fixed default-logo public_id.
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={branding.defaultLogoUrl} alt="Default iTestified logo" className="h-10 w-10 rounded-full bg-black/20 object-contain" />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-white/10" />
+                      )}
+                      <div>
+                        <p className="text-[12px] font-semibold text-white">Our default</p>
+                        <p className="text-[11px] text-white/45">The iTestified mark, always available.</p>
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLogoMode("custom");
+                      logoFileInputRef.current?.click();
+                    }}
+                    className={`rounded-[10px] border p-3 text-left transition ${logoMode === "custom" ? "border-[#b98aff] bg-[#241733]" : "border-white/10 bg-[var(--color-surface-muted)] hover:border-white/20"}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {customLogoUrl ? (
+                        // Admin-provided asset URLs cannot be known at build time for next/image's remotePatterns.
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={customLogoUrl} alt="Custom logo" className="h-10 w-10 rounded-full bg-black/20 object-contain" />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-[16px] text-white/50">+</div>
+                      )}
+                      <div>
+                        <p className="text-[12px] font-semibold text-white">{customLogoUrl ? "Custom logo" : "Upload a logo"}</p>
+                        <p className="text-[11px] text-white/45">{isUploadingLogo ? "Uploading…" : "Replaces the previous upload -- never adds a new one."}</p>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+                <input
+                  ref={logoFileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  onChange={handleLogoFileChange}
+                />
+                {logoUploadError ? <p className="mt-1.5 text-[11px] text-[#ff9b9b]">{logoUploadError}</p> : null}
                 <span className="mt-1.5 block text-[11px] text-white/35">Placed in the top-left corner of exported videos.</span>
-              </label>
+              </div>
               <label className="block">
                 <span className="text-[12px] font-semibold text-white/75">Watermark text</span>
                 <input name="watermark_text" required maxLength={120} defaultValue={branding.watermarkText} className="mt-2 h-11 w-full rounded-[10px] border border-white/10 bg-[var(--color-surface-muted)] px-3 text-[13px] text-white outline-none transition focus:border-[#b98aff]" />
@@ -101,10 +230,10 @@ export function MediaExportsPage({ viewModel }: { viewModel: MediaExportViewMode
             </div>
             <div className="mx-auto mt-6 max-w-[220px] rounded-[26px] border-[6px] border-[#35303d] bg-[#110d17] p-2 shadow-[0_18px_45px_rgba(0,0,0,0.35)]">
               <div className="relative flex aspect-[9/16] flex-col justify-end overflow-hidden rounded-[18px] bg-[radial-gradient(circle_at_50%_30%,#6b3c86,#241733_46%,#0e0b13)] p-4">
-                {branding.logoUrl ? (
+                {activeLogoPreviewUrl ? (
                   // Admin-provided asset URLs cannot be known at build time for next/image's remotePatterns.
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={branding.logoUrl} alt="Brand logo preview" className="absolute left-3 top-3 max-h-9 max-w-[85px] object-contain" />
+                  <img src={activeLogoPreviewUrl} alt="Brand logo preview" className="absolute left-3 top-3 max-h-9 max-w-[85px] object-contain" />
                 ) : <div className="absolute left-3 top-3 rounded bg-white/10 px-2 py-1 text-[9px] font-bold tracking-[0.12em] text-white">iTESTIFIED</div>}
                 <div className="absolute inset-x-0 top-[44%] h-px bg-white/20" />
                 <div className="relative border-t border-white/30 pt-3 text-center text-[9px] leading-4 text-white/90">
