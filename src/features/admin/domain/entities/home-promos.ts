@@ -4,7 +4,7 @@ import type { AdminPaginationFields } from "@/features/admin/domain/entities/pag
 export type HomePromoState = "populated" | "empty" | "loading" | "error";
 export type HomePromoStatusFilter = "all" | "active" | "scheduled" | "ended" | "inactive";
 export type HomePromoStatus = Exclude<HomePromoStatusFilter, "all">;
-export type HomePromoCtaDestination = "" | "giving" | "submit_testimony" | "external_url";
+export type HomePromoCtaDestination = "" | "giving" | "submit_testimony" | "external_url" | "referral_link";
 
 export type HomePromoRow = {
   id: number;

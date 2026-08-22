@@ -226,6 +226,7 @@ function PromoForm({
                 <option value="">No CTA</option>
                 <option value="giving">Giving screen</option>
                 <option value="submit_testimony">Submit a testimony</option>
+                <option value="referral_link">Referral link screen</option>
                 <option value="external_url">External URL</option>
               </select>
             </label>
