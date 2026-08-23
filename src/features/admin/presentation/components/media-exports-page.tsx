@@ -15,7 +15,11 @@ const statusStyles: Record<MediaExportStatus, string> = {
 
 function formatDate(value: string | null) {
   if (!value) return "—";
-  return new Date(value).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  // A fixed locale, not undefined -- undefined defers to the runtime's own
+  // default, which is the server process's locale during SSR and the
+  // browser's during hydration. Those can differ (day/month order, 12h vs
+  // 24h clock), which is exactly what a hydration mismatch flags.
+  return new Date(value).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
 }
 
 function extractApiErrorMessage(data: unknown): string {
