@@ -18,6 +18,44 @@ afterEach(() => {
 });
 
 describe("getTestimoniesViewModelFromBackend", () => {
+  test("requests and maps only audio testimonies for the audio tab", async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes("/testimonies/admin/categories/")) return Promise.resolve(jsonResponse(categoriesPayload));
+      return Promise.resolve(jsonResponse({
+        count: 1,
+        results: [{
+          id: 31,
+          title: "Audio testimony",
+          testimony_type: "audio",
+          status: "pending_review",
+          author_name: "Audio Author",
+          author_email: "audio@example.com",
+          category: "Healing",
+          view_count: 0,
+          comment_count: 0,
+          audio_url: "https://example.com/testimony.m4a",
+          duration_ms: 125000,
+          transcript_status: "processing",
+          created_at: "2026-08-24T10:00:00Z",
+        }],
+      }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const viewModel = await getTestimoniesViewModelFromBackend({ tab: "audio", cookieHeader: "sessionid=audio-tab" });
+
+    const testimonyUrl = new URL(fetchMock.mock.calls[0][0]);
+    expect(testimonyUrl.searchParams.get("testimony_type")).toBe("audio");
+    expect(viewModel.activeTab).toBe("audio");
+    expect(viewModel.rows[0]).toMatchObject({
+      kind: "audio",
+      audioUrl: "https://example.com/testimony.m4a",
+      durationMs: 125000,
+      transcriptStatus: "processing",
+      status: "Pending",
+    });
+  });
+
   test("requests only video testimonies for the video tab", async () => {
     const fetchMock = vi.fn((url: string) => {
       if (url.includes("/testimonies/admin/categories/")) {

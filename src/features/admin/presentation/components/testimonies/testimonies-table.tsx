@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type {
   TestimoniesViewModel,
+  AudioTestimonyRow,
   TestimonyRow,
   TestimonyStatus,
   TestimonyTab,
@@ -86,12 +87,12 @@ function TestimoniesError({ message }: { message?: string }) {
   return <AdminErrorState title="Unable to load testimonies" message={message} />;
 }
 
-function TextActionMenu({
+function ModerationActionMenu({
   row,
   viewModel,
   onView,
 }: {
-  row: TextTestimonyRow;
+  row: TextTestimonyRow | AudioTestimonyRow;
   viewModel: TestimoniesViewModel;
   onView: (row: TestimonyRow) => void;
 }) {
@@ -113,6 +114,21 @@ function TextActionMenu({
       </Link>
     </div>
   );
+}
+
+function formatDuration(durationMs: number) {
+  const totalSeconds = Math.max(0, Math.round(durationMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function transcriptLabel(row: AudioTestimonyRow) {
+  if (row.transcriptStatus === "done") return "Transcript ready";
+  if (row.transcriptStatus === "processing") return "Transcribing";
+  if (row.transcriptStatus === "pending") return "Queued";
+  if (row.transcriptStatus === "failed") return "Needs attention";
+  return "Not available";
 }
 
 function VideoActionMenu({
@@ -280,12 +296,66 @@ function TextTable({
               <button type="button" onClick={() => onToggleMenu(textRow)} aria-label={`Open actions for testimony ${textRow.id}`}>
                 <RowMenuIcon />
               </button>
-              {openMenuId === textRow.id && !isBottomActionRow(viewModel, textRow) ? <TextActionMenu row={textRow} viewModel={viewModel} onView={onView} /> : null}
+              {openMenuId === textRow.id && !isBottomActionRow(viewModel, textRow) ? <ModerationActionMenu row={textRow} viewModel={viewModel} onView={onView} /> : null}
             </div>
           </div>
         );
       })}
     </>
+  );
+}
+
+function AudioTable({
+  viewModel,
+  openMenuId,
+  onToggleMenu,
+  onView,
+}: {
+  viewModel: TestimoniesViewModel;
+  openMenuId: number | null;
+  onToggleMenu: (row: TestimonyRow) => void;
+  onView: (row: TestimonyRow) => void;
+}) {
+  return (
+    <div className="space-y-3 px-3 pb-3">
+      <div className="grid grid-cols-[minmax(280px,2fr)_1fr_0.7fr_0.9fr_44px] items-center rounded-[12px] bg-[var(--color-surface-muted)] px-4 py-3 text-[10px] font-medium uppercase tracking-[0.08em] text-white/55">
+        <span>Audio testimony</span>
+        <span>Submitted by</span>
+        <span>Duration</span>
+        <span>Status</span>
+        <span className="text-right">Action</span>
+      </div>
+      {viewModel.rows.map((row) => {
+        const audioRow = row as AudioTestimonyRow;
+        const bars = [8, 14, 20, 11, 17, 24, 13, 19, 9, 22, 15, 10];
+        return (
+          <div key={audioRow.id} className="group rounded-[16px] border border-white/10 bg-[linear-gradient(110deg,rgba(155,104,213,0.09),rgba(255,255,255,0.02)_45%)] px-4 py-4 transition hover:border-[#9B68D5]/35">
+            <div className="grid grid-cols-[minmax(280px,2fr)_1fr_0.7fr_0.9fr_44px] items-center gap-3">
+              <button type="button" onClick={() => onView(audioRow)} className="flex min-w-0 items-center gap-3 text-left">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[#b887f1]/30 bg-[#9B68D5]/15 text-[#d4b1ff]" aria-hidden="true">▶</span>
+                <span className="min-w-0">
+                  <span className="block truncate text-[14px] font-semibold text-white/95">{audioRow.title}</span>
+                  <span className="mt-1 flex items-center gap-1 text-[#b887f1]/75" aria-hidden="true">
+                    {bars.map((height, index) => <i key={index} className="w-[2px] rounded-full bg-current" style={{ height }} />)}
+                  </span>
+                  <span className="mt-1 block truncate text-[11px] text-white/45">{audioRow.category} · {transcriptLabel(audioRow)}</span>
+                </span>
+              </button>
+              <div className="min-w-0 text-[12px] text-white/72">
+                <p className="truncate text-white/90">{audioRow.name}</p>
+                <p className="mt-1 truncate text-white/42">{audioRow.dateSubmitted}</p>
+              </div>
+              <span className="font-mono text-[13px] tabular-nums text-white/72">{formatDuration(audioRow.durationMs)}</span>
+              <span><StatusPill status={audioRow.status} /></span>
+              <div className="relative text-right text-white/72">
+                <button type="button" onClick={() => onToggleMenu(audioRow)} aria-label={`Open actions for audio testimony ${audioRow.id}`}><RowMenuIcon /></button>
+                {openMenuId === audioRow.id && !isBottomActionRow(viewModel, audioRow) ? <ModerationActionMenu row={audioRow} viewModel={viewModel} onView={onView} /> : null}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -433,7 +503,7 @@ function paginationHref(viewModel: TestimoniesViewModel, page: number) {
     to: viewModel.filterDraft.to,
     category: viewModel.filterDraft.category,
     source: viewModel.activeTab === "video" ? viewModel.filterDraft.source : undefined,
-    statusFilter: viewModel.activeTab === "text" ? viewModel.filterDraft.status : undefined,
+    statusFilter: viewModel.activeTab !== "video" ? viewModel.filterDraft.status : undefined,
     page,
   });
 }
@@ -450,6 +520,7 @@ export function TestimoniesTable({
   onTabChange: (tab: TestimonyTab) => void;
 }) {
   const isVideo = viewModel.activeTab === "video";
+  const isAudio = viewModel.activeTab === "audio";
   const [openMenuId, setOpenMenuId] = useState<number | null>(
     viewModel.showActionMenu && viewModel.selectedRow ? viewModel.selectedRow.id : null,
   );
@@ -471,8 +542,8 @@ export function TestimoniesTable({
         <div className="flex flex-col gap-4 px-4 pt-5 md:flex-row md:items-center md:justify-between md:px-5 md:pt-5">
           <TopTabs viewModel={viewModel} onTabChange={onTabChange} />
           <div className="flex flex-wrap items-center gap-3">
-            <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, settings: true })} className="inline-flex min-h-[52px] items-center justify-center rounded-[12px] border border-[var(--color-primary)] px-5 text-[14px] leading-[1.25] text-[var(--color-primary)]">
-              Manage Settings
+            <Link href={buildTestimoniesHref({ tab: viewModel.activeTab, videoStatus: isVideo ? viewModel.activeVideoStatus : null, engagement: isVideo ? viewModel.activeVideoEngagement : null, settings: true })} className="inline-flex min-h-[52px] items-center justify-center rounded-[12px] border border-[var(--color-primary)] px-5 text-[14px] leading-[1.25] text-[var(--color-primary)]">
+              {isAudio ? "Audio Upload Policy" : "Manage Settings"}
             </Link>
             <Link href={buildTestimoniesHref({ tab: "video", videoStatus: viewModel.activeVideoStatus, engagement: viewModel.activeVideoEngagement, screen: "activity" })} className="inline-flex min-h-[44px] items-center justify-center rounded-[10px] bg-[var(--color-primary)] px-5 text-[14px] font-medium text-[var(--color-text-primary)]">
               View Activity Log
@@ -480,7 +551,7 @@ export function TestimoniesTable({
           </div>
         </div>
 
-        {!isVideo ? <div className="px-4 pb-2 pt-6 text-[18px] font-medium text-[var(--color-text-primary)] md:px-5">Testimony</div> : null}
+        {!isVideo ? <div className="px-4 pb-2 pt-6 text-[18px] font-medium text-[var(--color-text-primary)] md:px-5">{isAudio ? "Audio moderation queue" : "Testimony"}</div> : null}
         <div className={`px-4 md:px-5 ${isVideo ? "pb-5 pt-6 md:pb-6 md:pt-7" : "pb-4"}`}>
           {isVideo ? (
             <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
@@ -502,8 +573,11 @@ export function TestimoniesTable({
           {viewModel.phaseState === "loading" ? <TestimoniesLoading video={isVideo} /> : null}
           {viewModel.phaseState === "empty" ? <TestimoniesEmpty /> : null}
           {viewModel.phaseState === "error" ? <TestimoniesError message={viewModel.errorMessage} /> : null}
-          {viewModel.phaseState === "populated" && !isVideo ? (
+          {viewModel.phaseState === "populated" && !isVideo && !isAudio ? (
             <TextTable viewModel={viewModel} openMenuId={openMenuId} onToggleMenu={toggleActionMenu} onView={openDetails} />
+          ) : null}
+          {viewModel.phaseState === "populated" && isAudio ? (
+            <AudioTable viewModel={viewModel} openMenuId={openMenuId} onToggleMenu={toggleActionMenu} onView={openDetails} />
           ) : null}
           {viewModel.phaseState === "populated" && isVideo ? (
             <VideoSliceTable viewModel={viewModel} openMenuId={openMenuId} onToggleMenu={toggleActionMenu} onView={openDetails} />
@@ -519,9 +593,9 @@ export function TestimoniesTable({
         />
       </div>
 
-      {showDetachedActionMenu && openMenuRow?.kind === "text" ? (
+      {showDetachedActionMenu && (openMenuRow?.kind === "text" || openMenuRow?.kind === "audio") ? (
         <div className="absolute bottom-[92px] right-5 z-50">
-          <TextActionMenu row={openMenuRow} viewModel={viewModel} onView={openDetails} />
+          <ModerationActionMenu row={openMenuRow} viewModel={viewModel} onView={openDetails} />
         </div>
       ) : null}
 

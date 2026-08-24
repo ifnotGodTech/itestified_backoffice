@@ -8,6 +8,8 @@ import {
 import { formatShowingLabel, parsePageParam } from "@/features/admin/data/services/pagination";
 import type {
   TestimonyCategoryOption,
+  AudioTestimonyRow,
+  AudioTranscriptStatus,
   TestimoniesViewModel,
   TestimonyRow,
   TextTestimonyRow,
@@ -21,7 +23,7 @@ export { getTestimoniesViewModel } from "@/features/admin/data/services/get-test
 type BackendTestimony = {
   id: number;
   title: string;
-  testimony_type: "written" | "video";
+  testimony_type: "written" | "audio" | "video";
   status: "draft" | "pending_review" | "approved" | "rejected" | "scheduled" | "archived";
   author_name: string;
   author_email: string;
@@ -47,6 +49,10 @@ type BackendTestimony = {
   body?: string;
   pull_quote?: string;
   video_url?: string;
+  audio_url?: string;
+  duration_ms?: number;
+  transcript_status?: AudioTranscriptStatus;
+  transcript?: string | null;
   thumbnail_url?: string;
 };
 
@@ -107,9 +113,9 @@ export async function getTestimoniesViewModelFromBackend(
 ): Promise<TestimoniesViewModel> {
   const base = getTestimoniesViewModel(input);
   const page = parsePageParam(input.page);
-  const activeTab = input.tab === "video" ? "video" : "text";
+  const activeTab = input.tab === "video" || input.tab === "audio" ? input.tab : "text";
   const statusFilter =
-    activeTab === "text"
+    activeTab !== "video"
       ? input.statusFilter === "Approved"
         ? "approved"
         : input.statusFilter === "Rejected"
@@ -137,7 +143,7 @@ export async function getTestimoniesViewModelFromBackend(
   if (input.from?.trim()) params.set("date_from", input.from.trim());
   if (input.to?.trim()) params.set("date_to", input.to.trim());
   if (activeTab === "video" && input.source?.trim()) params.set("source", input.source.trim());
-  params.set("testimony_type", activeTab === "video" ? "video" : "written");
+  params.set("testimony_type", activeTab === "video" ? "video" : activeTab === "audio" ? "audio" : "written");
   params.set("page_size", String(TESTIMONIES_PAGE_SIZE));
   params.set("page", String(page));
   const categoryCacheKey = input.cookieHeader ?? "anonymous";
@@ -205,7 +211,7 @@ export async function getTestimoniesViewModelFromBackend(
       });
     }
     const typedRows: TestimonyRow[] = backendRows
-      .filter((item) => (activeTab === "video" ? item.testimony_type === "video" : item.testimony_type === "written"))
+      .filter((item) => item.testimony_type === (activeTab === "text" ? "written" : activeTab))
       .map((item) => {
         if (item.testimony_type === "video") {
           return {
@@ -224,6 +230,23 @@ export async function getTestimoniesViewModelFromBackend(
             status: mapBackendStatusToVideo(item.status),
             thumbnailSrc: item.thumbnail_url || "/admin-logo.svg",
           } satisfies VideoTestimonyRow;
+        }
+        if (item.testimony_type === "audio") {
+          return {
+            kind: "audio",
+            id: item.id,
+            title: item.title,
+            testimonyId: `AUDIO-${String(item.id).padStart(3, "0")}`,
+            name: item.author_name,
+            email: item.author_email,
+            category: item.category,
+            dateSubmitted: new Date(item.created_at).toLocaleDateString("en-GB"),
+            status: mapBackendStatusToText(item.status),
+            audioUrl: item.audio_url || "",
+            durationMs: item.duration_ms ?? 0,
+            body: item.body || "",
+            transcriptStatus: item.transcript_status ?? "not_available",
+          } satisfies AudioTestimonyRow;
         }
         return {
           kind: "text",
@@ -270,7 +293,17 @@ export async function getTestimoniesViewModelFromBackend(
                 pullQuote: detailPayload.pull_quote ?? selectedRow.pullQuote ?? "",
                 moderationHistory,
               }
-            : {
+            : selectedRow.kind === "audio"
+              ? {
+                  ...selectedRow,
+                  body: detailPayload.body || selectedRow.body,
+                  audioUrl: detailPayload.audio_url || selectedRow.audioUrl,
+                  durationMs: detailPayload.duration_ms ?? selectedRow.durationMs,
+                  transcriptStatus: detailPayload.transcript_status ?? selectedRow.transcriptStatus,
+                  transcript: detailPayload.transcript ?? selectedRow.transcript,
+                  moderationHistory,
+                }
+              : {
                 ...selectedRow,
                 videoUrl: detailPayload.video_url || selectedRow.videoUrl || "",
                 moderationHistory,

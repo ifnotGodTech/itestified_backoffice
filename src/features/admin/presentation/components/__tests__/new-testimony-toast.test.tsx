@@ -32,4 +32,24 @@ describe("NewTestimonyToast", () => {
     });
     expect(window.localStorage.getItem("admin:last_seen_testimony_notification_id")).toBe("42");
   });
+
+  test("links an audio submission notification to its exact moderation detail", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ item: {
+        id: 43,
+        title: "New Audio Testimony Submitted",
+        message: "A user submitted an audio testimony.",
+        created_at: "2026-08-24T10:00:00Z",
+        metadata: { testimony_id: 31, testimony_type: "audio" },
+      } }),
+    }));
+
+    render(<NewTestimonyToast />);
+
+    expect(await screen.findByRole("link", { name: "Review testimony" })).toHaveAttribute(
+      "href",
+      "/testimonies?tab=audio&view=31&origin=notification",
+    );
+  });
 });

@@ -159,6 +159,13 @@ function toDateAndTime(value: string): { date: string; time: string } {
 function mapRows(results: Array<Record<string, unknown>>): NotificationHistoryRow[] {
   return results.map((item) => {
     const dateTime = toDateAndTime(String(item.created_at ?? ""));
+    const metadata = item.metadata && typeof item.metadata === "object" ? item.metadata as Record<string, unknown> : {};
+    const testimonyId = Number(metadata.testimony_id ?? 0);
+    const testimonyType = String(metadata.testimony_type ?? "written");
+    const testimonyTab = testimonyType === "audio" ? "audio" : testimonyType === "video" ? "video" : "text";
+    const href = item.notification_type === "testimony_submitted" && Number.isFinite(testimonyId) && testimonyId > 0
+      ? `/testimonies?${new URLSearchParams({ ...(testimonyTab === "text" ? {} : { tab: testimonyTab }), view: String(testimonyId), origin: "notification" }).toString()}`
+      : undefined;
     return {
       id: Number(item.id ?? 0),
       title: String(item.title ?? "Notification"),
@@ -166,6 +173,7 @@ function mapRows(results: Array<Record<string, unknown>>): NotificationHistoryRo
       date: dateTime.date,
       time: dateTime.time,
       status: (item.is_read as boolean | undefined) === true ? "read" : "unread",
+      href,
     };
   });
 }

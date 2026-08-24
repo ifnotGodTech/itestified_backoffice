@@ -2,6 +2,7 @@ import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin
 import { formatShowingLabel, paginateRows, parsePageParam } from "@/features/admin/data/services/pagination";
 import type {
   TestimonyCategoryOption,
+  AudioTestimonyRow,
   TestimoniesViewModel,
   TestimonyRow,
   TestimonyState,
@@ -16,6 +17,7 @@ import type {
 
 const tabs: Array<{ key: TestimonyTab; label: string }> = [
   { key: "text", label: "Text" },
+  { key: "audio", label: "Audio" },
   { key: "video", label: "Video" },
 ];
 
@@ -173,8 +175,42 @@ const videoRows: VideoTestimonyRow[] = [
   },
 ];
 
+const audioRows: AudioTestimonyRow[] = [
+  {
+    kind: "audio",
+    id: 21,
+    title: "God Met Me in the Waiting",
+    testimonyId: "AUDIO-021",
+    name: "Amara Okafor",
+    email: "amara@example.com",
+    category: "Faith",
+    dateSubmitted: "18/08/2024",
+    status: "Pending",
+    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    durationMs: 248000,
+    body: "A spoken testimony about finding peace and renewed faith during a difficult season.",
+    transcriptStatus: "done",
+    transcript: "I had waited for an answer for so long, but God met me with peace before the answer arrived.",
+  },
+  {
+    kind: "audio",
+    id: 22,
+    title: "Healing After the Prayer Call",
+    testimonyId: "AUDIO-022",
+    name: "Daniel Adeyemi",
+    email: "daniel@example.com",
+    category: "Healing",
+    dateSubmitted: "19/08/2024",
+    status: "Approved",
+    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+    durationMs: 191000,
+    body: "Daniel shares what changed after a prayer call with his family.",
+    transcriptStatus: "processing",
+  },
+];
+
 function normalizeTab(tab?: string): TestimonyTab {
-  if (tab === "video") return tab;
+  if (tab === "video" || tab === "audio") return tab;
   return "text";
 }
 
@@ -234,14 +270,16 @@ export function sortVideoRowsByEngagement(rows: VideoTestimonyRow[], engagement:
 }
 
 function rowsForTab(tab: TestimonyTab) {
-  return tab === "video" ? videoRows : textRows;
+  if (tab === "video") return videoRows;
+  if (tab === "audio") return audioRows;
+  return textRows;
 }
 
 function matchesSearch(row: TestimonyRow, query: string) {
   const haystack =
     row.kind === "video"
       ? `${row.title} ${row.category} ${row.source} ${row.uploadedBy}`
-      : `${row.name} ${row.category} ${row.testimonyId}`;
+      : `${row.title} ${row.name} ${row.category} ${row.testimonyId}`;
   return haystack.toLowerCase().includes(query.toLowerCase());
 }
 
@@ -312,7 +350,7 @@ export function getTestimoniesViewModel(input: {
           return matchesStatus && matchesCategory && matchesSource && matchesFrom && matchesTo;
         })
       : searchedRows.filter((row) => {
-          if (row.kind !== "text") return false;
+          if (row.kind !== activeTab) return false;
           const matchesStatus = statusFilter ? row.status === statusFilter : true;
           const matchesCategory = categoryMatches(row.category, category);
           const matchesFrom = dateFrom ? row.dateSubmitted === dateFrom : true;

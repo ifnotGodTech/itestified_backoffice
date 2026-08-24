@@ -8,6 +8,7 @@ type BackendNotification = {
   message: string;
   created_at: string;
   is_read: boolean;
+  metadata?: { testimony_id?: number; testimony_type?: string };
 };
 
 export async function GET(req: Request) {

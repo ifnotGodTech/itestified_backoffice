@@ -1,7 +1,7 @@
 import type { AdminShellViewModel } from "@/features/admin/domain/entities/shell";
 import type { AdminPaginationFields } from "@/features/admin/domain/entities/pagination";
 
-export type TestimonyTab = "text" | "video";
+export type TestimonyTab = "text" | "audio" | "video";
 export type TestimonyState = "populated" | "empty" | "loading" | "error";
 export type VideoTestimonyScreen = "list" | "upload" | "activity";
 export type WrittenTestimonyStatus = "Pending" | "Approved" | "Rejected" | "Scheduled" | "Archived";
@@ -43,6 +43,26 @@ export type TextTestimonyRow = {
   moderationHistory?: ModerationHistoryItem[];
 };
 
+export type AudioTranscriptStatus = "not_available" | "pending" | "processing" | "done" | "failed";
+
+export type AudioTestimonyRow = {
+  kind: "audio";
+  id: number;
+  title: string;
+  testimonyId: string;
+  name: string;
+  email: string;
+  category: string;
+  dateSubmitted: string;
+  status: WrittenTestimonyStatus;
+  audioUrl: string;
+  durationMs: number;
+  body: string;
+  transcriptStatus: AudioTranscriptStatus;
+  transcript?: string;
+  moderationHistory?: ModerationHistoryItem[];
+};
+
 export type VideoTestimonyRow = {
   kind: "video";
   id: number;
@@ -61,7 +81,7 @@ export type VideoTestimonyRow = {
   moderationHistory?: ModerationHistoryItem[];
 };
 
-export type TestimonyRow = TextTestimonyRow | VideoTestimonyRow;
+export type TestimonyRow = TextTestimonyRow | AudioTestimonyRow | VideoTestimonyRow;
 
 export type TestimonyFilterDraft = {
   from?: string;

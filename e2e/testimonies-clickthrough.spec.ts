@@ -45,6 +45,34 @@ test("real admin can click through testimony performance surfaces", async ({ pag
   await page.getByRole("button", { name: /Dismiss .*testimony detail/ }).click();
   await expect(page.getByText("Approve Testimony")).toHaveCount(0);
 
+  const audioStart = Date.now();
+  await page.getByRole("button", { name: "Audio", exact: true }).click();
+  await expect(page).toHaveURL(/tab=audio/);
+  await expect(page.getByText("Audio testimony: Peace in the waiting")).toBeVisible({ timeout: 15000 });
+  timings.audioTabMs = Date.now() - audioStart;
+
+  await page.getByRole("button", { name: /Audio testimony: Peace in the waiting/ }).click();
+  await expect(page.getByRole("heading", { name: "Audio testimony: Peace in the waiting" })).toBeVisible();
+  await expect(page.getByLabel("Play Audio testimony: Peace in the waiting")).toBeVisible();
+  await expect(page.getByText("Transcript ready", { exact: true })).toBeVisible();
+  await expect(page.getByText(/God gave me peace before the answer arrived/)).toBeVisible();
+  await page.getByRole("button", { name: "Approve Testimony" }).click();
+  await expect(page).toHaveURL(/tab=audio.*success=approve/, { timeout: 15000 });
+  await expect(page.getByText("Testimony Approved Successfully!")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Close testimony approved success modal" })
+    .click({ position: { x: 8, y: 8 } });
+
+  await page.getByRole("link", { name: "Audio Upload Policy" }).click();
+  await expect(page.getByRole("heading", { name: "Audio upload policy" })).toBeVisible();
+  await expect(page.getByLabel("Maximum file size in MB")).toHaveValue("50");
+  await expect(page.getByLabel("Maximum duration in minutes")).toHaveValue("15");
+  await page.getByRole("button", { name: "Review changes" }).click();
+  await expect(page.getByRole("heading", { name: "Confirm policy update" })).toBeVisible();
+  await page.getByRole("button", { name: "Confirm policy update" }).click();
+  await expect(page.getByText("Audio upload policy updated. New uploads will use these limits.")).toBeVisible();
+  await page.getByRole("button", { name: "Dismiss audio upload policy" }).click();
+
   const filterStart = Date.now();
   await page.getByRole("button", { name: "Filter" }).click();
   await expect(page.getByText("Date Range")).toBeVisible();

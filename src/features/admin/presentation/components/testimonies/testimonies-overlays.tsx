@@ -6,12 +6,14 @@ import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type {
   TestimoniesViewModel,
+  AudioTestimonyRow,
   TestimonyCategoryOption,
   TestimonyRow,
   TextTestimonyRow,
   VideoTestimonyRow,
 } from "@/features/admin/domain/entities/testimonies";
 import { buildTestimoniesHref } from "@/features/admin/presentation/state/testimonies-route-state";
+import { AudioUploadPolicyModal } from "@/features/admin/presentation/components/testimonies/audio-upload-policy-modal";
 
 function StatusPill({ status }: { status: string }) {
   const cls =
@@ -445,7 +447,7 @@ function ApprovedDetailModal({
   );
 }
 
-function ScheduleModal({ row, viewModel, onClose }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
+function ScheduleModal({ row, viewModel, onClose }: { row: TextTestimonyRow | AudioTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
   const router = useRouter();
   const [publishAt, setPublishAt] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -499,7 +501,7 @@ function ScheduleModal({ row, viewModel, onClose }: { row: TextTestimonyRow; vie
   );
 }
 
-function ArchiveModal({ row, viewModel, onClose }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
+function ArchiveModal({ row, viewModel, onClose }: { row: TextTestimonyRow | AudioTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
   const router = useRouter();
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -553,7 +555,7 @@ function ArchiveModal({ row, viewModel, onClose }: { row: TextTestimonyRow; view
   );
 }
 
-function RejectModal({ row, viewModel, onClose }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
+function RejectModal({ row, viewModel, onClose }: { row: TextTestimonyRow | AudioTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
   const router = useRouter();
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -625,7 +627,7 @@ function RejectModal({ row, viewModel, onClose }: { row: TextTestimonyRow; viewM
   );
 }
 
-function DeleteTextTestimonyModal({ row, viewModel, onClose }: { row: TextTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
+function DeleteTextTestimonyModal({ row, viewModel, onClose }: { row: TextTestimonyRow | AudioTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1158,6 +1160,109 @@ function TestimonySettingsModal({ viewModel, onClose }: { viewModel: Testimonies
   );
 }
 
+function formatAudioDuration(durationMs: number) {
+  const totalSeconds = Math.max(0, Math.round(durationMs / 1000));
+  return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;
+}
+
+function AudioDetailsModal({
+  row,
+  viewModel,
+  onClose,
+  onActionComplete,
+}: {
+  row: AudioTestimonyRow;
+  viewModel: TestimoniesViewModel;
+  onClose?: () => void;
+  onActionComplete?: () => void;
+}) {
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const transcriptState = {
+    done: { label: "Transcript ready", className: "border-[#0cbc32]/25 bg-[#0d3215] text-[#5ee57b]" },
+    processing: { label: "Transcribing", className: "border-[#b887f1]/30 bg-[#9B68D5]/15 text-[#d4b1ff]" },
+    pending: { label: "Queued", className: "border-[#f0c400]/25 bg-[#2f2906] text-[#f0c400]" },
+    failed: { label: "Transcription failed", className: "border-[#ef4335]/25 bg-[#321313] text-[#ef7066]" },
+    not_available: { label: "Not available", className: "border-white/10 bg-white/[0.04] text-white/50" },
+  }[row.transcriptStatus];
+
+  async function approveTestimony() {
+    setSubmitting(true);
+    const response = await fetch(`/api/admin/testimonies/${row.id}/approve`, { method: "POST" });
+    if (response.ok) {
+      onActionComplete?.();
+      router.push(buildTestimoniesHref({ tab: "audio", q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status, success: "approve" }));
+      return;
+    }
+    setSubmitting(false);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4 py-4 backdrop-blur-[2px] sm:px-6 sm:py-8">
+      <DetailCloseControl viewModel={viewModel} onClose={onClose} className="absolute inset-0" ariaLabel="Close audio testimony details">
+        <span className="sr-only">Close audio testimony details</span>
+      </DetailCloseControl>
+      <section className="relative z-10 flex max-h-[calc(100vh-32px)] w-full max-w-[760px] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#17131d] shadow-[0_28px_90px_rgba(0,0,0,0.65)]" aria-labelledby="audio-detail-title">
+        <header className="relative overflow-hidden border-b border-white/10 bg-[radial-gradient(circle_at_20%_0%,rgba(155,104,213,0.3),transparent_48%),linear-gradient(120deg,#241b2d,#17131d)] px-6 pb-6 pt-5 sm:px-8">
+          <div className="absolute -right-8 -top-12 h-40 w-40 rounded-full border border-[#b887f1]/15" aria-hidden="true" />
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#cda4ff]">Audio testimony · {row.testimonyId}</p>
+              <h2 id="audio-detail-title" className="mt-2 max-w-[590px] text-[24px] font-semibold leading-tight text-white sm:text-[28px]">{row.title}</h2>
+            </div>
+            <DetailCloseControl viewModel={viewModel} onClose={onClose} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-black/15 text-white/75 transition hover:bg-white/10 hover:text-white" ariaLabel="Dismiss audio testimony details"><CloseIcon /></DetailCloseControl>
+          </div>
+          <div className="mt-5 rounded-[18px] border border-white/10 bg-black/20 p-4">
+            <div className="mb-3 flex items-center justify-between text-[12px] text-white/55">
+              <span>Listen before moderating</span>
+              <span className="font-mono tabular-nums">{formatAudioDuration(row.durationMs)}</span>
+            </div>
+            {row.audioUrl ? <audio controls preload="metadata" src={row.audioUrl} className="h-11 w-full accent-[#9B68D5]" aria-label={`Play ${row.title}`} /> : <p className="rounded-[12px] bg-white/[0.04] px-4 py-3 text-[13px] text-[#ef7066]">The audio file is unavailable.</p>}
+          </div>
+        </header>
+
+        <div className="overflow-y-auto px-6 py-6 sm:px-8">
+          <DetailOriginBanner viewModel={viewModel} />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              ["Submitted by", row.name],
+              ["Category", row.category],
+              ["Submitted", row.dateSubmitted],
+              ["Status", row.status],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-[14px] border border-white/8 bg-white/[0.025] px-4 py-3">
+                <p className="text-[10px] uppercase tracking-[0.12em] text-white/38">{label}</p>
+                <p className="mt-2 truncate text-[13px] font-medium text-white/85" title={value}>{value}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-[12px] text-white/42">{row.email}</p>
+
+          {row.body ? <div className="mt-6 rounded-[18px] border border-white/8 bg-white/[0.025] p-5"><h3 className="text-[13px] font-semibold uppercase tracking-[0.1em] text-white/45">Submission note</h3><p className="mt-3 text-[15px] leading-7 text-white/78">{row.body}</p></div> : null}
+
+          <div className="mt-6 rounded-[18px] border border-white/10 bg-[linear-gradient(135deg,rgba(155,104,213,0.08),rgba(255,255,255,0.02))] p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div><p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/42">AI transcription</p><h3 className="mt-1 text-[17px] font-semibold text-white">Spoken testimony transcript</h3></div>
+              <span className={`rounded-full border px-3 py-1 text-[11px] ${transcriptState.className}`}>{transcriptState.label}</span>
+            </div>
+            {row.transcriptStatus === "done" && row.transcript ? <p className="mt-4 whitespace-pre-wrap text-[15px] leading-7 text-white/78">{row.transcript}</p> : <p className="mt-4 text-[13px] leading-6 text-white/48">{row.transcriptStatus === "failed" ? "The audio remains available for manual review. Transcription can be retried from AI jobs." : "The transcript will appear here automatically when processing is complete. You can still listen and moderate now."}</p>}
+          </div>
+          <ModerationHistoryPanel row={row} />
+        </div>
+
+        <footer className="flex flex-col gap-3 border-t border-white/10 bg-black/15 px-6 py-5 sm:flex-row sm:justify-end sm:px-8">
+          {row.status === "Pending" ? <>
+            <Link href={buildTestimoniesHref({ tab: "audio", q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status, schedule: row.id })} className="inline-flex min-h-11 items-center justify-center rounded-[11px] border border-[#f0c400]/70 px-5 text-[13px] font-medium text-[#f0c400]">Schedule</Link>
+            <Link href={buildTestimoniesHref({ tab: "audio", q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status, reject: row.id })} className="inline-flex min-h-11 items-center justify-center rounded-[11px] border border-[#ef4335]/70 px-5 text-[13px] font-medium text-[#ef7066]">Reject</Link>
+            <button type="button" disabled={submitting} onClick={approveTestimony} className="inline-flex min-h-11 items-center justify-center rounded-[11px] bg-[#9B68D5] px-6 text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(155,104,213,0.25)] disabled:opacity-60">{submitting ? "Approving…" : "Approve testimony"}</button>
+          </> : null}
+          {(row.status === "Approved" || row.status === "Scheduled") ? <Link href={buildTestimoniesHref({ tab: "audio", q: viewModel.searchQuery, statusFilter: viewModel.filterDraft.status, archive: row.id })} className="inline-flex min-h-11 items-center justify-center rounded-[11px] border border-[#ef4335]/70 px-5 text-[13px] font-medium text-[#ef7066]">Archive testimony</Link> : null}
+        </footer>
+      </section>
+    </div>
+  );
+}
+
 function VideoDetailsModal({
   row,
   viewModel,
@@ -1554,15 +1659,18 @@ export function TestimoniesOverlays({
     <>
       {showDetails && selectedDetailRow?.kind === "text" && selectedDetailRow.status === "Pending" ? <PendingDetailModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} onActionComplete={onActionComplete} /> : null}
       {showDetails && selectedDetailRow?.kind === "text" && selectedDetailRow.status !== "Pending" ? <ApprovedDetailModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} /> : null}
+      {showDetails && selectedDetailRow?.kind === "audio" ? <AudioDetailsModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} onActionComplete={onActionComplete} /> : null}
       {showDetails && selectedDetailRow?.kind === "video" ? <VideoDetailsModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} /> : null}
-      {viewModel.showRejectModal && viewModel.selectedRow?.kind === "text" && !isDismissed(rejectKey, "reject") ? <RejectModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(rejectKey)} /> : null}
-      {viewModel.showScheduleModal && viewModel.selectedRow?.kind === "text" && !isDismissed(scheduleKey, "schedule") ? <ScheduleModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(scheduleKey)} /> : null}
-      {viewModel.showArchiveModal && viewModel.selectedRow?.kind === "text" && !isDismissed(archiveKey, "archive") ? <ArchiveModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(archiveKey)} /> : null}
+      {viewModel.showRejectModal && (viewModel.selectedRow?.kind === "text" || viewModel.selectedRow?.kind === "audio") && !isDismissed(rejectKey, "reject") ? <RejectModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(rejectKey)} /> : null}
+      {viewModel.showScheduleModal && (viewModel.selectedRow?.kind === "text" || viewModel.selectedRow?.kind === "audio") && !isDismissed(scheduleKey, "schedule") ? <ScheduleModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(scheduleKey)} /> : null}
+      {viewModel.showArchiveModal && (viewModel.selectedRow?.kind === "text" || viewModel.selectedRow?.kind === "audio") && !isDismissed(archiveKey, "archive") ? <ArchiveModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(archiveKey)} /> : null}
       {viewModel.showEditModal && viewModel.selectedRow?.kind === "video" && !isDismissed(editKey, "edit") ? <EditVideoModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(editKey)} /> : null}
       {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "video" && !isDismissed(deleteKey, "remove") ? <DeleteVideoModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(deleteKey)} /> : null}
       {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "text" && !isDismissed(deleteKey, "remove") ? <DeleteTextTestimonyModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(deleteKey)} /> : null}
+      {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "audio" && !isDismissed(deleteKey, "remove") ? <DeleteTextTestimonyModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(deleteKey)} /> : null}
       {(viewModel.showFilterModal && !isDismissed("filter", "filter")) || showFilterModal ? <FilterModal viewModel={viewModel} onClose={closeFilterModal} /> : null}
-      {viewModel.showSettingsModal && !isDismissed("settings", "settings") ? <TestimonySettingsModal viewModel={viewModel} onClose={() => dismissRouteOverlay("settings")} /> : null}
+      {viewModel.showSettingsModal && viewModel.activeTab === "audio" && !isDismissed("settings", "settings") ? <AudioUploadPolicyModal onClose={() => dismissRouteOverlay("settings")} /> : null}
+      {viewModel.showSettingsModal && viewModel.activeTab !== "audio" && !isDismissed("settings", "settings") ? <TestimonySettingsModal viewModel={viewModel} onClose={() => dismissRouteOverlay("settings")} /> : null}
     </>
   );
 }

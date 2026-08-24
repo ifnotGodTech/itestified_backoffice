@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 type TestimonyNotification = {
@@ -7,6 +8,7 @@ type TestimonyNotification = {
   title: string;
   message: string;
   created_at: string;
+  metadata?: { testimony_id?: number; testimony_type?: string };
 };
 
 const STORAGE_KEY = "admin:last_seen_testimony_notification_id";
@@ -52,12 +54,21 @@ export function NewTestimonyToast() {
   }, []);
 
   if (!item) return null;
+  const testimonyId = Number(item.metadata?.testimony_id ?? 0);
+  const testimonyType = item.metadata?.testimony_type;
+  const testimonyTab = testimonyType === "audio" ? "audio" : testimonyType === "video" ? "video" : "text";
+  const reviewHref = testimonyId > 0
+    ? `/testimonies?${new URLSearchParams({ ...(testimonyTab === "text" ? {} : { tab: testimonyTab }), view: String(testimonyId), origin: "notification" }).toString()}`
+    : "/testimonies";
 
   return (
     <div className="fixed right-6 top-6 z-[80] w-full max-w-[380px] rounded-[14px] border border-[#9B68D5]/40 bg-[#221a2c] px-4 py-4 shadow-[0_18px_40px_rgba(0,0,0,0.35)]">
       <p className="text-[13px] font-semibold text-[#cda4ff]">{item.title}</p>
       <p className="mt-1 text-[13px] leading-5 text-[#ffffff]/85">{item.message}</p>
-      <div className="mt-3 flex justify-end">
+      <div className="mt-3 flex items-center justify-end gap-4">
+        <Link href={reviewHref} className="rounded-[8px] bg-[#9B68D5] px-3 py-2 text-[12px] font-medium text-white">
+          Review testimony
+        </Link>
         <button
           type="button"
           onClick={() => {

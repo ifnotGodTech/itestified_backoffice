@@ -13,6 +13,10 @@ import { buildTestimoniesHref } from "@/features/admin/presentation/state/testim
 type AdminTestimonyDetailPayload = {
   body?: string;
   video_url?: string;
+  audio_url?: string;
+  duration_ms?: number;
+  transcript_status?: "not_available" | "pending" | "processing" | "done" | "failed";
+  transcript?: string | null;
   thumbnail_url?: string;
   moderation_history?: TestimonyRow["moderationHistory"];
 };
@@ -95,7 +99,7 @@ function tabHref(viewModel: TestimoniesViewModel, tab: TestimonyTab) {
     to: viewModel.filterDraft.to,
     category: viewModel.filterDraft.category,
     source: tab === "video" ? viewModel.filterDraft.source : undefined,
-    statusFilter: tab === "text" ? viewModel.filterDraft.status : undefined,
+    statusFilter: tab !== "video" ? viewModel.filterDraft.status : undefined,
   });
 }
 
@@ -107,7 +111,7 @@ function tabListApiHref(viewModel: TestimoniesViewModel, tab: TestimonyTab) {
     params.set("engagement", viewModel.activeVideoEngagement);
     if (viewModel.filterDraft.source) params.set("source", viewModel.filterDraft.source);
   }
-  if (tab === "text" && viewModel.filterDraft.status) params.set("statusFilter", viewModel.filterDraft.status);
+  if (tab !== "video" && viewModel.filterDraft.status) params.set("statusFilter", viewModel.filterDraft.status);
   if (viewModel.searchQuery) params.set("q", viewModel.searchQuery);
   if (viewModel.filterDraft.from) params.set("from", viewModel.filterDraft.from);
   if (viewModel.filterDraft.to) params.set("to", viewModel.filterDraft.to);
@@ -136,6 +140,18 @@ function mergeDetailPayload(row: TestimonyRow, payload: AdminTestimonyDetailPayl
     return {
       ...row,
       body: payload.body ?? row.body,
+      moderationHistory: payload.moderation_history ?? row.moderationHistory,
+    };
+  }
+
+  if (row.kind === "audio") {
+    return {
+      ...row,
+      body: payload.body ?? row.body,
+      audioUrl: payload.audio_url ?? row.audioUrl,
+      durationMs: payload.duration_ms ?? row.durationMs,
+      transcriptStatus: payload.transcript_status ?? row.transcriptStatus,
+      transcript: payload.transcript ?? row.transcript,
       moderationHistory: payload.moderation_history ?? row.moderationHistory,
     };
   }
