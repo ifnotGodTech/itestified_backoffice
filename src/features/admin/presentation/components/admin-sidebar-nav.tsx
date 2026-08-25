@@ -102,6 +102,16 @@ function SidebarIcon({ kind, active = false }: { kind: string; active?: boolean 
     );
   }
 
+  if (kind === "broadcast") {
+    return (
+      <svg viewBox="0 0 20 20" className={cls} fill="none" aria-hidden="true">
+        <circle cx="10" cy="10" r="2" fill={color} />
+        <path d="M6.5 6.5a5 5 0 0 0 0 7M13.5 6.5a5 5 0 0 1 0 7" stroke={color} strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M4 4a9 9 0 0 0 0 12M16 4a9 9 0 0 1 0 12" stroke={color} strokeWidth="1.6" strokeLinecap="round" opacity="0.55" />
+      </svg>
+    );
+  }
+
   if (kind === "profile") {
     return (
       <svg viewBox="0 0 20 20" className={cls} fill="none" aria-hidden="true">
