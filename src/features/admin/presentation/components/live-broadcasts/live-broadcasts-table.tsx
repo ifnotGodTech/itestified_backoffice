@@ -1,8 +1,10 @@
+import { useState } from "react";
 import type {
   ActiveBroadcastRow,
   LiveBroadcastsViewModel,
   ScheduledBroadcastRow,
 } from "@/features/admin/domain/entities/live-broadcasts";
+import { EndBroadcastModal } from "@/features/admin/presentation/components/live-broadcasts/end-broadcast-modal";
 import { AdminErrorState } from "@/features/admin/presentation/components/shared/admin-table-primitives";
 
 function TopStatPill({ label }: { label: string }) {
@@ -39,8 +41,14 @@ function MinistryCell({ name, avatar }: { name: string; avatar: string }) {
   );
 }
 
-function ActiveBroadcastsSection({ rows }: { rows: ActiveBroadcastRow[] }) {
-  const tableGridClass = "grid min-w-[920px] grid-cols-[1.4fr_1.2fr_120px_100px_110px_1.2fr]";
+function ActiveBroadcastsSection({
+  rows,
+  onEndClick,
+}: {
+  rows: ActiveBroadcastRow[];
+  onEndClick: (row: ActiveBroadcastRow) => void;
+}) {
+  const tableGridClass = "grid min-w-[1040px] grid-cols-[1.4fr_1.2fr_120px_100px_110px_1.2fr_110px]";
 
   return (
     <div className="relative rounded-[16px] border border-white/10 bg-[var(--color-surface-elevated)] shadow-[0_20px_40px_rgba(0,0,0,0.18)]">
@@ -63,6 +71,7 @@ function ActiveBroadcastsSection({ rows }: { rows: ActiveBroadcastRow[] }) {
               <span>Viewers</span>
               <span>Caps</span>
               <span>Minutes used this month</span>
+              <span> </span>
             </div>
             {rows.map((row) => (
               <div
@@ -82,6 +91,13 @@ function ActiveBroadcastsSection({ rows }: { rows: ActiveBroadcastRow[] }) {
                 <span>
                   {row.reservedMinutesThisMonth.toLocaleString()} / {row.totalAllowanceMinutes.toLocaleString()} min
                 </span>
+                <button
+                  type="button"
+                  onClick={() => onEndClick(row)}
+                  className="inline-flex h-[32px] items-center justify-center rounded-[8px] border border-[#ef4335] px-3 text-[11px] font-semibold text-[#ef4335] hover:bg-[#ef4335]/10"
+                >
+                  End
+                </button>
               </div>
             ))}
           </>
@@ -131,10 +147,14 @@ function ScheduledBroadcastsSection({ rows }: { rows: ScheduledBroadcastRow[] })
 export function LiveBroadcastsTable({
   viewModel,
   isRefreshing,
+  onBroadcastEnded,
 }: {
   viewModel: LiveBroadcastsViewModel;
   isRefreshing: boolean;
+  onBroadcastEnded: () => void;
 }) {
+  const [endingRow, setEndingRow] = useState<ActiveBroadcastRow | null>(null);
+
   return (
     <div className="max-w-[1248px] pt-6 md:pt-8">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -158,10 +178,21 @@ export function LiveBroadcastsTable({
         </div>
       ) : (
         <div className="mt-7 flex flex-col gap-7">
-          <ActiveBroadcastsSection rows={viewModel.active} />
+          <ActiveBroadcastsSection rows={viewModel.active} onEndClick={setEndingRow} />
           <ScheduledBroadcastsSection rows={viewModel.scheduled} />
         </div>
       )}
+
+      {endingRow ? (
+        <EndBroadcastModal
+          broadcast={endingRow}
+          onClose={() => setEndingRow(null)}
+          onEnded={() => {
+            setEndingRow(null);
+            onBroadcastEnded();
+          }}
+        />
+      ) : null}
     </div>
   );
 }

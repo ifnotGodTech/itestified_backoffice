@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { LiveBroadcastsViewModel } from "@/features/admin/domain/entities/live-broadcasts";
 import { AdminDashboardShell } from "@/features/admin/presentation/components/admin-dashboard-shell";
 import { LiveBroadcastsTable } from "@/features/admin/presentation/components/live-broadcasts/live-broadcasts-table";
@@ -13,39 +13,39 @@ const POLL_INTERVAL_MS = 20000;
 export function LiveBroadcastsPage({ viewModel }: { viewModel: LiveBroadcastsViewModel }) {
   const [currentViewModel, setCurrentViewModel] = useState(viewModel);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const cancelledRef = useRef(false);
 
   useEffect(() => {
     setCurrentViewModel(viewModel);
   }, [viewModel]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function poll() {
-      setIsRefreshing(true);
-      try {
-        const response = await fetch("/api/admin/live-broadcasts/monitor", { cache: "no-store" });
-        if (!response.ok) throw new Error("poll failed");
-        const next = (await response.json()) as LiveBroadcastsViewModel;
-        if (!cancelled) setCurrentViewModel(next);
-      } catch {
-        // A transient poll failure keeps showing the last good snapshot
-        // rather than flashing an error state on every hiccup.
-      } finally {
-        if (!cancelled) setIsRefreshing(false);
-      }
+  const refresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const response = await fetch("/api/admin/live-broadcasts/monitor", { cache: "no-store" });
+      if (!response.ok) throw new Error("poll failed");
+      const next = (await response.json()) as LiveBroadcastsViewModel;
+      if (!cancelledRef.current) setCurrentViewModel(next);
+    } catch {
+      // A transient poll failure keeps showing the last good snapshot
+      // rather than flashing an error state on every hiccup.
+    } finally {
+      if (!cancelledRef.current) setIsRefreshing(false);
     }
+  }, []);
 
-    const interval = setInterval(poll, POLL_INTERVAL_MS);
+  useEffect(() => {
+    cancelledRef.current = false;
+    const interval = setInterval(refresh, POLL_INTERVAL_MS);
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [refresh]);
 
   return (
     <AdminDashboardShell viewModel={currentViewModel.shell}>
-      <LiveBroadcastsTable viewModel={currentViewModel} isRefreshing={isRefreshing} />
+      <LiveBroadcastsTable viewModel={currentViewModel} isRefreshing={isRefreshing} onBroadcastEnded={refresh} />
     </AdminDashboardShell>
   );
 }

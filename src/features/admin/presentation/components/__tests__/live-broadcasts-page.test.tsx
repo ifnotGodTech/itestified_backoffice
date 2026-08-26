@@ -1,4 +1,5 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin-shell-view-model";
 import type { LiveBroadcastsViewModel } from "@/features/admin/domain/entities/live-broadcasts";
@@ -135,5 +136,67 @@ describe("LiveBroadcastsPage", () => {
     expect(fetchMock).toHaveBeenCalled();
     expect(screen.getByText("Grace Chapel")).toBeInTheDocument();
     expect(screen.getByText("7")).toBeInTheDocument();
+  });
+
+  test("ending a broadcast requires a reason before the confirm button is enabled", async () => {
+    const user = userEvent.setup();
+    render(<LiveBroadcastsPage viewModel={baseViewModel()} />);
+
+    await user.click(screen.getByRole("button", { name: "End" }));
+    expect(screen.getByRole("heading", { name: "End Broadcast" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "End Broadcast" })).toBeDisabled();
+
+    await user.type(screen.getByLabelText(/Reason/), "Inappropriate content.");
+    expect(screen.getByRole("button", { name: "End Broadcast" })).toBeEnabled();
+  });
+
+  test("confirming end broadcast posts the reason and refreshes the panel", async () => {
+    const user = userEvent.setup();
+    const refreshed = baseViewModel({ active: [] });
+    const fetchMock = vi.fn().mockImplementation((url: string) => {
+      if (typeof url === "string" && url.includes("/end")) {
+        return Promise.resolve({ ok: true, json: async () => ({ status: "ended" }) });
+      }
+      return Promise.resolve({ ok: true, json: async () => refreshed });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<LiveBroadcastsPage viewModel={baseViewModel()} />);
+    await user.click(screen.getByRole("button", { name: "End" }));
+    await user.type(screen.getByLabelText(/Reason/), "Inappropriate content.");
+    await user.click(screen.getByRole("button", { name: "End Broadcast" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/admin/live-broadcasts/1/end",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ reason: "Inappropriate content." }),
+        }),
+      );
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole("heading", { name: "End Broadcast" })).not.toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.getByText("No Ministry is broadcasting right now.")).toBeInTheDocument();
+    });
+  });
+
+  test("shows an inline error and keeps the modal open when ending a broadcast fails", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ message: "Cannot end a broadcast in status 'ended'." }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<LiveBroadcastsPage viewModel={baseViewModel()} />);
+    await user.click(screen.getByRole("button", { name: "End" }));
+    await user.type(screen.getByLabelText(/Reason/), "Inappropriate content.");
+    await user.click(screen.getByRole("button", { name: "End Broadcast" }));
+
+    expect(await screen.findByText("Cannot end a broadcast in status 'ended'.")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "End Broadcast" })).toBeInTheDocument();
   });
 });
