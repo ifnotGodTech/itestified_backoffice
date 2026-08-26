@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useState } from "react";
 import type {
   ActiveBroadcastRow,
@@ -166,6 +167,12 @@ export function LiveBroadcastsTable({
           <TopStatPill
             label={`Cap: ${viewModel.policyMaxConcurrentViewers} viewers / ${viewModel.policyMaxDurationMinutes} min`}
           />
+          <Link
+            href="/live-broadcasts/policy"
+            className="inline-flex h-9 items-center rounded-[8px] border border-[#9B68D5] px-4 text-[12px] font-semibold text-[#c590ff]"
+          >
+            Manage Policy
+          </Link>
           <span className={`text-[12px] transition-opacity ${isRefreshing ? "opacity-100" : "opacity-0"} text-white/40`}>
             Refreshing…
           </span>
