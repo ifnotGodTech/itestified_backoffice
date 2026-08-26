@@ -7,6 +7,7 @@ const primaryItems: AdminNavItem[] = [
   { label: "Scripture of the day", href: "/scripture-of-the-day", hasCaret: true, icon: "book" },
   { label: "Users", href: "/users", icon: "users" },
   { label: "Testimonies", href: "/testimonies", hasCaret: true, icon: "chat" },
+  { label: "Playlists", href: "/playlists", icon: "playlist" },
   { label: "Inspirational Pictures", href: "/inspirational-pictures", hasCaret: true, icon: "image" },
   { label: "Donations", href: "/donations", icon: "money" },
   { label: "Subscriptions", href: "/subscriptions", icon: "money" },

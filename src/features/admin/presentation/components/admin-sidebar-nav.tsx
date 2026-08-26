@@ -112,6 +112,19 @@ function SidebarIcon({ kind, active = false }: { kind: string; active?: boolean 
     );
   }
 
+  if (kind === "playlist") {
+    return (
+      <svg viewBox="0 0 20 20" className={cls} fill="none" aria-hidden="true">
+        <path
+          d="M6 15.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm8-1.2a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM8 13.5V5.8l6-1.3v7.8"
+          stroke={color}
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+
   if (kind === "profile") {
     return (
       <svg viewBox="0 0 20 20" className={cls} fill="none" aria-hidden="true">
