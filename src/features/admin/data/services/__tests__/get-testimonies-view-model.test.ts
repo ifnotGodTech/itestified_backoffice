@@ -178,6 +178,67 @@ describe("getTestimoniesViewModelFromBackend", () => {
     expect(viewModel.rows[0]).toMatchObject({ kind: "video", source: "YouTube" });
   });
 
+  // Regression: a self-submitted (Phase 32) video awaiting moderation used
+  // to silently map to "Drafts" (the video table's original, admin-only-
+  // upload assumption never anticipated a video reaching pending_review),
+  // which offered "Upload" instead of "Approve" -- clicking it always
+  // failed against the backend's draft/scheduled-only guard, silently,
+  // leaving the testimony stuck forever with no notification ever sent.
+  test("maps a pending self-submitted video testimony to Pending, not Drafts", async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes("/testimonies/admin/categories/")) {
+        return Promise.resolve(jsonResponse(categoriesPayload));
+      }
+      return Promise.resolve(
+        jsonResponse({
+          count: 1,
+          results: [
+            {
+              id: 22,
+              title: "Self-submitted video testimony",
+              testimony_type: "video",
+              status: "pending_review",
+              author_name: "Premium User",
+              author_email: "premium@example.com",
+              category: "Healing",
+              view_count: 0,
+              comment_count: 0,
+              created_at: "2026-08-28T10:00:00Z",
+              video_url: "https://res.cloudinary.com/demo/video/upload/v1/video.mp4",
+            },
+          ],
+        }),
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const viewModel = await getTestimoniesViewModelFromBackend({
+      tab: "video",
+      cookieHeader: "sessionid=pending-video",
+    });
+
+    expect(viewModel.rows[0]).toMatchObject({ kind: "video", status: "Pending" });
+  });
+
+  test("filters the video tab to pending_review when the Pending status tab is selected", async () => {
+    const fetchMock = vi.fn((url: string) => {
+      if (url.includes("/testimonies/admin/categories/")) {
+        return Promise.resolve(jsonResponse(categoriesPayload));
+      }
+      return Promise.resolve(jsonResponse(emptyTestimoniesPayload));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await getTestimoniesViewModelFromBackend({
+      tab: "video",
+      videoStatus: "Pending",
+      cookieHeader: "sessionid=pending-video-filter",
+    });
+
+    const testimonyUrl = new URL(fetchMock.mock.calls[0][0]);
+    expect(testimonyUrl.searchParams.get("status")).toBe("pending_review");
+  });
+
   test("reuses cached categories for the same admin session", async () => {
     const fetchMock = vi.fn((url: string) => {
       if (url.includes("/testimonies/admin/categories/")) {

@@ -23,6 +23,7 @@ const tabs: Array<{ key: TestimonyTab; label: string }> = [
 
 const videoStatusTabs: Array<{ key: VideoTestimonyStatus; label: string }> = [
   { key: "All", label: "All" },
+  { key: "Pending", label: "Pending" },
   { key: "Uploaded", label: "Uploaded" },
   { key: "Scheduled", label: "Scheduled" },
   { key: "Drafts", label: "Drafts" },

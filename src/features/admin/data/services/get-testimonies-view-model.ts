@@ -93,10 +93,23 @@ function mapBackendStatusToText(status: BackendTestimony["status"]): WrittenTest
 function mapBackendStatusToVideo(status: BackendTestimony["status"]): Exclude<VideoTestimonyStatus, "All"> {
   if (status === "approved") return "Uploaded";
   if (status === "draft") return "Drafts";
+  // A self-submitted (Phase 32) video's rejection still needs the admin's
+  // own "Rejected" reason visible somewhere, but this table has no
+  // "Rejected" video status/tab at all (video was admin-only, draft-only,
+  // when this table was built) -- Drafts is the closest existing bucket
+  // and lets the admin re-review it via the same "Pending" detail modal's
+  // Reject/Approve actions, rather than a status with no UI home at all.
   if (status === "rejected") return "Drafts";
   if (status === "scheduled") return "Scheduled";
   if (status === "archived") return "Archived";
-  return "Drafts";
+  // Only "pending_review" reaches here -- a self-submitted video awaiting
+  // moderation. This used to silently fall through to "Drafts" (the video
+  // table's original, admin-only-upload assumption never anticipated a
+  // video reaching pending_review at all), which offered "Upload" instead
+  // of "Approve" -- clicking it always failed (upload_now_video_testimony
+  // rejects anything that isn't draft/scheduled), silently, leaving the
+  // testimony stuck forever with no notification ever sent.
+  return "Pending";
 }
 
 function extractVideoSource(body: string | undefined): string {
@@ -129,6 +142,8 @@ export async function getTestimoniesViewModelFromBackend(
             : ""
       : input.videoStatus === "Uploaded"
         ? "approved"
+      : input.videoStatus === "Pending"
+        ? "pending_review"
       : input.videoStatus === "Drafts"
           ? "draft"
         : input.videoStatus === "Scheduled"

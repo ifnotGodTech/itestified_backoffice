@@ -446,7 +446,7 @@ function ApprovedDetailModal({
   );
 }
 
-function ScheduleModal({ row, viewModel, onClose }: { row: TextTestimonyRow | AudioTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
+function ScheduleModal({ row, viewModel, onClose }: { row: TextTestimonyRow | AudioTestimonyRow | VideoTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
   const router = useRouter();
   const [publishAt, setPublishAt] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -500,7 +500,7 @@ function ScheduleModal({ row, viewModel, onClose }: { row: TextTestimonyRow | Au
   );
 }
 
-function ArchiveModal({ row, viewModel, onClose }: { row: TextTestimonyRow | AudioTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
+function ArchiveModal({ row, viewModel, onClose }: { row: TextTestimonyRow | AudioTestimonyRow | VideoTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
   const router = useRouter();
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -554,7 +554,7 @@ function ArchiveModal({ row, viewModel, onClose }: { row: TextTestimonyRow | Aud
   );
 }
 
-function RejectModal({ row, viewModel, onClose }: { row: TextTestimonyRow | AudioTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
+function RejectModal({ row, viewModel, onClose }: { row: TextTestimonyRow | AudioTestimonyRow | VideoTestimonyRow; viewModel: TestimoniesViewModel; onClose: () => void }) {
   const router = useRouter();
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -1266,13 +1266,34 @@ function VideoDetailsModal({
   row,
   viewModel,
   onClose,
+  onActionComplete,
 }: {
   row: VideoTestimonyRow;
   viewModel: TestimoniesViewModel;
   onClose?: () => void;
+  onActionComplete?: () => void;
 }) {
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
   const stat = (value: number | null) => (value == null ? 0 : value);
   const hasPlayableVideo = Boolean(row.videoUrl?.trim());
+
+  // A self-submitted (Phase 32) video enters "Pending" the same way any
+  // other testimony does, and needs the same Approve action -- this modal
+  // never had one, since every video shown here used to be admin-uploaded
+  // (draft -> "Upload", never pending_review). Reuses the exact same
+  // generic /approve endpoint text/audio's own detail modals already call.
+  async function approveTestimony() {
+    setSubmitting(true);
+    const response = await fetch(`/api/admin/testimonies/${row.id}/approve`, { method: "POST" });
+    if (response.ok) {
+      onActionComplete?.();
+      router.push(buildTestimoniesHref({ tab: "video", q: viewModel.searchQuery, videoStatus: viewModel.activeVideoStatus, success: "approve" }));
+      return;
+    }
+    setSubmitting(false);
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
       <DetailCloseControl viewModel={viewModel} onClose={onClose} className="absolute inset-0" ariaLabel="Close video details modal">
@@ -1328,6 +1349,14 @@ function VideoDetailsModal({
             ) : null}
           </dl>
         </div>
+        <footer className="flex flex-col gap-3 border-t border-white/10 bg-black/15 px-6 py-5 sm:flex-row sm:justify-end">
+          {row.status === "Pending" ? <>
+            <Link href={buildTestimoniesHref({ tab: "video", q: viewModel.searchQuery, videoStatus: viewModel.activeVideoStatus, schedule: row.id })} className="inline-flex min-h-11 items-center justify-center rounded-[11px] border border-[#f0c400]/70 px-5 text-[13px] font-medium text-[#f0c400]">Schedule</Link>
+            <Link href={buildTestimoniesHref({ tab: "video", q: viewModel.searchQuery, videoStatus: viewModel.activeVideoStatus, reject: row.id })} className="inline-flex min-h-11 items-center justify-center rounded-[11px] border border-[#ef4335]/70 px-5 text-[13px] font-medium text-[#ef7066]">Reject</Link>
+            <button type="button" disabled={submitting} onClick={approveTestimony} className="inline-flex min-h-11 items-center justify-center rounded-[11px] bg-[#9B68D5] px-6 text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(155,104,213,0.25)] disabled:opacity-60">{submitting ? "Approving…" : "Approve testimony"}</button>
+          </> : null}
+          {(row.status === "Uploaded" || row.status === "Scheduled") ? <Link href={buildTestimoniesHref({ tab: "video", q: viewModel.searchQuery, videoStatus: viewModel.activeVideoStatus, archive: row.id })} className="inline-flex min-h-11 items-center justify-center rounded-[11px] border border-[#ef4335]/70 px-5 text-[13px] font-medium text-[#ef7066]">Archive testimony</Link> : null}
+        </footer>
       </div>
     </div>
   );
@@ -1659,10 +1688,10 @@ export function TestimoniesOverlays({
       {showDetails && selectedDetailRow?.kind === "text" && selectedDetailRow.status === "Pending" ? <PendingDetailModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} onActionComplete={onActionComplete} /> : null}
       {showDetails && selectedDetailRow?.kind === "text" && selectedDetailRow.status !== "Pending" ? <ApprovedDetailModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} /> : null}
       {showDetails && selectedDetailRow?.kind === "audio" ? <AudioDetailsModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} onActionComplete={onActionComplete} /> : null}
-      {showDetails && selectedDetailRow?.kind === "video" ? <VideoDetailsModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} /> : null}
-      {viewModel.showRejectModal && (viewModel.selectedRow?.kind === "text" || viewModel.selectedRow?.kind === "audio") && !isDismissed(rejectKey, "reject") ? <RejectModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(rejectKey)} /> : null}
-      {viewModel.showScheduleModal && (viewModel.selectedRow?.kind === "text" || viewModel.selectedRow?.kind === "audio") && !isDismissed(scheduleKey, "schedule") ? <ScheduleModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(scheduleKey)} /> : null}
-      {viewModel.showArchiveModal && (viewModel.selectedRow?.kind === "text" || viewModel.selectedRow?.kind === "audio") && !isDismissed(archiveKey, "archive") ? <ArchiveModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(archiveKey)} /> : null}
+      {showDetails && selectedDetailRow?.kind === "video" ? <VideoDetailsModal row={selectedDetailRow} viewModel={viewModel} onClose={closeDetails} onActionComplete={onActionComplete} /> : null}
+      {viewModel.showRejectModal && (viewModel.selectedRow?.kind === "text" || viewModel.selectedRow?.kind === "audio" || viewModel.selectedRow?.kind === "video") && !isDismissed(rejectKey, "reject") ? <RejectModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(rejectKey)} /> : null}
+      {viewModel.showScheduleModal && (viewModel.selectedRow?.kind === "text" || viewModel.selectedRow?.kind === "audio" || viewModel.selectedRow?.kind === "video") && !isDismissed(scheduleKey, "schedule") ? <ScheduleModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(scheduleKey)} /> : null}
+      {viewModel.showArchiveModal && (viewModel.selectedRow?.kind === "text" || viewModel.selectedRow?.kind === "audio" || viewModel.selectedRow?.kind === "video") && !isDismissed(archiveKey, "archive") ? <ArchiveModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(archiveKey)} /> : null}
       {viewModel.showEditModal && viewModel.selectedRow?.kind === "video" && !isDismissed(editKey, "edit") ? <EditVideoModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(editKey)} /> : null}
       {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "video" && !isDismissed(deleteKey, "remove") ? <DeleteVideoModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(deleteKey)} /> : null}
       {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "text" && !isDismissed(deleteKey, "remove") ? <DeleteTextTestimonyModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(deleteKey)} /> : null}
