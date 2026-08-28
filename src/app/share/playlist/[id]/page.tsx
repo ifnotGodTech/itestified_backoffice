@@ -9,9 +9,28 @@ import { androidStoreUrl, iosStoreUrl } from "@/features/share/domain/entities/s
 // installed never reaches this page at all (the Android App Link's
 // pathPrefix="/share/" intercepts it first, same as a testimony link); this
 // is purely the fallback for someone who doesn't have the app yet.
+// Without its own openGraph/twitter images, messaging apps (WhatsApp,
+// iMessage, Slack, ...) render a link preview with no icon at all rather
+// than falling back to the site favicon -- the testimony share page avoids
+// this by setting the testimony's own thumbnail as its openGraph image;
+// this page has no per-playlist image to use (see the no-content note
+// above), so it uses the app's own icon as a stable, branded fallback.
+const shareImageUrl = "/apple-icon.png";
+
 export const metadata: Metadata = {
   title: "Shared Playlist | iTestified",
   description: "Open this playlist in the iTestified app to view it.",
+  openGraph: {
+    title: "Shared Playlist | iTestified",
+    description: "Open this playlist in the iTestified app to view it.",
+    images: [{ url: shareImageUrl }],
+  },
+  twitter: {
+    card: "summary",
+    title: "Shared Playlist | iTestified",
+    description: "Open this playlist in the iTestified app to view it.",
+    images: [shareImageUrl],
+  },
 };
 
 export default function SharedPlaylistPage() {
