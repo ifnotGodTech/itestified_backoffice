@@ -471,73 +471,10 @@ describe("TestimoniesPage", () => {
     expect(screen.getByText("Save Settings")).toBeInTheDocument();
   });
 
-  test("loads, confirms, and saves the audio upload policy in canonical units", async () => {
-    const user = userEvent.setup();
-    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
-      if (url !== "/api/admin/testimonies/audio-upload-policy") return Promise.reject(new Error(`Unexpected fetch: ${url}`));
-      if (init?.method === "PATCH") {
-        return Promise.resolve({ ok: true, json: async () => ({
-          max_file_size_bytes: 75 * 1024 * 1024,
-          max_duration_ms: 20 * 60 * 1000,
-          allowed_content_types: ["audio/aac", "audio/mp4", "audio/x-m4a", "audio/mpeg", "audio/mp3"],
-          updated_at: "2026-08-24T14:00:00Z",
-          updated_by_name: "Audio Policy Admin",
-        }) });
-      }
-      return Promise.resolve({ ok: true, json: async () => ({
-        max_file_size_bytes: 50 * 1024 * 1024,
-        max_duration_ms: 15 * 60 * 1000,
-        allowed_content_types: ["audio/aac", "audio/mp4", "audio/x-m4a", "audio/mpeg", "audio/mp3"],
-        updated_at: "2026-08-24T12:00:00Z",
-        updated_by_name: "System default",
-      }) });
-    });
-    vi.stubGlobal("fetch", fetchMock);
+  test("renders the testimony settings modal on the audio tab too (upload policy now lives on its own page)", () => {
     render(<TestimoniesPage viewModel={getTestimoniesViewModel({ tab: "audio", settings: "1" })} />);
 
-    expect(await screen.findByRole("heading", { name: "Audio upload policy" })).toBeInTheDocument();
-    const sizeInput = screen.getByLabelText("Maximum file size in MB");
-    const durationInput = screen.getByLabelText("Maximum duration in minutes");
-    expect(sizeInput).toHaveValue(50);
-    expect(durationInput).toHaveValue(15);
-    await user.clear(sizeInput);
-    await user.type(sizeInput, "75");
-    await user.clear(durationInput);
-    await user.type(durationInput, "20");
-    await user.click(screen.getByRole("button", { name: "Review changes" }));
-    expect(screen.getByRole("heading", { name: "Confirm policy update" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Confirm policy update" }));
-
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
-      "/api/admin/testimonies/audio-upload-policy",
-      expect.objectContaining({
-        method: "PATCH",
-        body: JSON.stringify({
-          max_file_size_bytes: 75 * 1024 * 1024,
-          max_duration_ms: 20 * 60 * 1000,
-          allowed_content_types: ["audio/aac", "audio/mp4", "audio/x-m4a", "audio/mpeg", "audio/mp3"],
-        }),
-      }),
-    ));
-    expect(await screen.findByText("Audio upload policy updated. New uploads will use these limits.")).toBeInTheDocument();
-  });
-
-  test("prevents an invalid audio policy from reaching confirmation", async () => {
-    const user = userEvent.setup();
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({
-      max_file_size_bytes: 50 * 1024 * 1024,
-      max_duration_ms: 15 * 60 * 1000,
-      allowed_content_types: ["audio/aac", "audio/mp4", "audio/x-m4a", "audio/mpeg", "audio/mp3"],
-      updated_at: "2026-08-24T12:00:00Z",
-    }) }));
-    render(<TestimoniesPage viewModel={getTestimoniesViewModel({ tab: "audio", settings: "1" })} />);
-
-    const durationInput = await screen.findByLabelText("Maximum duration in minutes");
-    await user.clear(durationInput);
-    await user.type(durationInput, "0");
-
-    expect(screen.getByRole("alert")).toHaveTextContent("Duration must be between 1 and 120 minutes.");
-    expect(screen.getByRole("button", { name: "Review changes" })).toBeDisabled();
+    expect(screen.getByRole("heading", { name: "Testimony Settings" })).toBeInTheDocument();
   });
 
   test("renders the activity log screen", () => {

@@ -13,7 +13,6 @@ import type {
   VideoTestimonyRow,
 } from "@/features/admin/domain/entities/testimonies";
 import { buildTestimoniesHref } from "@/features/admin/presentation/state/testimonies-route-state";
-import { AudioUploadPolicyModal } from "@/features/admin/presentation/components/testimonies/audio-upload-policy-modal";
 
 function StatusPill({ status }: { status: string }) {
   const cls =
@@ -1669,8 +1668,7 @@ export function TestimoniesOverlays({
       {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "text" && !isDismissed(deleteKey, "remove") ? <DeleteTextTestimonyModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(deleteKey)} /> : null}
       {viewModel.showDeleteModal && viewModel.selectedRow?.kind === "audio" && !isDismissed(deleteKey, "remove") ? <DeleteTextTestimonyModal row={viewModel.selectedRow} viewModel={viewModel} onClose={() => dismissRouteOverlay(deleteKey)} /> : null}
       {(viewModel.showFilterModal && !isDismissed("filter", "filter")) || showFilterModal ? <FilterModal viewModel={viewModel} onClose={closeFilterModal} /> : null}
-      {viewModel.showSettingsModal && viewModel.activeTab === "audio" && !isDismissed("settings", "settings") ? <AudioUploadPolicyModal onClose={() => dismissRouteOverlay("settings")} /> : null}
-      {viewModel.showSettingsModal && viewModel.activeTab !== "audio" && !isDismissed("settings", "settings") ? <TestimonySettingsModal viewModel={viewModel} onClose={() => dismissRouteOverlay("settings")} /> : null}
+      {viewModel.showSettingsModal && !isDismissed("settings", "settings") ? <TestimonySettingsModal viewModel={viewModel} onClose={() => dismissRouteOverlay("settings")} /> : null}
     </>
   );
 }

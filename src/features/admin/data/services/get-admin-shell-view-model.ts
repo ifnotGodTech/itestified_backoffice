@@ -75,6 +75,11 @@ export function getAdminShellViewModel(input: {
               href: "/testimonies?tab=video&screen=upload",
               active: input.activeChildHref === "/testimonies?tab=video&screen=upload",
             },
+            {
+              label: "Upload Policy",
+              href: "/testimonies/upload-policy",
+              active: input.activeChildHref === "/testimonies/upload-policy",
+            },
           ],
         };
       }
