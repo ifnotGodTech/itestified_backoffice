@@ -1,63 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type {
-  HomeManagementDisplayRule,
-  HomeManagementFeaturedTestimony,
-  HomeManagementRow,
-  HomeManagementSectionKey,
-  HomeManagementTab,
-  HomeManagementViewModel,
-} from "@/features/admin/domain/entities/home-management";
+import type { HomeManagementRow, HomeManagementViewModel } from "@/features/admin/domain/entities/home-management";
 import { AdminDashboardShell } from "@/features/admin/presentation/components/admin-dashboard-shell";
 import { HomeManagementContentTable } from "@/features/admin/presentation/components/home-management/home-management-table";
 import { HomeManagementOverlays } from "@/features/admin/presentation/components/home-management/home-management-overlays";
-import { HomeManagementSectionOrderCard } from "@/features/admin/presentation/components/home-management/home-management-section-order";
-import { HomeManagementAddTestimonyModal } from "@/features/admin/presentation/components/home-management/home-management-add-testimony-modal";
 import { HomeManagementAddPictureModal } from "@/features/admin/presentation/components/home-management/home-management-add-picture-modal";
 import { HomeManagementApplyConfirmModal } from "@/features/admin/presentation/components/home-management/home-management-apply-confirm-modal";
-import { sortFeaturedPicturesByRule, sortFeaturedTestimoniesByRule } from "@/features/admin/data/services/get-home-management-view-model";
-import { buildHomeManagementHref } from "@/features/admin/presentation/state/home-management-route-state";
+import { sortFeaturedPicturesByRule } from "@/features/admin/data/services/get-home-management-view-model";
 
-function countLabelForTab(activeTab: HomeManagementViewModel["activeTab"]) {
-  return activeTab === "pictures" ? "Number of Pictures" : "Number of Testimonies";
-}
-
-function homeTabHref(viewModel: HomeManagementViewModel, tab: HomeManagementTab) {
-  return buildHomeManagementHref({
-    tab,
-    rule: viewModel.displayRule,
-    count: viewModel.testimonyCount,
-  });
-}
-
-function homeApiHref(viewModel: HomeManagementViewModel, tab: HomeManagementTab) {
-  const params = new URLSearchParams();
-  params.set("tab", tab);
-  params.set("rule", viewModel.displayRule);
-  params.set("count", String(viewModel.testimonyCount));
-  return `/api/admin/home-management/list?${params.toString()}`;
-}
-
-function loadingHomeViewModel(viewModel: HomeManagementViewModel, tab: HomeManagementTab): HomeManagementViewModel {
-  return {
-    ...viewModel,
-    activeTab: tab,
-    phaseState: "loading",
-    rows: [],
-    selectedRow: null,
-    availableCount: 0,
-    showActionMenu: false,
-    showDetails: false,
-    showRemoveConfirm: false,
-  };
-}
-
+/** Phase 35: the featured pictures woven into the app's Home feed -- all that
+ * remains of this page once the featured testimonies and the section order
+ * were retired. */
 export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementViewModel }) {
   const [currentViewModel, setCurrentViewModel] = useState(viewModel);
-  const [tabCache, setTabCache] = useState<Partial<Record<HomeManagementTab, HomeManagementViewModel>>>({
-    [viewModel.activeTab]: viewModel,
-  });
   const [menuRow, setMenuRow] = useState<HomeManagementRow | null>(null);
   const [detailRow, setDetailRow] = useState<HomeManagementRow | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -65,7 +21,6 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
   const [curationBusy, setCurationBusy] = useState(false);
   const [curationError, setCurationError] = useState<string | null>(null);
   const [pendingApply, setPendingApply] = useState<{
-    testimonyIds: number[];
     pictureIds: number[];
     removedTitles: string[];
     keptCount: number;
@@ -73,41 +28,19 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
 
   useEffect(() => {
     setCurrentViewModel(viewModel);
-    setTabCache({ [viewModel.activeTab]: viewModel });
   }, [viewModel]);
 
-  async function submitCuration(
-    featuredTestimonyIds: number[],
-    featuredPictureIds: number[],
-    sectionOrder: HomeManagementSectionKey[],
-  ) {
+  async function submitCuration(featuredPictureIds: number[]) {
     setCurationBusy(true);
     setCurationError(null);
     try {
       const response = await fetch("/api/admin/content/home-curation", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          featuredTestimonyIds,
-          featuredPictureIds,
-          sectionOrder,
-          tab: currentViewModel.activeTab,
-          rule: currentViewModel.displayRule,
-          count: currentViewModel.testimonyCount,
-        }),
+        body: JSON.stringify({ featuredPictureIds, count: currentViewModel.testimonyCount }),
       });
       if (!response.ok) throw new Error("Unable to update home page curation.");
-      const nextViewModel = (await response.json()) as HomeManagementViewModel;
-      // featuredOrder/featuredPictureOrder/sectionOrder are global curation
-      // state shared by every tab's view model, not tab-scoped -- a curation
-      // change here makes every OTHER cached tab stale. Drop them instead of
-      // patching just the active one, or switching to a stale tab and
-      // curating from there would silently resubmit pre-change data and
-      // wipe out what changed here (e.g. adding a picture from a Pictures
-      // tab cached before testimonies were added would blow away those
-      // testimonies).
-      setTabCache({ [nextViewModel.activeTab]: nextViewModel });
-      setCurrentViewModel(nextViewModel);
+      setCurrentViewModel((await response.json()) as HomeManagementViewModel);
       setShowAddModal(false);
     } catch {
       setCurationError("We could not update the home page right now. Please try again.");
@@ -117,20 +50,6 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
     }
   }
 
-  function moveFeatured(id: number, direction: "up" | "down") {
-    const order = currentViewModel.featuredOrder;
-    const index = order.findIndex((item) => item.id === id);
-    const swapWith = direction === "up" ? index - 1 : index + 1;
-    if (index === -1 || swapWith < 0 || swapWith >= order.length) return;
-    const reordered = [...order];
-    [reordered[index], reordered[swapWith]] = [reordered[swapWith], reordered[index]];
-    submitCuration(
-      reordered.map((item) => item.id),
-      currentViewModel.featuredPictureOrder.map((item) => item.id),
-      currentViewModel.sectionOrder.map((section) => section.key),
-    );
-  }
-
   function moveFeaturedPicture(id: number, direction: "up" | "down") {
     const order = currentViewModel.featuredPictureOrder;
     const index = order.findIndex((item) => item.id === id);
@@ -138,136 +57,44 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
     if (index === -1 || swapWith < 0 || swapWith >= order.length) return;
     const reordered = [...order];
     [reordered[index], reordered[swapWith]] = [reordered[swapWith], reordered[index]];
-    submitCuration(
-      currentViewModel.featuredOrder.map((item) => item.id),
-      reordered.map((item) => item.id),
-      currentViewModel.sectionOrder.map((section) => section.key),
-    );
-  }
-
-  function moveSection(key: HomeManagementSectionKey, direction: "up" | "down") {
-    const order = currentViewModel.sectionOrder;
-    const index = order.findIndex((item) => item.key === key);
-    const swapWith = direction === "up" ? index - 1 : index + 1;
-    if (index === -1 || swapWith < 0 || swapWith >= order.length) return;
-    const reordered = [...order];
-    [reordered[index], reordered[swapWith]] = [reordered[swapWith], reordered[index]];
-    submitCuration(
-      currentViewModel.featuredOrder.map((item) => item.id),
-      currentViewModel.featuredPictureOrder.map((item) => item.id),
-      reordered.map((section) => section.key),
-    );
-  }
-
-  function addTestimony(id: number) {
-    setAddPendingId(id);
-    submitCuration(
-      [...currentViewModel.featuredOrder.map((item) => item.id), id],
-      currentViewModel.featuredPictureOrder.map((item) => item.id),
-      currentViewModel.sectionOrder.map((section) => section.key),
-    );
+    submitCuration(reordered.map((item) => item.id));
   }
 
   function addPicture(id: number) {
     setAddPendingId(id);
-    submitCuration(
-      currentViewModel.featuredOrder.map((item) => item.id),
-      [...currentViewModel.featuredPictureOrder.map((item) => item.id), id],
-      currentViewModel.sectionOrder.map((section) => section.key),
-    );
+    submitCuration([...currentViewModel.featuredPictureOrder.map((item) => item.id), id]);
   }
 
-  // "Apply" sorts + caps the currently-featured set for the active tab's
-  // type by the chosen rule, rather than only filtering the admin's own
-  // table view -- items beyond the count are dropped from what mobile sees.
-  // Because that's a real, hard-to-reverse deletion (not a display filter),
-  // this only computes the plan; nothing is submitted until the admin
-  // confirms exactly what's about to be removed (see pendingApply below).
-  function planApplyDisplayRule(rule: HomeManagementDisplayRule, count: number) {
-    if (currentViewModel.activeTab === "pictures") {
-      const all = currentViewModel.featuredPictureOrder;
-      const kept = sortFeaturedPicturesByRule(all).slice(0, count);
-      const keptIds = new Set(kept.map((item) => item.id));
-      const removedTitles = all.filter((item) => !keptIds.has(item.id)).map((item) => item.title);
-      return {
-        testimonyIds: currentViewModel.featuredOrder.map((item) => item.id),
-        pictureIds: kept.map((item) => item.id),
-        removedTitles,
-        keptCount: kept.length,
-      };
-    }
-    const targetType = currentViewModel.activeTab;
-    const kept = sortFeaturedTestimoniesByRule(
-      currentViewModel.featuredOrder.filter((item) => item.testimonyType === targetType),
-      rule,
-    ).slice(0, count);
+  // "Apply" keeps the newest N featured pictures, rather than only filtering
+  // the admin's own table view -- items beyond the count are dropped from
+  // what the app shows. Because that's a real, hard-to-reverse deletion (not
+  // a display filter), this only computes the plan; nothing is submitted
+  // until the admin confirms exactly what's about to be removed.
+  function planApply(count: number) {
+    const all = currentViewModel.featuredPictureOrder;
+    const kept = sortFeaturedPicturesByRule(all).slice(0, count);
     const keptIds = new Set(kept.map((item) => item.id));
-    const removedTitles = currentViewModel.featuredOrder
-      .filter((item) => item.testimonyType === targetType && !keptIds.has(item.id))
-      .map((item) => item.title);
-    let keptIndex = 0;
-    const merged = currentViewModel.featuredOrder
-      .map((item): HomeManagementFeaturedTestimony | null => {
-        if (item.testimonyType !== targetType) return item;
-        const replacement = kept[keptIndex] ?? null;
-        keptIndex += 1;
-        return replacement;
-      })
-      .filter((item): item is HomeManagementFeaturedTestimony => item !== null);
     return {
-      testimonyIds: merged.map((item) => item.id),
-      pictureIds: currentViewModel.featuredPictureOrder.map((item) => item.id),
-      removedTitles,
+      pictureIds: kept.map((item) => item.id),
+      removedTitles: all.filter((item) => !keptIds.has(item.id)).map((item) => item.title),
       keptCount: kept.length,
     };
   }
 
-  function requestApplyDisplayRule(rule: HomeManagementDisplayRule, count: number) {
-    const plan = planApplyDisplayRule(rule, count);
+  function requestApply(count: number) {
+    const plan = planApply(count);
     if (plan.removedTitles.length === 0) {
-      // Nothing would actually be removed (e.g. reordering within the same
-      // set, or a count that doesn't cut anything) -- no need to interrupt
-      // with a confirmation for a change that can't lose anything.
-      submitCuration(plan.testimonyIds, plan.pictureIds, currentViewModel.sectionOrder.map((section) => section.key));
+      // Nothing would be removed, so there's nothing to confirm.
+      submitCuration(plan.pictureIds);
       return;
     }
     setPendingApply(plan);
   }
 
-  function confirmApplyDisplayRule() {
+  function confirmApply() {
     if (!pendingApply) return;
-    submitCuration(
-      pendingApply.testimonyIds,
-      pendingApply.pictureIds,
-      currentViewModel.sectionOrder.map((section) => section.key),
-    );
+    submitCuration(pendingApply.pictureIds);
     setPendingApply(null);
-  }
-
-  async function switchTab(tab: HomeManagementTab) {
-    if (tab === currentViewModel.activeTab) return;
-    setMenuRow(null);
-    setDetailRow(null);
-    window.history.pushState(null, "", homeTabHref(currentViewModel, tab));
-    const cached = tabCache[tab];
-    if (cached) {
-      setCurrentViewModel(cached);
-      return;
-    }
-    setCurrentViewModel((current) => loadingHomeViewModel(current, tab));
-    try {
-      const response = await fetch(homeApiHref(currentViewModel, tab));
-      if (!response.ok) throw new Error("Unable to load homepage content.");
-      const nextViewModel = (await response.json()) as HomeManagementViewModel;
-      setTabCache((current) => ({ ...current, [tab]: nextViewModel }));
-      setCurrentViewModel(nextViewModel);
-    } catch {
-      setCurrentViewModel((current) => ({
-        ...loadingHomeViewModel(current, tab),
-        phaseState: "error",
-        errorMessage: "We could not load homepage content right now. Please try again.",
-      }));
-    }
   }
 
   const interactiveViewModel: HomeManagementViewModel = {
@@ -280,47 +107,26 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
   return (
     <AdminDashboardShell viewModel={interactiveViewModel.shell} pageTitle="Home Page Management">
       <div className="space-y-5">
-        <HomeManagementSectionOrderCard sectionOrder={interactiveViewModel.sectionOrder} onMove={moveSection} disabled={curationBusy} />
-
         {curationError ? <p className="text-[13px] text-[#ef4335]">{curationError}</p> : null}
 
         <div className="flex items-center justify-between gap-2">
-          <div className="flex gap-2">
-            {interactiveViewModel.tabs.map((tab) => {
-              const active = tab.key === interactiveViewModel.activeTab;
-
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => switchTab(tab.key)}
-                  aria-pressed={active}
-                  className={`rounded-[7px] px-4 py-2 text-[13px] ${
-                    active ? "bg-[#9B68D5] text-white" : "bg-[var(--color-surface-elevated)] text-white/45"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
+          <p className="text-[14px] text-white/70">The pictures that appear between testimonies in the app&apos;s Home feed.</p>
           <button
             type="button"
             onClick={() => setShowAddModal(true)}
             className="inline-flex h-[38px] items-center justify-center gap-1 rounded-[8px] bg-[#9B68D5] px-4 text-[13px] text-white"
           >
-            {interactiveViewModel.activeTab === "pictures" ? "+ Add Picture" : "+ Add Testimony"}
+            + Add Picture
           </button>
         </div>
 
         <form
-          key={`${interactiveViewModel.activeTab}-${interactiveViewModel.displayRule}-${interactiveViewModel.testimonyCount}`}
+          key={`${interactiveViewModel.displayRule}-${interactiveViewModel.testimonyCount}`}
           onSubmit={(event) => {
             event.preventDefault();
             const formData = new FormData(event.currentTarget);
-            const rule = String(formData.get("rule") ?? interactiveViewModel.displayRule) as HomeManagementDisplayRule;
             const count = Number(formData.get("count") ?? interactiveViewModel.testimonyCount) || interactiveViewModel.testimonyCount;
-            requestApplyDisplayRule(rule, count);
+            requestApply(count);
           }}
           className={`rounded-[18px] bg-[var(--color-surface-elevated)] px-4 py-4 ${
             interactiveViewModel.phaseState === "loading" || curationBusy ? "pointer-events-none opacity-40" : ""
@@ -346,7 +152,7 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
               </span>
             </label>
             <label className="space-y-2">
-              <span className="text-[16px] font-medium text-white/90">{countLabelForTab(interactiveViewModel.activeTab)}</span>
+              <span className="text-[16px] font-medium text-white/90">Number of Pictures</span>
               <input
                 type="number"
                 name="count"
@@ -354,7 +160,7 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
                 max={interactiveViewModel.availableCount}
                 defaultValue={interactiveViewModel.testimonyCount}
                 className="h-[44px] w-full rounded-[8px] bg-[var(--color-surface-elevated)] px-4 text-[15px] text-white/75 outline-none"
-                aria-label={countLabelForTab(interactiveViewModel.activeTab)}
+                aria-label="Number of Pictures"
               />
             </label>
             <div className="flex items-end">
@@ -368,25 +174,14 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
         <HomeManagementContentTable
           viewModel={interactiveViewModel}
           onOpenMenu={(row) => setMenuRow((current) => (current?.id === row.id ? null : row))}
-          onMoveFeatured={moveFeatured}
           onMoveFeaturedPicture={moveFeaturedPicture}
         />
       </div>
 
-      {showAddModal && interactiveViewModel.activeTab === "pictures" ? (
+      {showAddModal ? (
         <HomeManagementAddPictureModal
           availablePictures={interactiveViewModel.availablePictures}
           onAdd={addPicture}
-          onClose={() => setShowAddModal(false)}
-          pendingId={addPendingId}
-        />
-      ) : null}
-
-      {showAddModal && interactiveViewModel.activeTab !== "pictures" ? (
-        <HomeManagementAddTestimonyModal
-          activeTab={interactiveViewModel.activeTab}
-          availableTestimonies={interactiveViewModel.availableTestimonies}
-          onAdd={addTestimony}
           onClose={() => setShowAddModal(false)}
           pendingId={addPendingId}
         />
@@ -397,7 +192,7 @@ export function HomeManagementPage({ viewModel }: { viewModel: HomeManagementVie
           removedTitles={pendingApply.removedTitles}
           keptCount={pendingApply.keptCount}
           busy={curationBusy}
-          onConfirm={confirmApplyDisplayRule}
+          onConfirm={confirmApply}
           onCancel={() => setPendingApply(null)}
         />
       ) : null}

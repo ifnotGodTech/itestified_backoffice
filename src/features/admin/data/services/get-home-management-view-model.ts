@@ -2,119 +2,20 @@ import { getAdminShellViewModel } from "@/features/admin/data/services/get-admin
 import { backendBaseUrl } from "@/core/auth/backend";
 import type {
   HomeManagementAvailablePicture,
-  HomeManagementAvailableTestimony,
   HomeManagementDisplayRule,
   HomeManagementFeaturedPicture,
-  HomeManagementFeaturedTestimony,
   HomeManagementPhaseState,
   HomeManagementRow,
-  HomeManagementSectionKey,
-  HomeManagementSectionOrderItem,
-  HomeManagementTab,
   HomeManagementViewModel,
 } from "@/features/admin/domain/entities/home-management";
 
-// Pictures track no engagement metric at all in the backend, so "Trending"
-// (view_count + comment_count) is only meaningful for testimonies.
-function displayRuleOptionsForTab(tab: HomeManagementTab): HomeManagementDisplayRule[] {
-  return tab === "pictures" ? ["Most Recent"] : ["Trending", "Most Recent"];
-}
+// Phase 35: this page now manages only the featured pictures woven into the
+// app's Home feed (the featured testimonies and section order were retired).
+// Pictures track no engagement metric, so "Most Recent" is the only rule.
+const DISPLAY_RULE_OPTIONS: HomeManagementDisplayRule[] = ["Most Recent"];
 
-const SECTION_LABELS: Record<HomeManagementSectionKey, string> = {
-  featured_testimonies: "Featured Testimonies",
-  inspirational_picture: "Inspirational Picture",
-  scripture: "Scripture of the Day",
-};
-
-const DEFAULT_SECTION_ORDER: HomeManagementSectionOrderItem[] = [
-  { key: "featured_testimonies", label: SECTION_LABELS.featured_testimonies },
-  { key: "inspirational_picture", label: SECTION_LABELS.inspirational_picture },
-  { key: "scripture", label: SECTION_LABELS.scripture },
-];
-
-const baseRows: HomeManagementRow[] = [
-  {
-    id: 1,
-    kind: "video",
-    title: "God healed...",
-    category: "Healing",
-    source: "You-tube",
-    dateUploaded: "08/08/2024",
-    uploadedBy: "Super Admin",
-    views: 92,
-    likes: 44,
-    comments: 12,
-    shares: 32,
-    thumbnailLabel: "God Healed Me",
-    thumbnailSrc: "/admin-logo.svg",
-    status: "Uploaded",
-  },
-  {
-    id: 2,
-    kind: "video",
-    title: "God healed...",
-    category: "Deliverance",
-    source: "You-tube",
-    dateUploaded: "09/08/2024",
-    uploadedBy: "Super Admin",
-    views: 40,
-    likes: 16,
-    comments: 4,
-    shares: 9,
-    thumbnailLabel: "God Healed Me",
-    thumbnailSrc: "/admin-logo.svg",
-    status: "Uploaded",
-  },
-  {
-    id: 3,
-    kind: "video",
-    title: "God healed...",
-    category: "Healing",
-    source: "You-tube",
-    dateUploaded: "10/08/2024",
-    uploadedBy: "Super Admin",
-    views: 18,
-    likes: 7,
-    comments: 2,
-    shares: 4,
-    thumbnailLabel: "God Healed Me",
-    thumbnailSrc: "/admin-icon.svg",
-    status: "Uploaded",
-  },
-  {
-    id: 4,
-    kind: "video",
-    title: "God healed...",
-    category: "Healing",
-    source: "You-tube",
-    dateUploaded: "11/08/2024",
-    uploadedBy: "Super Admin",
-    views: 71,
-    likes: 24,
-    comments: 6,
-    shares: 18,
-    thumbnailLabel: "God Healed Me",
-    thumbnailSrc: "/admin-icon.svg",
-    status: "Uploaded",
-  },
-  {
-    id: 5,
-    kind: "video",
-    title: "God healed...",
-    category: "Healing",
-    source: "You-tube",
-    dateUploaded: "12/08/2024",
-    uploadedBy: "Super Admin",
-    views: 27,
-    likes: 10,
-    comments: 3,
-    shares: 41,
-    thumbnailLabel: "God Healed Me",
-    thumbnailSrc: "/admin-icon.svg",
-    status: "Uploaded",
-  },
-];
-
+// Sample rows for the page's static render and tests; the real page loads
+// from the backend via getHomeManagementViewModelFromApi.
 const pictureRows: HomeManagementRow[] = [
   {
     id: 1,
@@ -150,100 +51,15 @@ const pictureRows: HomeManagementRow[] = [
   },
 ];
 
-const textRows: HomeManagementRow[] = [
-  {
-    id: 1,
-    kind: "text",
-    title: "Miraculous Healing After Prayer",
-    category: "Healing",
-    source: "App submission",
-    dateUploaded: "08/08/2024",
-    uploadedBy: "Super Admin",
-    submitterName: "John Stone",
-    submitterEmail: "Johnstone@gmail.com",
-    body: "I want to give all the glory to God for the miraculous healing I received. For the past few months, I had been suffering from severe back pain that made it difficult to even get out of bed in the morning. I tried everything from medication to physical therapy, but nothing seemed to work. One Sunday, after service, I approached the prayer team and asked for prayers for healing. As they laid hands on me and prayed, I felt a warmth spread through my back, and the pain immediately started to decrease. By the time I got home that day, the pain was completely gone. It has now been three weeks, and I haven't felt even a hint of discomfort. I am so thankful to God for this miracle and want to encourage anyone who is struggling to believe in His power to heal. Our God is a healer, and He hears our prayers!",
-    views: 66,
-    likes: 21,
-    comments: 12,
-    shares: 17,
-    thumbnailLabel: "Written Testimony",
-    thumbnailSrc: "/admin-logo.svg",
-    status: "Uploaded",
-  },
-  {
-    id: 2,
-    kind: "text",
-    title: "Saved by Grace",
-    category: "Salvation",
-    source: "App submission",
-    dateUploaded: "12/08/2024",
-    uploadedBy: "Super Admin",
-    submitterName: "Sarah James",
-    submitterEmail: "sarahjames@gmail.com",
-    body: "I had been far from God for years, but through a difficult season He drew me back and reminded me of His mercy. I surrendered my life fully to Christ and found a peace I never had before. I am grateful for His grace and for a church family that helped me find my way back.",
-    views: 24,
-    likes: 9,
-    comments: 5,
-    shares: 22,
-    thumbnailLabel: "Written Testimony",
-    thumbnailSrc: "/admin-logo.svg",
-    status: "Uploaded",
-  },
-];
-
-const tabs: Array<{ key: HomeManagementTab; label: string }> = [
-  { key: "video", label: "Video Testimonies" },
-  { key: "text", label: "Text Testimonies" },
-  { key: "pictures", label: "Inspirational Pictures" },
-];
-
-function normalizeTab(tab?: string): HomeManagementTab {
-  if (tab === "text" || tab === "pictures") return tab;
-  return "video";
-}
-
-function normalizeDisplayRule(rule?: string): HomeManagementDisplayRule {
-  if (rule === "Most Recent") return rule;
-  return "Trending";
-}
-
 function normalizePhaseState(value?: string): HomeManagementPhaseState {
   if (value === "loading" || value === "empty" || value === "error") return value;
   return "populated";
 }
 
-function normalizeTestimonyCount(value: string | undefined, max: number) {
+function normalizeCount(value: string | undefined, max: number) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return max;
   return Math.min(Math.max(1, Math.floor(parsed)), max);
-}
-
-function toSortableDateValue(value: string) {
-  const [day, month, year] = value.split("/").map(Number);
-  return Number(`${year}${String(month).padStart(2, "0")}${String(day).padStart(2, "0")}`);
-}
-
-function sortRows(rows: HomeManagementRow[], rule: HomeManagementDisplayRule) {
-  const clonedRows = [...rows];
-
-  if (rule === "Most Recent") {
-    return clonedRows.sort((a, b) => toSortableDateValue(b.dateUploaded) - toSortableDateValue(a.dateUploaded));
-  }
-
-  return clonedRows.sort((a, b) => b.views + b.comments - (a.views + a.comments));
-}
-
-// Real Display Rule / Count semantics: sort the currently-featured set of
-// the active tab's type by the chosen rule, then keep only the top N --
-// items beyond N are dropped from the featured list. Operates in-place on
-// combined position order so untouched items (the other testimony type, on
-// video/text tabs) keep their relative slots.
-export function sortFeaturedTestimoniesByRule(items: HomeManagementFeaturedTestimony[], rule: HomeManagementDisplayRule) {
-  const cloned = [...items];
-  if (rule === "Most Recent") {
-    return cloned.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }
-  return cloned.sort((a, b) => b.viewCount + b.commentCount - (a.viewCount + a.commentCount));
 }
 
 export function sortFeaturedPicturesByRule(items: HomeManagementFeaturedPicture[]) {
@@ -251,6 +67,7 @@ export function sortFeaturedPicturesByRule(items: HomeManagementFeaturedPicture[
 }
 
 export function getHomeManagementViewModel(input: {
+  /** Ignored: kept so old links (?tab=video, ?rule=Trending) still open the page. */
   tab?: string;
   rule?: string;
   count?: string;
@@ -261,12 +78,9 @@ export function getHomeManagementViewModel(input: {
   removeId?: string;
   success?: string;
 }): HomeManagementViewModel {
-  const activeTab = normalizeTab(input.tab);
-  const displayRule = normalizeDisplayRule(input.rule);
   const phaseState = normalizePhaseState(input.state);
-  const sortedRows = sortRows(activeTab === "pictures" ? pictureRows : activeTab === "text" ? textRows : baseRows, displayRule);
-  const testimonyCount = normalizeTestimonyCount(input.count, sortedRows.length);
-  const rows = phaseState === "populated" ? sortedRows.slice(0, testimonyCount) : [];
+  const count = normalizeCount(input.count, pictureRows.length);
+  const rows = phaseState === "populated" ? pictureRows.slice(0, count) : [];
   const selectedId = Number(input.menuId ?? input.viewId ?? input.removeId ?? "");
   const selectedRow = Number.isFinite(selectedId) ? rows.find((row) => row.id === selectedId) ?? null : null;
 
@@ -275,36 +89,25 @@ export function getHomeManagementViewModel(input: {
       activeHref: "/home-management",
       fullName: input.fullName,
     }),
-    activeTab,
+    activeTab: "pictures",
     phaseState,
-    displayRule,
-    displayRuleOptions: displayRuleOptionsForTab(activeTab),
-    testimonyCount,
-    availableCount: sortedRows.length,
+    displayRule: "Most Recent",
+    displayRuleOptions: DISPLAY_RULE_OPTIONS,
+    testimonyCount: count,
+    availableCount: pictureRows.length,
     errorMessage: phaseState === "error" ? "We could not load homepage content right now. Please try again." : undefined,
-    tabs,
     rows,
     selectedRow,
     showActionMenu: Boolean(input.menuId),
     showDetails: Boolean(input.viewId),
     showRemoveConfirm: Boolean(input.removeId),
     showSuccess: input.success === "remove",
-    featuredOrder: [...baseRows, ...textRows].map((row) => ({
-      id: row.id,
-      title: row.title,
-      testimonyType: row.kind as "video" | "text",
-      createdAt: new Date().toISOString(),
-      viewCount: row.views,
-      commentCount: row.comments,
-    })),
-    availableTestimonies: [],
     featuredPictureOrder: pictureRows.map((row) => ({
       id: row.id,
       title: row.title,
       createdAt: new Date().toISOString(),
     })),
     availablePictures: [],
-    sectionOrder: DEFAULT_SECTION_ORDER,
   };
 }
 
@@ -340,46 +143,9 @@ export async function getHomeManagementViewModelFromApi(
 
     const curationPayload = (await curationResponse.json()) as Record<string, unknown>;
     const vm = getHomeManagementViewModel(input);
-    const featured = (curationPayload.featured_testimonies as Array<Record<string, unknown>> | undefined) ?? [];
     const featuredPictures = (curationPayload.featured_pictures as Array<Record<string, unknown>> | undefined) ?? [];
 
-    const videoRows: HomeManagementRow[] = featured
-      .filter((item) => String(item.testimony_type ?? "") === "video")
-      .map((item, index) => ({
-        id: Number(item.testimony_id ?? index + 1),
-        kind: "video",
-        title: String(item.title ?? ""),
-        category: String(item.category ?? ""),
-        source: "App submission",
-        dateUploaded: formatIsoDate(String(item.created_at ?? "")),
-        uploadedBy: "Content Admin",
-        views: Number(item.view_count ?? 0),
-        likes: 0,
-        comments: Number(item.comment_count ?? 0),
-        shares: 0,
-        thumbnailLabel: String(item.title ?? ""),
-        thumbnailSrc: String(item.thumbnail_url ?? "") || undefined,
-        status: "Uploaded",
-      }));
-    const textRows: HomeManagementRow[] = featured
-      .filter((item) => String(item.testimony_type ?? "") !== "video")
-      .map((item, index) => ({
-        id: Number(item.testimony_id ?? index + 1),
-        kind: "text",
-        title: String(item.title ?? ""),
-        category: String(item.category ?? ""),
-        source: "App submission",
-        dateUploaded: formatIsoDate(String(item.created_at ?? "")),
-        uploadedBy: "Content Admin",
-        body: String(item.body ?? ""),
-        views: Number(item.view_count ?? 0),
-        likes: 0,
-        comments: Number(item.comment_count ?? 0),
-        shares: 0,
-        thumbnailLabel: "Written Testimony",
-        status: "Uploaded",
-      }));
-    const pictureRowsMapped: HomeManagementRow[] = featuredPictures.map((item, index) => ({
+    const rows: HomeManagementRow[] = featuredPictures.map((item, index) => ({
       id: Number(item.picture_id ?? index + 1),
       kind: "picture",
       title: String(item.title ?? ""),
@@ -396,27 +162,9 @@ export async function getHomeManagementViewModelFromApi(
       thumbnailSrc: String(item.image_url ?? "") || undefined,
       status: "Uploaded",
     }));
-
-    const activeRows = vm.activeTab === "video" ? videoRows : vm.activeTab === "text" ? textRows : pictureRowsMapped;
     const selectedId = Number(input.menuId ?? input.viewId ?? input.removeId ?? "");
-    const selectedRow = Number.isFinite(selectedId) ? activeRows.find((row) => row.id === selectedId) ?? null : null;
+    const selectedRow = Number.isFinite(selectedId) ? rows.find((row) => row.id === selectedId) ?? null : null;
 
-    const featuredOrder: HomeManagementFeaturedTestimony[] = featured.map((item) => ({
-      id: Number(item.testimony_id ?? 0),
-      title: String(item.title ?? ""),
-      testimonyType: String(item.testimony_type ?? "") === "video" ? "video" : "text",
-      createdAt: String(item.created_at ?? ""),
-      viewCount: Number(item.view_count ?? 0),
-      commentCount: Number(item.comment_count ?? 0),
-    }));
-    const availableTestimonies: HomeManagementAvailableTestimony[] = (
-      (curationPayload.available_testimonies as Array<Record<string, unknown>> | undefined) ?? []
-    ).map((item) => ({
-      id: Number(item.id ?? 0),
-      title: String(item.title ?? ""),
-      category: String(item.category ?? ""),
-      testimonyType: String(item.testimony_type ?? "") === "video" ? "video" : "text",
-    }));
     const featuredPictureOrder: HomeManagementFeaturedPicture[] = featuredPictures.map((item) => ({
       id: Number(item.picture_id ?? 0),
       title: String(item.title ?? ""),
@@ -429,28 +177,16 @@ export async function getHomeManagementViewModelFromApi(
       title: String(item.title ?? ""),
       category: String(item.category ?? ""),
     }));
-    const sectionOrderRaw = (curationPayload.section_order as Array<Record<string, unknown>> | undefined) ?? [];
-    const sectionOrder: HomeManagementSectionOrderItem[] = sectionOrderRaw
-      .slice()
-      .sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0))
-      .map((item) => {
-        const key = String(item.section ?? "") as HomeManagementSectionKey;
-        return { key, label: SECTION_LABELS[key] ?? key };
-      });
 
     return {
       ...vm,
-      displayRuleOptions: displayRuleOptionsForTab(vm.activeTab),
-      phaseState: activeRows.length ? "populated" : "empty",
-      availableCount: activeRows.length,
-      testimonyCount: Math.min(vm.testimonyCount, Math.max(activeRows.length, 1)),
-      rows: activeRows,
+      phaseState: rows.length ? "populated" : "empty",
+      availableCount: rows.length,
+      testimonyCount: Math.min(vm.testimonyCount, Math.max(rows.length, 1)),
+      rows,
       selectedRow,
-      featuredOrder,
-      availableTestimonies,
       featuredPictureOrder,
       availablePictures,
-      sectionOrder: sectionOrder.length ? sectionOrder : DEFAULT_SECTION_ORDER,
     };
   } catch {
     return getHomeManagementViewModel({ ...input, state: "error" });

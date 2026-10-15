@@ -28,10 +28,10 @@ describe("HomeManagementPage", () => {
     render(<HomeManagementPage viewModel={getHomeManagementViewModel({ fullName: "Elvis Igiebor" })} />);
 
     expect(screen.getByRole("heading", { name: "Home Page Management" })).toBeInTheDocument();
-    expect(screen.getByText("Video Testimonies")).toBeInTheDocument();
-    expect(screen.getByText("Featured Testimonies")).toBeInTheDocument();
+    expect(screen.getByText("Featured Pictures")).toBeInTheDocument();
     expect(screen.getByText("Display Rule")).toBeInTheDocument();
-    expect(screen.getAllByText("God healed...")).toHaveLength(5);
+    expect(screen.getByText("Deeply Loved")).toBeInTheDocument();
+    expect(screen.getByText("Grace Note")).toBeInTheDocument();
   });
 
   test("renders the selected display rule in the filter control", () => {
@@ -40,60 +40,30 @@ describe("HomeManagementPage", () => {
     expect(screen.getByRole("combobox", { name: "Display Rule" })).toHaveValue("Most Recent");
   });
 
-  test("switches home management tabs on the client", async () => {
-    const user = userEvent.setup();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation((url: string) => {
-        const tab = new URL(url, "http://localhost").searchParams.get("tab") ?? "video";
-        return Promise.resolve({
-          ok: true,
-          json: async () => getHomeManagementViewModel({ tab }),
-        });
-      }),
-    );
-    render(<HomeManagementPage viewModel={getHomeManagementViewModel({})} />);
+  test("renders the selected picture count and limits visible rows", () => {
+    render(<HomeManagementPage viewModel={getHomeManagementViewModel({ count: "1" })} />);
 
-    await user.click(screen.getByRole("button", { name: "Inspirational Pictures" }));
-
-    await waitFor(() => {
-      expect(screen.getByText("Featured Pictures")).toBeInTheDocument();
-    });
-    expect(screen.getByRole("button", { name: "Inspirational Pictures" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("spinbutton", { name: "Number of Pictures" })).toHaveValue(1);
+    expect(screen.getByText("Deeply Loved")).toBeInTheDocument();
+    expect(screen.queryByText("Grace Note")).not.toBeInTheDocument();
   });
 
-  // Regression coverage: the Display Rule and count fields are uncontrolled inputs
-  // (defaultValue) with no remount trigger. Switching tabs used to leave them stuck on
-  // whatever the first-loaded tab's values were, even after a real fetch returned fresh
-  // data for the new tab — never updating, not even after loading finished.
-  test("updates the display rule and count fields after switching tabs, not just the table", async () => {
-    const user = userEvent.setup();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation(() => {
-        return Promise.resolve({
-          ok: true,
-          json: async () => getHomeManagementViewModel({ tab: "pictures", rule: "Most Recent", count: "2" }),
-        });
-      }),
-    );
-    render(<HomeManagementPage viewModel={getHomeManagementViewModel({ tab: "video", rule: "Trending" })} />);
+  // Phase 35 retired the featured testimonies and the section order: only
+  // the featured pictures woven into the app's Home feed are managed here.
+  test("offers no testimony tabs or section order, and saving sends only pictures", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => getHomeManagementViewModel({}) });
+    vi.stubGlobal("fetch", fetchSpy);
+    render(<HomeManagementPage viewModel={getHomeManagementViewModel({ tab: "video" })} />);
 
-    expect(screen.getByRole("combobox", { name: "Display Rule" })).toHaveValue("Trending");
+    expect(screen.queryByText("Video Testimonies")).not.toBeInTheDocument();
+    expect(screen.queryByText("Text Testimonies")).not.toBeInTheDocument();
+    expect(screen.queryByText("Home Screen Section Order")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "+ Add Testimony" })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Inspirational Pictures" }));
-
-    await waitFor(() => {
-      expect(screen.getByRole("combobox", { name: "Display Rule" })).toHaveValue("Most Recent");
-    });
-    expect(screen.getByRole("spinbutton", { name: "Number of Pictures" })).toHaveValue(2);
-  });
-
-  test("renders the selected testimony count and limits visible rows", () => {
-    render(<HomeManagementPage viewModel={getHomeManagementViewModel({ count: "3" })} />);
-
-    expect(screen.getByRole("spinbutton", { name: "Number of Testimonies" })).toHaveValue(3);
-    expect(screen.getAllByText("God healed...")).toHaveLength(3);
+    await userEvent.setup().click(screen.getByRole("button", { name: "Move Grace Note up in featured order" }));
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    const body = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
+    expect(Object.keys(body).sort()).toEqual(["count", "featuredPictureIds"]);
   });
 
   test("renders the remove confirmation state", () => {
@@ -105,7 +75,7 @@ describe("HomeManagementPage", () => {
 
   test("closes route-opened remove confirmation without router navigation", async () => {
     const user = userEvent.setup();
-    window.history.pushState(null, "", "/home-management?tab=video&remove=1");
+    window.history.pushState(null, "", "/home-management?tab=pictures&remove=1");
     render(<HomeManagementPage viewModel={getHomeManagementViewModel({ removeId: "1" })} />);
 
     await user.click(screen.getByRole("button", { name: "Cancel remove from home page" }));
@@ -126,14 +96,14 @@ describe("HomeManagementPage", () => {
   test("renders the loading state", () => {
     render(<HomeManagementPage viewModel={getHomeManagementViewModel({ state: "loading" })} />);
 
-    expect(screen.getByText("Featured Testimonies")).toBeInTheDocument();
+    expect(screen.getByText("Featured Pictures")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Apply" })).toBeInTheDocument();
   });
 
   test("renders the empty state", () => {
     render(<HomeManagementPage viewModel={getHomeManagementViewModel({ state: "empty" })} />);
 
-    expect(screen.getByText("No featured testimonies yet")).toBeInTheDocument();
+    expect(screen.getByText("No featured pictures yet")).toBeInTheDocument();
   });
 
   test("renders the error state", () => {
@@ -149,16 +119,6 @@ describe("HomeManagementPage", () => {
     expect(screen.getByText("Picture Details")).toBeInTheDocument();
     expect(screen.getAllByText("Deeply Loved")).toHaveLength(2);
     expect(screen.getAllByText("Instagram.com")).toHaveLength(3);
-  });
-
-  test("renders the text testimony detail state from the reference layout", () => {
-    render(<HomeManagementPage viewModel={getHomeManagementViewModel({ tab: "text", viewId: "1" })} />);
-
-    expect(screen.getByText("John Stone")).toBeInTheDocument();
-    expect(screen.getByText("Johnstone@gmail.com")).toBeInTheDocument();
-    expect(screen.getByText("Success")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Miraculous Healing After Prayer" })).toBeInTheDocument();
-    expect(screen.queryByText("Text Details")).not.toBeInTheDocument();
   });
 
   // Regression coverage: pictures used to have no add/reorder curation at all --
@@ -206,48 +166,6 @@ describe("HomeManagementPage", () => {
     const [, requestInit] = fetchSpy.mock.calls[0];
     const body = JSON.parse((requestInit as RequestInit).body as string);
     expect(body.featuredPictureIds).toEqual([2, 1]);
-  });
-
-  // Regression coverage: featuredOrder/featuredPictureOrder/sectionOrder are
-  // global curation state shared by every tab's view model, not tab-scoped.
-  // A curation change used to only refresh the cache entry for the tab you
-  // were on -- any OTHER tab visited earlier kept its stale snapshot, so
-  // curating from that stale tab would resubmit pre-change data and wipe out
-  // whatever had changed elsewhere (reported live: adding testimonies, then
-  // switching to an earlier-cached Pictures tab and adding a picture there,
-  // silently deleted all the just-added testimonies).
-  test("a curation change invalidates other tabs' cache instead of leaving them stale", async () => {
-    const user = userEvent.setup();
-    let picturesFetchCount = 0;
-    const fetchSpy = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
-      if (url === "/api/admin/content/home-curation" && init?.method === "POST") {
-        return Promise.resolve({
-          ok: true,
-          json: async () => getHomeManagementViewModel({ tab: "video" }),
-        });
-      }
-      const tab = new URL(url, "http://localhost").searchParams.get("tab") ?? "video";
-      if (tab === "pictures") picturesFetchCount += 1;
-      return Promise.resolve({
-        ok: true,
-        json: async () => getHomeManagementViewModel({ tab }),
-      });
-    });
-    vi.stubGlobal("fetch", fetchSpy);
-    render(<HomeManagementPage viewModel={getHomeManagementViewModel({ tab: "video" })} />);
-
-    // Visit Pictures first, caching a snapshot, then return to Video.
-    await user.click(screen.getByRole("button", { name: "Inspirational Pictures" }));
-    await waitFor(() => expect(picturesFetchCount).toBe(1));
-    await user.click(screen.getByRole("button", { name: "Video Testimonies" }));
-
-    // Curate from Video (reorder) -- this changes global featured-testimony state.
-    const moveButtons = screen.getAllByRole("button", { name: /down in featured order/ });
-    await user.click(moveButtons[0]);
-
-    // Returning to Pictures must re-fetch rather than reuse the now-stale cache.
-    await user.click(screen.getByRole("button", { name: "Inspirational Pictures" }));
-    await waitFor(() => expect(picturesFetchCount).toBe(2));
   });
 
   // Regression coverage: Apply used to submit the trim immediately with no

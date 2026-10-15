@@ -111,11 +111,8 @@ test("real admin can click through testimony performance surfaces", async ({ pag
 
   await page.goto("/home-management");
   await expect(page.getByRole("heading", { name: "Home Page Management" })).toBeVisible();
-  const homeTabStart = Date.now();
-  await page.getByRole("button", { name: "Inspirational Pictures", exact: true }).click();
-  await expect(page).toHaveURL(/tab=pictures/);
-  await expect(page.getByRole("button", { name: "Inspirational Pictures", exact: true })).toHaveAttribute("aria-pressed", "true");
-  timings.homeManagementTabMs = Date.now() - homeTabStart;
+  // Phase 35: a single list of featured pictures, no tabs to switch.
+  await expect(page.getByText("Featured Pictures")).toBeVisible();
 
   await page.goto("/scripture-of-the-day");
   await expect(page.getByRole("heading", { name: "Scripture of the day" })).toBeVisible();

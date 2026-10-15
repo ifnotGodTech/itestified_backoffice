@@ -4,22 +4,14 @@ import { getHomeManagementViewModelFromApi } from "@/features/admin/data/service
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as {
-    sectionOrder?: string[];
-    featuredTestimonyIds?: number[];
     featuredPictureIds?: number[];
-    tab?: string;
-    rule?: string;
     count?: string;
   };
 
   const backendResponse = await fetch(`${backendBaseUrl}/content/admin/home-curation/`, {
     method: "PUT",
     headers: buildBackendSessionHeaders(req, true),
-    body: JSON.stringify({
-      section_order: body.sectionOrder ?? [],
-      featured_testimony_ids: body.featuredTestimonyIds ?? [],
-      featured_picture_ids: body.featuredPictureIds ?? [],
-    }),
+    body: JSON.stringify({ featured_picture_ids: body.featuredPictureIds ?? [] }),
     cache: "no-store",
   });
 
@@ -34,7 +26,7 @@ export async function POST(req: Request) {
 
   const cookieHeader = req.headers.get("cookie") ?? "";
   const viewModel = await getHomeManagementViewModelFromApi(
-    { tab: body.tab, rule: body.rule, count: body.count },
+    { count: body.count },
     cookieHeader,
   );
   const response = NextResponse.json(viewModel, { status: 200 });

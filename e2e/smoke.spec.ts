@@ -76,13 +76,15 @@ test("home page management route renders phase 3 table state", async ({ page }) 
   await page.goto("/home-management");
 
   await expect(page.getByRole("heading", { name: "Home Page Management" })).toBeVisible();
-  await expect(page.getByText("Available Testimonies")).toBeVisible();
+  // Phase 35: only the featured pictures woven into the app's Home feed.
+  await expect(page.getByText("Featured Pictures")).toBeVisible();
+  await expect(page.getByText("Video Testimonies")).toHaveCount(0);
   await expect(page.getByText("Display Rule")).toBeVisible();
 });
 
 test("home page management supports the remove confirmation state", async ({ page }) => {
   await loginAsAdmin(page);
-  await page.goto("/home-management?tab=video&remove=1");
+  await page.goto("/home-management?tab=pictures&remove=1");
 
   await expect(page.getByRole("heading", { name: "Remove from Home Page?" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Yes, remove" })).toBeVisible();
@@ -90,7 +92,7 @@ test("home page management supports the remove confirmation state", async ({ pag
 
 test("home page management supports the row action menu state", async ({ page }) => {
   await loginAsAdmin(page);
-  await page.goto("/home-management?tab=video&menu=1");
+  await page.goto("/home-management?tab=pictures&menu=1");
 
   await expect(page.getByRole("link", { name: "View", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Remove", exact: true })).toBeVisible();
@@ -110,10 +112,10 @@ test("home page management supports loading, empty, and error states", async ({ 
 
   await page.goto("/home-management?state=loading");
   await expect(page.getByRole("heading", { name: "Home Page Management" })).toBeVisible();
-  await expect(page.getByRole("main").getByText("Available Testimonies").first()).toBeVisible();
+  await expect(page.getByRole("main").getByText("Featured Pictures").first()).toBeVisible();
 
   await page.goto("/home-management?state=empty");
-  await expect(page.getByRole("heading", { name: "No featured testimonies yet" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "No featured pictures yet" })).toBeVisible();
 
   await page.goto("/home-management?state=error");
   await expect(page.getByRole("heading", { name: "Unable to load home page content" })).toBeVisible();
