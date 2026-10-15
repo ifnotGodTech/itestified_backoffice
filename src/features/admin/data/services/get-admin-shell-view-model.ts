@@ -112,6 +112,11 @@ export function getAdminShellViewModel(input: {
           expanded: item.href === input.activeHref,
           children: [
             {
+              label: "Home engagement",
+              href: "/analytics/home",
+              active: input.activeChildHref === "/analytics/home",
+            },
+            {
               label: "Users",
               href: "/analytics?area=users",
               active: input.activeChildHref === "/analytics?area=users",
