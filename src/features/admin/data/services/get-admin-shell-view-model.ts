@@ -81,6 +81,11 @@ export function getAdminShellViewModel(input: {
               href: "/testimonies/upload-policy",
               active: input.activeChildHref === "/testimonies/upload-policy",
             },
+            {
+              label: "Reactions",
+              href: "/testimonies/reactions",
+              active: input.activeChildHref === "/testimonies/reactions",
+            },
           ],
         };
       }
