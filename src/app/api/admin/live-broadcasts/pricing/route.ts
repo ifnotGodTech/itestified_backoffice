@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { seeOther } from "@/core/lib/see-other";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
 const CURRENCY_PATTERN = /^[A-Za-z]{3}$/;
@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   const amountMajor = Number.parseFloat(rawAmount);
 
   if (!CURRENCY_PATTERN.test(currency) || !Number.isFinite(amountMajor) || amountMajor <= 0) {
-    return NextResponse.redirect(new URL("/live-broadcasts/policy?section=pricing&state=validation", req.url), 303);
+    return seeOther("/live-broadcasts/policy?section=pricing&state=validation");
   }
 
   // Backend stores minor units (kobo/cents); the admin types a normal
@@ -25,10 +25,7 @@ export async function POST(req: Request) {
   });
 
   const targetState = backendResponse.status === 400 ? "validation" : backendResponse.ok ? "success" : "error";
-  const redirect = NextResponse.redirect(
-    new URL(`/live-broadcasts/policy?section=pricing&state=${targetState}`, req.url),
-    303,
-  );
+  const redirect = seeOther(`/live-broadcasts/policy?section=pricing&state=${targetState}`);
   for (const header of extractSetCookieHeaders(backendResponse)) {
     redirect.headers.append("set-cookie", header);
   }

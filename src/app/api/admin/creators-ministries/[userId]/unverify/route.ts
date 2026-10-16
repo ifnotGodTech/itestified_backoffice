@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { seeOther } from "@/core/lib/see-other";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
 export async function POST(req: Request, context: { params: Promise<{ userId: string }> }) {
@@ -14,14 +14,14 @@ export async function POST(req: Request, context: { params: Promise<{ userId: st
   });
 
   if (!backendResponse.ok) {
-    const failRedirect = NextResponse.redirect(new URL("/creators-ministries?state=error", req.url), 303);
+    const failRedirect = seeOther("/creators-ministries?state=error");
     for (const header of extractSetCookieHeaders(backendResponse)) {
       failRedirect.headers.append("set-cookie", header);
     }
     return failRedirect;
   }
 
-  const redirectResponse = NextResponse.redirect(new URL(next, req.url), 303);
+  const redirectResponse = seeOther(next);
   for (const header of extractSetCookieHeaders(backendResponse)) {
     redirectResponse.headers.append("set-cookie", header);
   }

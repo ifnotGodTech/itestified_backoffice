@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { OPTIMIZED_IMAGE_HOSTS } from "./src/core/lib/image-hosts";
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
@@ -8,16 +9,7 @@ const nextConfig: NextConfig = {
     proxyClientMaxBodySize: 220 * 1024 * 1024,
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "placehold.co",
-      },
-      {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-      },
-    ],
+    remotePatterns: OPTIMIZED_IMAGE_HOSTS.map((hostname) => ({ protocol: "https" as const, hostname })),
   },
 };
 

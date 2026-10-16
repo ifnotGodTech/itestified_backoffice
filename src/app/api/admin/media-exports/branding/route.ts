@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { seeOther } from "@/core/lib/see-other";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
 export async function POST(req: Request) {
@@ -16,10 +16,7 @@ export async function POST(req: Request) {
     body: JSON.stringify(payload),
     cache: "no-store",
   });
-  const response = NextResponse.redirect(
-    new URL(`/media-exports?state=${backendResponse.ok ? "success" : "error"}`, req.url),
-    303,
-  );
+  const response = seeOther(`/media-exports?state=${backendResponse.ok ? "success" : "error"}`);
   for (const header of extractSetCookieHeaders(backendResponse)) response.headers.append("set-cookie", header);
   return response;
 }

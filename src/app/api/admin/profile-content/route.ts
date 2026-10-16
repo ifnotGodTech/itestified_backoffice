@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { seeOther } from "@/core/lib/see-other";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 import { PROFILE_CONTENT_KEYS } from "@/features/admin/data/services/get-profile-content-view-model";
 
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   const targetState = hadValidationFailure ? "validation" : hadOtherFailure ? "error" : "success";
   // status 303 forces the browser to follow up with GET; the default 307 preserves
   // POST, which Next.js's App Router then rejects as an invalid server-action request.
-  const redirect = NextResponse.redirect(new URL(`/profile-content?state=${targetState}`, req.url), 303);
+  const redirect = seeOther(`/profile-content?state=${targetState}`);
   for (const header of setCookieHeaders) {
     redirect.headers.append("set-cookie", header);
   }

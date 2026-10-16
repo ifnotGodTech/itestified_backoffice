@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { RemoteImage } from "@/core/ui/remote-image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -458,7 +458,7 @@ function VideoSliceTable({
               <div className="min-w-0">
                 <div className="flex min-w-0 gap-3">
                   <span className="relative mt-0.5 block h-[38px] w-[64px] shrink-0 overflow-hidden rounded-[6px] bg-[var(--color-surface-muted)]">
-                    <Image src={videoRow.thumbnailSrc} alt={videoRow.title} fill sizes="64px" className="object-cover" />
+                    <RemoteImage src={videoRow.thumbnailSrc} alt={videoRow.title} fill sizes="64px" className="object-cover" />
                   </span>
                   <div className="min-w-0">
                     <p className="truncate text-[14px] font-medium text-white/95" title={videoRow.title}>{videoRow.title}</p>

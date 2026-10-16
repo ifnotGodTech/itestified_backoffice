@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { RemoteImage } from "@/core/ui/remote-image";
 import type { HomeManagementRow, HomeManagementViewModel } from "@/features/admin/domain/entities/home-management";
 import { AdminErrorState } from "@/features/admin/presentation/components/shared/admin-table-primitives";
 
@@ -6,7 +6,7 @@ function ThumbnailCell({ row }: { row: HomeManagementRow }) {
   return (
     <div className="flex items-center gap-2">
       <span className="relative h-8 w-8 overflow-hidden rounded bg-[var(--color-surface-muted)]">
-        {row.thumbnailSrc ? <Image src={row.thumbnailSrc} alt={row.thumbnailLabel} fill sizes="64px" className="object-cover opacity-80" /> : null}
+        {row.thumbnailSrc ? <RemoteImage src={row.thumbnailSrc} alt={row.thumbnailLabel} fill sizes="64px" className="object-cover opacity-80" /> : null}
       </span>
     </div>
   );

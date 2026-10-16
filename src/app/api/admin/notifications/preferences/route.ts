@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { seeOther } from "@/core/lib/see-other";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
 export async function POST(req: Request) {
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   // status 303 forces the browser to follow up with GET; the default 307 preserves
   // POST, which Next.js's App Router then rejects as an invalid server-action request.
   if (!Object.values(payload).some(Boolean)) {
-    return NextResponse.redirect(new URL("/notification-settings?state=validation", req.url), 303);
+    return seeOther("/notification-settings?state=validation");
   }
 
   const backendResponse = await fetch(`${backendBaseUrl}/notifications/preferences/me/`, {
@@ -23,10 +23,7 @@ export async function POST(req: Request) {
     cache: "no-store",
   });
 
-  const redirect = NextResponse.redirect(
-    new URL(backendResponse.ok ? "/notification-settings?success=1" : "/notification-settings?state=error", req.url),
-    303,
-  );
+  const redirect = seeOther(backendResponse.ok ? "/notification-settings?success=1" : "/notification-settings?state=error");
   for (const header of extractSetCookieHeaders(backendResponse)) {
     redirect.headers.append("set-cookie", header);
   }

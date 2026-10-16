@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { RemoteImage } from "@/core/ui/remote-image";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
@@ -199,7 +199,7 @@ function TestimonyAvatar({ avatarSrc, name }: { avatarSrc?: string; name: string
   return (
     <div className="relative h-[102px] w-[102px] overflow-hidden rounded-full border-[6px] border-white bg-white">
       {avatarSrc ? (
-        <Image src={avatarSrc} alt={name} fill sizes="72px" className="object-contain p-3" />
+        <RemoteImage src={avatarSrc} alt={name} fill sizes="72px" className="object-contain p-3" />
       ) : (
         <svg viewBox="0 0 24 24" aria-hidden="true" className="absolute inset-0 h-full w-full p-6 text-[var(--color-surface-muted)]" fill="none">
           <circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.8" />
@@ -1322,7 +1322,7 @@ function VideoDetailsModal({
                 </video>
               ) : (
                 <>
-                  <Image src={row.thumbnailSrc} alt={row.title} fill sizes="240px" className="object-cover opacity-70" />
+                  <RemoteImage src={row.thumbnailSrc} alt={row.title} fill sizes="240px" className="object-cover opacity-70" />
                   <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-[14px] text-white/92">
                     Video playback unavailable for this testimony.
                   </div>

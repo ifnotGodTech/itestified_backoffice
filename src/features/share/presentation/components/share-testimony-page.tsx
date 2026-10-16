@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { RemoteImage } from "@/core/ui/remote-image";
 import type { ShareTestimony } from "@/features/share/domain/entities/share-testimony";
 import { androidStoreUrl, iosStoreUrl } from "@/features/share/domain/entities/store-links";
 
@@ -12,7 +13,7 @@ export function ShareTestimonyPage({ testimony }: { testimony: ShareTestimony })
       <div className="overflow-hidden rounded-[24px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] shadow-[0_24px_80px_-56px_rgba(0,0,0,0.8)]">
         {testimony.thumbnailUrl ? (
           <div className="relative aspect-[16/9] w-full bg-[var(--color-surface-muted)]">
-            <Image
+            <RemoteImage
               src={testimony.thumbnailUrl}
               alt={testimony.title}
               fill

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { seeOther } from "@/core/lib/see-other";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
 const CURRENCY_PATTERN = /^[A-Za-z]{3}$/;
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   // preserves POST, which Next.js's App Router then rejects as an invalid
   // server-action request (same as app-version's own redirect below).
   if (!CURRENCY_PATTERN.test(currency) || !Number.isFinite(amountMajor) || amountMajor <= 0) {
-    return NextResponse.redirect(new URL("/subscriptions/pricing?state=validation", req.url), 303);
+    return seeOther("/subscriptions/pricing?state=validation");
   }
 
   // The backend stores minor units (kobo/cents); the admin types a normal
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
           ? "success"
           : "error";
 
-  const redirect = NextResponse.redirect(new URL(`/subscriptions/pricing?state=${targetState}`, req.url), 303);
+  const redirect = seeOther(`/subscriptions/pricing?state=${targetState}`);
   for (const header of extractSetCookieHeaders(backendResponse)) {
     redirect.headers.append("set-cookie", header);
   }

@@ -1,16 +1,12 @@
-import { NextResponse } from "next/server";
+import { seeOther } from "@/core/lib/see-other";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
 // Phase 34 Slice 8: the Bible settings page's three actions, proxied to the
 // backend with the admin's session, then back to the page with the outcome.
 const ACTIONS = new Set(["enable", "disable", "make-default"]);
 
-// A relative Location: the browser resolves it against the address it's
-// actually on. Building an absolute URL from req.url sends it to
-// "localhost" in dev even when the admin opened 127.0.0.1, and the session
-// cookie (scoped to the host) doesn't follow.
-function backToPage(query: URLSearchParams): NextResponse {
-  return new NextResponse(null, { status: 303, headers: { location: `/bible-packs?${query.toString()}` } });
+function backToPage(query: URLSearchParams) {
+  return seeOther(`/bible-packs?${query.toString()}`);
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ code: string; action: string }> }) {

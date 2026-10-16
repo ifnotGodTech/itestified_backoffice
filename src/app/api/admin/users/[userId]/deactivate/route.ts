@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { seeOther } from "@/core/lib/see-other";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
 export async function POST(req: Request, context: { params: Promise<{ userId: string }> }) {
@@ -13,15 +13,7 @@ export async function POST(req: Request, context: { params: Promise<{ userId: st
 
   // status 303 forces the browser to follow up with GET; the default 307 preserves
   // POST, which Next.js's App Router then rejects as an invalid server-action request.
-  const redirect = NextResponse.redirect(
-    new URL(
-      backendResponse.ok
-        ? next
-        : "/users?state=error",
-      req.url,
-    ),
-    303,
-  );
+  const redirect = seeOther(backendResponse.ok ? next : "/users?state=error");
   for (const header of extractSetCookieHeaders(backendResponse)) {
     redirect.headers.append("set-cookie", header);
   }

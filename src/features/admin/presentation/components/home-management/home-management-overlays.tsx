@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { RemoteImage } from "@/core/ui/remote-image";
 import Link from "next/link";
 import { useState } from "react";
 import type { ReactNode } from "react";
@@ -39,7 +39,7 @@ function detailCloseHref(viewModel: HomeManagementViewModel) {
 function PictureDetailArt({ row }: { row: HomeManagementRow }) {
   return (
     <div className="relative aspect-[1.74] w-full overflow-hidden rounded-[18px] bg-[var(--color-surface-muted)]">
-      {row.thumbnailSrc ? <Image src={row.thumbnailSrc} alt={row.thumbnailLabel} fill sizes="560px" className="object-cover" /> : null}
+      {row.thumbnailSrc ? <RemoteImage src={row.thumbnailSrc} alt={row.thumbnailLabel} fill sizes="560px" className="object-cover" /> : null}
     </div>
   );
 }

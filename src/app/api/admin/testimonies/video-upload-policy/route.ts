@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { seeOther } from "@/core/lib/see-other";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
 const FORMAT_CONTENT_TYPES: Record<string, string[]> = {
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     dailyLimit <= 50 &&
     allowedContentTypes.length > 0;
   if (!allValid) {
-    return NextResponse.redirect(new URL("/testimonies/upload-policy?section=video&state=validation", req.url), 303);
+    return seeOther("/testimonies/upload-policy?section=video&state=validation");
   }
 
   const backendResponse = await fetch(`${backendBaseUrl}/testimonies/admin/video-upload-policy/`, {
@@ -42,10 +42,7 @@ export async function POST(req: Request) {
   });
 
   const targetState = backendResponse.status === 400 ? "validation" : backendResponse.ok ? "success" : "error";
-  const redirect = NextResponse.redirect(
-    new URL(`/testimonies/upload-policy?section=video&state=${targetState}`, req.url),
-    303,
-  );
+  const redirect = seeOther(`/testimonies/upload-policy?section=video&state=${targetState}`);
   for (const header of extractSetCookieHeaders(backendResponse)) {
     redirect.headers.append("set-cookie", header);
   }

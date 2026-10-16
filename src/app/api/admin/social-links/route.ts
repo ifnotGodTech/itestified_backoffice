@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { seeOther } from "@/core/lib/see-other";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 import { SOCIAL_LINK_PLATFORMS } from "@/features/admin/data/services/get-social-links-view-model";
 
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   // status 303 forces the browser to follow up with GET; the default 307 preserves
   // POST, which Next.js's App Router then rejects as an invalid server-action request.
   if (hasInvalidFormat) {
-    return NextResponse.redirect(new URL("/social-links?state=validation", req.url), 303);
+    return seeOther("/social-links?state=validation");
   }
 
   let hadValidationFailure = false;
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
   }
 
   const targetState = hadValidationFailure ? "validation" : hadOtherFailure ? "error" : "success";
-  const redirect = NextResponse.redirect(new URL(`/social-links?state=${targetState}`, req.url), 303);
+  const redirect = seeOther(`/social-links?state=${targetState}`);
   for (const header of setCookieHeaders) {
     redirect.headers.append("set-cookie", header);
   }

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { seeOther } from "@/core/lib/see-other";
 import { backendBaseUrl, buildBackendSessionHeaders, extractSetCookieHeaders } from "@/core/auth/backend";
 
 export async function POST(req: Request) {
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     (value) => Number.isFinite(value) && value > 0,
   );
   if (!allValid) {
-    return NextResponse.redirect(new URL("/live-broadcasts/policy?section=policy&state=validation", req.url), 303);
+    return seeOther("/live-broadcasts/policy?section=policy&state=validation");
   }
 
   const backendResponse = await fetch(`${backendBaseUrl}/live-broadcasts/admin/policy/`, {
@@ -33,10 +33,7 @@ export async function POST(req: Request) {
   });
 
   const targetState = backendResponse.status === 400 ? "validation" : backendResponse.ok ? "success" : "error";
-  const redirect = NextResponse.redirect(
-    new URL(`/live-broadcasts/policy?section=policy&state=${targetState}`, req.url),
-    303,
-  );
+  const redirect = seeOther(`/live-broadcasts/policy?section=policy&state=${targetState}`);
   for (const header of extractSetCookieHeaders(backendResponse)) {
     redirect.headers.append("set-cookie", header);
   }

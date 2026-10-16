@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { RemoteImage } from "@/core/ui/remote-image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -113,14 +113,7 @@ function SafePictureImage({
   sizes: string;
   className: string;
 }) {
-  const canUseNextImage = src.startsWith("/") || src.startsWith("https://placehold.co/");
-
-  if (canUseNextImage) {
-    return <Image src={src} alt={alt} fill sizes={sizes} className={className} />;
-  }
-
-  // eslint-disable-next-line @next/next/no-img-element -- External admin-provided URLs can be unconfigured for next/image.
-  return <img src={src} alt={alt} className={`absolute inset-0 h-full w-full ${className}`} />;
+  return <RemoteImage src={src} alt={alt} fill sizes={sizes} className={className} />;
 }
 
 function closeHref(viewModel: InspirationalPicturesViewModel) {
