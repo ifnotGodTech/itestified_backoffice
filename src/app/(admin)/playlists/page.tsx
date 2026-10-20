@@ -1,4 +1,3 @@
-import { getServerSession } from "@/core/auth/session";
 import { cookies } from "next/headers";
 import { getPlaylistsViewModelFromBackend } from "@/features/admin/data/services/get-playlists-view-model";
 import { PlaylistsPage } from "@/features/admin/presentation/components/playlists-page";
@@ -14,8 +13,9 @@ export default async function PlaylistsRoute({
     takedown?: string;
   }>;
 }) {
+  // The admin layout draws the shell (and checks the session), so this page
+  // goes straight to the list -- one backend round trip per tab switch.
   const params = await searchParams;
-  const session = await getServerSession();
 
   const cookieStore = await cookies();
   const cookieHeader = cookieStore
@@ -29,7 +29,6 @@ export default async function PlaylistsRoute({
     page: params.page,
     view: params.view,
     takedown: params.takedown,
-    fullName: session?.fullName ?? session?.email,
     cookieHeader,
   });
 

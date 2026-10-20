@@ -106,6 +106,16 @@ export function ScriptureOfTheDayPage({ viewModel }: { viewModel: ScriptureOfThe
           {interactiveViewModel.isCreatingNew ? "Scripture uploaded successfully." : "Scripture updated successfully."}
         </div>
       ) : null}
+      {interactiveViewModel.formError && !interactiveViewModel.showEdit && !interactiveViewModel.showScheduleBuilder ? (
+        <div role="alert" className="mb-5 max-w-[1080px] rounded-[14px] border border-[#ef4335]/25 bg-[#ef4335]/10 px-4 py-3 text-[14px] text-[var(--color-danger)]">
+          {interactiveViewModel.formError}
+        </div>
+      ) : null}
+      {interactiveViewModel.deleteSuccess ? (
+        <div role="status" className="mb-5 max-w-[1080px] rounded-[14px] border border-[#0cbc32]/20 bg-[#0d3215] px-4 py-3 text-[14px] text-[#d2ffd9]">
+          Scripture deleted.
+        </div>
+      ) : null}
       {!interactiveViewModel.showScheduleBuilder && interactiveViewModel.streakStats ? (
         <div className="max-w-[1080px]">
           <ScriptureStreakStatsCard stats={interactiveViewModel.streakStats} />

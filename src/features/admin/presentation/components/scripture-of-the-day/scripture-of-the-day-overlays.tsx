@@ -84,6 +84,46 @@ function DetailModal({ viewModel, row, onClose }: { viewModel: ScriptureOfTheDay
   );
 }
 
+function DeleteModal({ viewModel, row }: { viewModel: ScriptureOfTheDayViewModel; row: ScriptureRow }) {
+  const closeHref = buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery });
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">
+      <Link href={closeHref} className="absolute inset-0" aria-label="Close delete scripture dialog" />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Delete this scripture?"
+        className="relative z-10 w-full max-w-[520px] rounded-[22px] bg-[var(--color-surface-elevated)] px-6 py-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+      >
+        <h2 className="text-[22px] font-semibold text-[var(--color-text-primary)]">Delete this scripture?</h2>
+        <p className="mt-3 text-[15px] font-semibold text-[var(--color-text-primary)]">
+          {row.bibleText} · {row.date}
+        </p>
+        <p className="mt-3 text-[14px] leading-6 text-[var(--color-text-secondary)]">
+          {row.status === "Scheduled"
+            ? "It won't be published. You can schedule another Scripture for that day."
+            : "The app will show no Scripture for that day unless you add another. Readers keep their streaks."}{" "}
+          This can&apos;t be undone.
+        </p>
+        <form action={`/api/admin/content/scriptures/${row.id}/delete`} method="POST" className="mt-6 flex justify-end gap-3">
+          <Link
+            href={closeHref}
+            className="inline-flex min-h-[42px] items-center justify-center rounded-[10px] px-5 text-[14px] shadow-[0_0_0_1px_var(--color-border-soft)]"
+          >
+            <span className="text-[var(--color-text-secondary)]">Keep it</span>
+          </Link>
+          <button
+            type="submit"
+            className="inline-flex min-h-[42px] items-center justify-center rounded-[10px] bg-[var(--color-danger)] px-5 text-[14px] font-semibold text-[#ffffff]"
+          >
+            Delete scripture
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function EditModal({ viewModel }: { viewModel: ScriptureOfTheDayViewModel }) {
   const draft: ScriptureDraft = viewModel.editDraft;
   const closeHref = buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery });
@@ -236,6 +276,7 @@ export function ScriptureOfTheDayOverlays({
     <>
       {showDetails && selectedRow ? <DetailModal viewModel={viewModel} row={selectedRow} onClose={detailRow ? onCloseDetails : undefined} /> : null}
       {viewModel.showEdit && !viewModel.showScheduleBuilder ? <EditModal viewModel={viewModel} /> : null}
+      {viewModel.showDeleteConfirm && viewModel.selectedRow ? <DeleteModal viewModel={viewModel} row={viewModel.selectedRow} /> : null}
       {showFilter ? <FilterModal viewModel={viewModel} onClose={showFilterModal ? onCloseFilter : undefined} /> : null}
     </>
   );

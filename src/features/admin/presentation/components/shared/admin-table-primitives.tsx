@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
 
 export function AdminSearchIcon() {
   return (
@@ -20,19 +19,7 @@ export function AdminRowMenuIcon() {
   );
 }
 
-export function AdminActionMenuPanel({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={`min-w-[118px] overflow-hidden rounded-[12px] border border-[var(--color-border-soft)] bg-[var(--color-surface-muted)] text-left shadow-[0_14px_24px_rgba(0,0,0,0.35)] ${className}`}>
-      {children}
-    </div>
-  );
-}
+export { AdminActionMenuPanel } from "@/features/admin/presentation/components/shared/admin-action-menu-panel";
 
 export function AdminActionMenuBackdrop({ href, label }: { href: string; label: string }) {
   return <Link href={href} className="fixed inset-0 z-40" aria-label={label} />;

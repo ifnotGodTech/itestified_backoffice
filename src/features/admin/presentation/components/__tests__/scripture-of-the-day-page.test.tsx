@@ -33,9 +33,23 @@ describe("ScriptureOfTheDayPage", () => {
 
     expect(screen.getByRole("button", { name: "View" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Edit" })).toBeInTheDocument();
-    // There is no backend delete endpoint for scriptures, and no delete slice in the
-    // Phase 7 spec -- the row menu must not offer an action that can't actually happen.
-    expect(screen.queryByRole("link", { name: "Delete" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Delete" })).toHaveAttribute("href", "/scripture-of-the-day?remove=1");
+  });
+
+  test("asks before deleting a scripture, and posts the delete", () => {
+    render(<ScriptureOfTheDayPage viewModel={getScriptureOfTheDayViewModel({ remove: "1" })} />);
+
+    const dialog = screen.getByRole("dialog", { name: "Delete this scripture?" });
+    expect(dialog).toHaveTextContent("This can't be undone.");
+    const submit = screen.getByRole("button", { name: "Delete scripture" });
+    expect(submit.closest("form")).toHaveAttribute("action", "/api/admin/content/scriptures/1/delete");
+    expect(screen.getByRole("link", { name: "Keep it" })).toBeInTheDocument();
+  });
+
+  test("confirms a deletion", () => {
+    render(<ScriptureOfTheDayPage viewModel={getScriptureOfTheDayViewModel({ deleted: "1" })} />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Scripture deleted.");
   });
 
   test("opens and closes the scripture action menu without fetching", async () => {

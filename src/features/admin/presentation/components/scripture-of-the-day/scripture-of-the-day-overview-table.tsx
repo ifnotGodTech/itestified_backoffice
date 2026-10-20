@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ScriptureOfTheDayViewModel, ScriptureRow, ScriptureStatus, ScriptureTab } from "@/features/admin/domain/entities/scripture-of-the-day";
-import { AdminErrorState, AdminPaginationFooter } from "@/features/admin/presentation/components/shared/admin-table-primitives";
+import { AdminActionMenuPanel, AdminErrorState, AdminPaginationFooter } from "@/features/admin/presentation/components/shared/admin-table-primitives";
 import { buildScriptureOfTheDayHref } from "@/features/admin/presentation/state/scripture-of-the-day-route-state";
 
 function paginationHref(viewModel: ScriptureOfTheDayViewModel, page: number) {
@@ -180,11 +180,7 @@ export function ScriptureOfTheDayOverviewTable({
                   <RowMenuIcon />
                 </button>
                 {viewModel.showActionMenu && viewModel.selectedRow?.id === row.id ? (
-                  <div
-                    className={`absolute right-0 z-50 min-w-[126px] overflow-hidden rounded-[12px] border border-[var(--color-border-soft)] bg-[var(--color-surface-muted)] text-left shadow-[0_14px_24px_rgba(0,0,0,0.35)] ${
-                      viewModel.rows.length - viewModel.rows.indexOf(row) <= 1 ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"
-                    }`}
-                  >
+                  <AdminActionMenuPanel className="min-w-[126px]">
                     <button
                       type="button"
                       onClick={() => onView?.(row)}
@@ -202,11 +198,18 @@ export function ScriptureOfTheDayOverviewTable({
                         bibleText: row.bibleText,
                         bibleVersion: row.bibleVersion,
                       })}
-                      className="block px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]"
+                      className="block border-b border-white/10 px-4 py-2 text-[14px] text-white/90 hover:bg-white/[0.04]"
                     >
                       Edit
                     </Link>
-                  </div>
+                    <Link
+                      href={buildScriptureOfTheDayHref({ tab: viewModel.activeTab, q: viewModel.searchQuery, remove: row.id })}
+                      onClick={onCloseMenu}
+                      className="block px-4 py-2 text-[14px] hover:bg-white/[0.04]"
+                    >
+                      <span className="text-[var(--color-danger)]">Delete</span>
+                    </Link>
+                  </AdminActionMenuPanel>
                 ) : null}
               </div>
             </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { buildPlaylistsHref } from "@/features/admin/data/services/get-playlists-view-model";
 import type { PlaylistRow, PlaylistVisibility, PlaylistsViewModel } from "@/features/admin/domain/entities/playlists";
 import {
@@ -75,15 +75,32 @@ function SearchBox({ viewModel }: { viewModel: PlaylistsViewModel }) {
   );
 }
 
-function VisibilityFilterChips({ viewModel }: { viewModel: PlaylistsViewModel }) {
+/** The tab moves the moment it's tapped, and the list dims until the new
+ * one arrives, instead of nothing happening while the server answers. */
+function VisibilityFilterChips({
+  viewModel,
+  pendingKey,
+  onSelect,
+}: {
+  viewModel: PlaylistsViewModel;
+  pendingKey: PlaylistVisibility | "" | null;
+  onSelect: (key: PlaylistVisibility | "") => void;
+}) {
+  const shown = pendingKey ?? viewModel.visibilityFilter;
   return (
     <div className="flex gap-1 rounded-[10px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] p-1">
       {visibilityTabs.map((tab) => {
-        const active = tab.key === viewModel.visibilityFilter;
+        const active = tab.key === shown;
         return (
           <Link
             key={tab.label}
             href={buildPlaylistsHref({ q: viewModel.searchQuery, visibility: tab.key })}
+            aria-current={active ? "page" : undefined}
+            onClick={(event) => {
+              if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+              event.preventDefault();
+              if (tab.key !== shown) onSelect(tab.key);
+            }}
             className={`rounded-[7px] px-3 py-1.5 text-[12px] font-semibold transition-colors ${
               active
                 ? "bg-[var(--color-primary)] text-white"
@@ -125,6 +142,17 @@ function RowMenu({ row }: { row: PlaylistRow }) {
 }
 
 export function PlaylistsTable({ viewModel }: { viewModel: PlaylistsViewModel }) {
+  const router = useRouter();
+  const [isSwitching, startSwitching] = useTransition();
+  const [pendingKey, setPendingKey] = useState<PlaylistVisibility | "" | null>(null);
+
+  function selectVisibility(key: PlaylistVisibility | "") {
+    setPendingKey(key);
+    startSwitching(() => {
+      router.push(buildPlaylistsHref({ q: viewModel.searchQuery, visibility: key }));
+    });
+  }
+
   return (
     <div className="rounded-[20px] bg-[var(--color-surface-elevated)] shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
       <div className="flex flex-col gap-4 px-4 pt-5 md:px-5">
@@ -146,11 +174,18 @@ export function PlaylistsTable({ viewModel }: { viewModel: PlaylistsViewModel })
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <SearchBox viewModel={viewModel} />
-          <VisibilityFilterChips viewModel={viewModel} />
+          <VisibilityFilterChips
+            viewModel={viewModel}
+            pendingKey={isSwitching ? pendingKey : null}
+            onSelect={selectVisibility}
+          />
         </div>
       </div>
 
-      <div className="border-t border-white/5">
+      <div
+        aria-busy={isSwitching}
+        className={`border-t border-white/5 transition-opacity ${isSwitching ? "pointer-events-none opacity-50" : ""}`}
+      >
         {viewModel.phaseState === "error" ? (
           <AdminErrorState title="Couldn't load playlists" message={viewModel.errorMessage} />
         ) : viewModel.phaseState === "empty" ? (
